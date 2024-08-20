@@ -1197,7 +1197,7 @@ void cdCollectGeoForCylFromList(struct coord *pos, f32 radius, u8 *start, u8 *en
 				}
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + tile->header.numvertices * 6 + 0xe);
+			geo = (struct geo *)((uintptr_t)geo + GEOTILEI_SIZE(tile));
 		} else if (geo->type == GEOTYPE_TILE_F) {
 			struct geotilef *tile = (struct geotilef *) geo;
 
@@ -1220,7 +1220,7 @@ void cdCollectGeoForCylFromList(struct coord *pos, f32 radius, u8 *start, u8 *en
 				}
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + (tile->header.numvertices - 0x40) * sizeof(struct coord) + 0x310);
+			geo = (struct geo *)((uintptr_t)geo + GEOTILEF_SIZE(tile));
 		} else if (geo->type == GEOTYPE_BLOCK) {
 			struct geoblock *block = (struct geoblock *) geo;
 
@@ -1238,7 +1238,7 @@ void cdCollectGeoForCylFromList(struct coord *pos, f32 radius, u8 *start, u8 *en
 				}
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + 0x4c);
+			geo = (struct geo *)((uintptr_t)geo + GEOBLOCK_SIZE(block));
 		} else if (geo->type == GEOTYPE_CYL) {
 			struct geocyl *cyl = (struct geocyl *) geo;
 
@@ -1256,7 +1256,7 @@ void cdCollectGeoForCylFromList(struct coord *pos, f32 radius, u8 *start, u8 *en
 				}
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + 0x18);
+			geo = (struct geo *)((uintptr_t)geo + GEOCYL_SIZE(cyl));
 		}
 	}
 }
@@ -1552,7 +1552,7 @@ void cdCollectGeoForCylMoveFromList(u8 *start, u8 *end, struct coord *pos, f32 r
 				}
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + tile->header.numvertices * 6 + 0xe);
+			geo = (struct geo *)((uintptr_t)geo + GEOTILEI_SIZE(tile));
 		} else if (geo->type == GEOTYPE_TILE_F) {
 			struct geotilef *tile = (struct geotilef *) geo;
 
@@ -1566,7 +1566,7 @@ void cdCollectGeoForCylMoveFromList(u8 *start, u8 *end, struct coord *pos, f32 r
 				cd0002840c(tile, pos->x, pos->z, radius, prop, collisions, maxcollisions, numcollisions);
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + (uintptr_t)(tile->header.numvertices - 0x40) * 0xc + 0x310);
+			geo = (struct geo *)((uintptr_t)geo + GEOTILEF_SIZE(tile));
 		} else if (geo->type == GEOTYPE_BLOCK) {
 			struct geoblock *block = (struct geoblock *) geo;
 
@@ -1575,7 +1575,7 @@ void cdCollectGeoForCylMoveFromList(u8 *start, u8 *end, struct coord *pos, f32 r
 				cd00028638(block, pos->x, pos->z, radius, prop, collisions, maxcollisions, numcollisions);
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + sizeof(struct geoblock));
+			geo = (struct geo *)((uintptr_t)geo + GEOBLOCK_SIZE(block));
 		} else if (geo->type == GEOTYPE_CYL) {
 			struct geocyl *cyl = (struct geocyl *) geo;
 
@@ -1584,7 +1584,7 @@ void cdCollectGeoForCylMoveFromList(u8 *start, u8 *end, struct coord *pos, f32 r
 				cd0002885c(cyl, pos->x, pos->z, radius, prop, collisions, maxcollisions, numcollisions);
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + sizeof(struct geocyl));
+			geo = (struct geo *)((uintptr_t)geo + GEOCYL_SIZE(cyl));
 		}
 	}
 }
@@ -2913,7 +2913,7 @@ bool cdTestAToBGeolist(u8 *start, u8 *end, struct coord *arg2, struct coord *arg
 				}
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + tile->header.numvertices * 6 + 0xe);
+			geo = (struct geo *)((uintptr_t)geo + GEOTILEI_SIZE(tile));
 		} else if (geo->type == GEOTYPE_TILE_F) {
 			struct geotilef *tile = (struct geotilef *) geo;
 			struct coord min;
@@ -2947,7 +2947,7 @@ bool cdTestAToBGeolist(u8 *start, u8 *end, struct coord *arg2, struct coord *arg
 				}
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + (uintptr_t)(tile->header.numvertices - 0x40) * 0xc + 0x310);
+			geo = (struct geo *)((uintptr_t)geo + GEOTILEF_SIZE(tile));
 		} else if (geo->type == GEOTYPE_BLOCK) {
 			struct coord sp78;
 			struct geoblock *block = (struct geoblock *) geo;
@@ -2957,7 +2957,7 @@ bool cdTestAToBGeolist(u8 *start, u8 *end, struct coord *arg2, struct coord *arg
 				return false;
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + sizeof(struct geoblock));
+			geo = (struct geo *)((uintptr_t)geo + GEOBLOCK_SIZE(block));
 		} else if (geo->type == GEOTYPE_CYL) {
 			struct coord sp68;
 			struct geocyl *cyl = (struct geocyl *) geo;
@@ -2967,7 +2967,7 @@ bool cdTestAToBGeolist(u8 *start, u8 *end, struct coord *arg2, struct coord *arg
 				return false;
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + sizeof(struct geocyl));
+			geo = (struct geo *)((uintptr_t)geo + GEOCYL_SIZE(cyl));
 		}
 	}
 
@@ -3184,7 +3184,7 @@ bool cdExamAToBGeolist(u8 *start, u8 *end, struct coord *arg2, struct coord *arg
 				}
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + (uintptr_t)(tile->header.numvertices * 6) + 0xe);
+			geo = (struct geo *)((uintptr_t)geo + GEOTILEI_SIZE(tile));
 		} else if (geo->type == GEOTYPE_TILE_F) {
 			struct geotilef *tile = (struct geotilef *) geo;
 			struct coord min;
@@ -3260,7 +3260,7 @@ bool cdExamAToBGeolist(u8 *start, u8 *end, struct coord *arg2, struct coord *arg
 				}
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + (uintptr_t)(tile->header.numvertices - 0x40) * 0xc + 0x310);
+			geo = (struct geo *)((uintptr_t)geo + GEOTILEF_SIZE(tile));
 		} else if (geo->type == GEOTYPE_BLOCK) {
 			struct coord spb0;
 			struct coord spa4;
@@ -3294,7 +3294,7 @@ bool cdExamAToBGeolist(u8 *start, u8 *end, struct coord *arg2, struct coord *arg
 				}
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + sizeof(struct geoblock));
+			geo = (struct geo *)((uintptr_t)geo + GEOBLOCK_SIZE(geo));
 		} else if (geo->type == GEOTYPE_CYL) {
 			struct geocyl *cyl = (struct geocyl *) geo;
 			struct coord sp88;
@@ -3329,7 +3329,7 @@ bool cdExamAToBGeolist(u8 *start, u8 *end, struct coord *arg2, struct coord *arg
 				}
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + sizeof(struct geocyl));
+			geo = (struct geo *)((uintptr_t)geo + GEOCYL_SIZE(cyl));
 		}
 	}
 
@@ -3750,10 +3750,10 @@ s32 cdTestBlockOverlapsGeolist(u8 *start, u8 *end, struct geoblock *block, u16 g
 	while (geo < (struct geo *) end) {
 		if (geo->type == GEOTYPE_TILE_I) {
 			struct geotilei *tile = (struct geotilei *) geo;
-			geo = (struct geo *)((uintptr_t)geo + tile->header.numvertices * 6 + 0xe);
+			geo = (struct geo *)((uintptr_t)geo + GEOTILEI_SIZE(tile));
 		} else if (geo->type == GEOTYPE_TILE_F) {
 			struct geotilef *tile = (struct geotilef *) geo;
-			geo = (struct geo *)((uintptr_t)geo + tile->header.numvertices * 0xc + 0x10);
+			geo = (struct geo *)((uintptr_t)geo + GEOTILEF_SIZE(tile));
 		} else if (geo->type == GEOTYPE_BLOCK) {
 			struct geoblock *thisblock = (struct geoblock *) geo;
 
@@ -3782,7 +3782,7 @@ s32 cdTestBlockOverlapsGeolist(u8 *start, u8 *end, struct geoblock *block, u16 g
 				}
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + 0x4c);
+			geo = (struct geo *)((uintptr_t)geo + GEOBLOCK_SIZE(thisblock));
 		} else if (geo->type == GEOTYPE_CYL) {
 			struct geocyl *cyl = (struct geocyl *) geo;
 
@@ -3793,7 +3793,7 @@ s32 cdTestBlockOverlapsGeolist(u8 *start, u8 *end, struct geoblock *block, u16 g
 				return CDRESULT_COLLISION;
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + 0x18);
+			geo = (struct geo *)((uintptr_t)geo + GEOCYL_SIZE(cyl));
 		}
 	}
 
@@ -4024,7 +4024,7 @@ bool cd0002ed30(u8 *start, u8 *end, struct geoblock *block, s32 numvertices, str
 				return false;
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + tile->header.numvertices * 6 + 0xe);
+			geo = (struct geo *)((uintptr_t)geo + GEOTILEI_SIZE(tile));
 		} else if (geo->type == GEOTYPE_TILE_F) {
 			struct geotilef *tile = (struct geotilef *)geo;
 
@@ -4035,7 +4035,7 @@ bool cd0002ed30(u8 *start, u8 *end, struct geoblock *block, s32 numvertices, str
 				return false;
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + (uintptr_t)(tile->header.numvertices - 0x40) * 0xc + 0x310);
+			geo = (struct geo *)((uintptr_t)geo + GEOTILEF_SIZE(tile));
 		} else if (geo->type == GEOTYPE_BLOCK) {
 			struct geoblock *block2 = (struct geoblock *)geo;
 
@@ -4046,7 +4046,7 @@ bool cd0002ed30(u8 *start, u8 *end, struct geoblock *block, s32 numvertices, str
 				return false;
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + sizeof(struct geoblock));
+			geo = (struct geo *)((uintptr_t)geo + GEOBLOCK_SIZE(block2));
 		} else if (geo->type == GEOTYPE_CYL) {
 			struct geocyl *cyl = (struct geocyl *)geo;
 
@@ -4057,7 +4057,7 @@ bool cd0002ed30(u8 *start, u8 *end, struct geoblock *block, s32 numvertices, str
 				return false;
 			}
 
-			geo = (struct geo *)((uintptr_t)geo + sizeof(struct geocyl));
+			geo = (struct geo *)((uintptr_t)geo + GEOCYL_SIZE(cyl));
 		}
 	}
 
