@@ -21,7 +21,7 @@
 
 /*---------------------------------------------------------------------*
         Copyright (C) 1998 Nintendo. (Originated by SGI)
-        
+
         $RCSfile: os_system.h,v $
         $Revision: 1.1 $
         $Date: 1998/10/09 08:01:18 $
@@ -54,7 +54,7 @@ extern "C" {
  */
 
 /*
- * Values for osTvType 
+ * Values for osTvType
  */
 #define	OS_TV_PAL		0
 #define	OS_TV_NTSC		1
@@ -103,6 +103,9 @@ extern OSIntMask __OSGlobalIntMask;	/* global interrupt mask */
 
 extern void		osInitialize(void);
 extern void		osExit(void);
+/* Kept here, unlike the decomp, which moved this into lib/boot.h behind a
+ * VERSION check. The host build implements osGetMemSize in port/src/libultra.c
+ * and calls it from translation units that do not include lib/boot.h. */
 extern u32 		osGetMemSize(void);
 
 /* pre-NMI */
