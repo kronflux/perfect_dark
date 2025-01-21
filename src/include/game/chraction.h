@@ -188,7 +188,7 @@ bool chr_saw_injury(struct chrdata *chr, u8 arg1);
 bool chr_saw_death(struct chrdata *chr, u8 arg1);
 bool waypoint_is_within_90_degrees_of_pos_angle(struct waypoint *waypoint, struct coord *pos, f32 angle);
 s32 chr_find_waypoint_within_pos_quadrant(struct coord *pos, RoomNum *rooms, f32 angle, u8 quadrant);
-bool func0f04a4ec(struct chrdata *chr, u8 quadrant);
+bool chr_set_pad_preset_to_waypoint_within_quadrant(struct chrdata *chr, u8 quadrant);
 bool chr_set_pad_preset_to_waypoint_within_target_quadrant(struct chrdata *chr, u8 arg1);
 bool chr_set_chr_preset_to_chr_near_pad(u32 checktype, struct chrdata *chr, f32 distance, s32 padnum);
 bool chr_set_chr_preset_to_chr_near_pos(u8 checktype, struct chrdata *chr, f32 distance, struct coord *pos, RoomNum *room);
