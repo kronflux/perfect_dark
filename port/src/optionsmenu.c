@@ -1306,6 +1306,19 @@ static MenuItemHandlerResult menuhandlerUseKeyReloads(s32 operation, struct menu
 	return 0;
 }
 
+static MenuItemHandlerResult menuhandlerWeaponSway(s32 operation, struct menuitem *item, union handlerdata *data)
+{
+	switch (operation) {
+	case MENUOP_GET:
+		return g_PlayerExtCfg[g_ExtMenuPlayer].weaponsway;
+	case MENUOP_SET:
+		g_PlayerExtCfg[g_ExtMenuPlayer].weaponsway = data->checkbox.value;
+		break;
+	}
+
+	return 0;
+}
+
 static MenuItemHandlerResult menuhandlerCrouchMode(s32 operation, struct menuitem *item, union handlerdata *data)
 {
 	static const char *opts[] = {
@@ -1641,6 +1654,14 @@ struct menuitem g_ExtendedGameMenuItems[] = {
 		(uintptr_t)"Use Key Reloads",
 		0,
 		menuhandlerUseKeyReloads,
+	},
+	{
+		MENUITEMTYPE_CHECKBOX,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Weapon Sway",
+		0,
+		menuhandlerWeaponSway,
 	},
 	{
 		MENUITEMTYPE_SEPARATOR,

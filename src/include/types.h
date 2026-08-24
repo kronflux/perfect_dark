@@ -6168,6 +6168,7 @@ struct extplayerconfig {
 	f32 crosshairedgeboundary;
 	s32 crosshairhealth;
 	s32 usereloads;
+	s32 weaponsway;
 };
 
 struct setupblock {

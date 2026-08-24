@@ -3462,9 +3462,15 @@ void bgunUpdateBlend(struct hand *hand, s32 handnum)
 	func0f096b70(&hand->blendlook[(pos + 3) % 4], &hand->blendlook[pos], &hand->blendlook[(pos + 1) % 4], &hand->blendlook[(pos + 2) % 4], hand->dampt, &sp50);
 	func0f096b70(&hand->blendup[(pos + 3) % 4], &hand->blendup[pos], &hand->blendup[(pos + 1) % 4], &hand->blendup[(pos + 2) % 4], hand->dampt, &sp44);
 
-	sp5c.x *= player->gunposamplitude;
-	sp5c.y *= player->gunposamplitude;
-	sp5c.z *= player->gunposamplitude;
+	f32 bobamp = player->gunposamplitude;
+#ifndef PLATFORM_N64
+	if (!PLAYER_EXTCFG().weaponsway) {
+		bobamp = 0.0f;
+	}
+#endif
+	sp5c.x *= bobamp;
+	sp5c.y *= bobamp;
+	sp5c.z *= bobamp;
 
 	sp5c.x += hand->adjustdamp.x;
 	sp5c.y += hand->adjustdamp.y;
