@@ -187,5 +187,8 @@ PD_CONSTRUCTOR static void gameConfigInit(void)
 		configRegisterInt(strFmt("Game.Player%d.CrosshairHealth", i), &g_PlayerExtCfg[j].crosshairhealth, 0, CROSSHAIR_HEALTH_ON_WHITE);
 		configRegisterInt(strFmt("Game.Player%d.UseKeyReloads", i), &g_PlayerExtCfg[j].usereloads, 0, false);
 		configRegisterInt(strFmt("Game.Player%d.MovementStyle", i), &g_PlayerExtCfg[j].movementstyle, 0, 2);
+		configRegisterFloat(strFmt("Game.Player%d.ModernSpeed", i), &g_PlayerExtCfg[j].modernspeed, 0.0f, 50.0f);
+		configRegisterFloat(strFmt("Game.Player%d.ModernAccel", i), &g_PlayerExtCfg[j].modernaccel, 0.0f, 10.0f);
+		configRegisterFloat(strFmt("Game.Player%d.ModernFriction", i), &g_PlayerExtCfg[j].modernfriction, 0.0f, 1.0f);
 	}
 }

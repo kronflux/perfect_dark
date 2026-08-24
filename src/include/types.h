@@ -6169,6 +6169,9 @@ struct extplayerconfig {
 	s32 crosshairhealth;
 	s32 usereloads;
 	s32 movementstyle;
+	f32 modernspeed;
+	f32 modernaccel;
+	f32 modernfriction;
 };
 
 struct setupblock {

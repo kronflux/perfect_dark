@@ -30,6 +30,12 @@
 extern f32 fabsf(f32);
 #endif
 
+#ifndef PLATFORM_N64
+#define MODERN_STOPV 0.5f
+static f32 g_ModernVel[MAX_PLAYERS][2];
+static s32 g_ModernPrevStyle[MAX_PLAYERS];
+#endif
+
 void bwalkInit(void)
 {
 	u32 prevmode = g_Vars.currentplayer->bondmovemode;
@@ -60,6 +66,12 @@ void bwalkInit(void)
 	g_Vars.currentplayer->bondforcespeed.x = 0;
 	g_Vars.currentplayer->bondforcespeed.y = 0;
 	g_Vars.currentplayer->bondforcespeed.z = 0;
+
+#ifndef PLATFORM_N64
+	g_ModernVel[g_Vars.currentplayerstats->mpindex & 3][0] = 0;
+	g_ModernVel[g_Vars.currentplayerstats->mpindex & 3][1] = 0;
+	g_ModernPrevStyle[g_Vars.currentplayerstats->mpindex & 3] = MOVESTYLE_VANILLA;
+#endif
 
 	if (prevmode != MOVEMODE_WALK && prevmode != MOVEMODE_CUTSCENE) {
 		g_Vars.currentplayer->sumcrouch = 0;
@@ -1668,19 +1680,85 @@ void bwalk0f0c69b8(void)
 #endif
 
 #ifndef PLATFORM_N64
-		// Optimized: zero smoothed sideways momentum on strafe reversal for an
-		// instant direction change; everything else stays authentic.
-		if (PLAYER_EXTCFG().movementstyle == MOVESTYLE_OPTIMIZED) {
-			f32 ss = g_Vars.currentplayer->speedsideways;
+		if (PLAYER_EXTCFG().movementstyle == MOVESTYLE_MODERN) {
+			// Modern: Quake/HL-style velocity — friction (gradual stop) + dot-product
+			// acceleration (instant start/reversal), driven directly, bypassing the
+			// smoothed headpos locomotion.
+			s32 mpn = g_Vars.currentplayerstats->mpindex & 3;
+			f32 *mv = g_ModernVel[mpn];
+			f32 dt = g_Vars.lvupdate60freal;
+			f32 wx = g_Vars.currentplayer->bond2.unk00.f[0] * g_Vars.currentplayer->speedforwards - g_Vars.currentplayer->bond2.unk00.f[2] * g_Vars.currentplayer->speedsideways;
+			f32 wz = g_Vars.currentplayer->bond2.unk00.f[2] * g_Vars.currentplayer->speedforwards + g_Vars.currentplayer->bond2.unk00.f[0] * g_Vars.currentplayer->speedsideways;
+			f32 wishmag = sqrtf(wx * wx + wz * wz);
+			f32 speed;
 
-			if ((ss > 0.05f && spdc < 0.0f) || (ss < -0.05f && spdc > 0.0f)) {
-				g_Vars.currentplayer->headpossum.x = 0.0f;
-				spdc = 0.0f;
+			if (g_ModernPrevStyle[mpn] != MOVESTYLE_MODERN) {
+				mv[0] = 0;
+				mv[1] = 0;
 			}
-		}
+
+			speed = sqrtf(mv[0] * mv[0] + mv[1] * mv[1]);
+
+			if (speed > 0.0f) {
+				f32 control = (speed < MODERN_STOPV) ? MODERN_STOPV : speed;
+				f32 drop = control * PLAYER_EXTCFG().modernfriction * dt;
+				f32 ns = speed - drop;
+				if (ns < 0.0f) {
+					ns = 0.0f;
+				}
+				ns /= speed;
+				mv[0] *= ns;
+				mv[1] *= ns;
+			}
+
+			if (wishmag > 0.0f) {
+				f32 wdx = wx / wishmag;
+				f32 wdz = wz / wishmag;
+				f32 wishspeed = wishmag * PLAYER_EXTCFG().modernspeed;
+				f32 cur;
+
+				// Clamp combined wish speed to the flat max (HL/Source PM_WalkMove)
+				// so diagonal (forward+strafe) does not exceed straight-line speed.
+				if (wishspeed > PLAYER_EXTCFG().modernspeed) {
+					wishspeed = PLAYER_EXTCFG().modernspeed;
+				}
+
+				cur = mv[0] * wdx + mv[1] * wdz;
+				f32 add = wishspeed - cur;
+				if (add > 0.0f) {
+					f32 acc = PLAYER_EXTCFG().modernaccel * dt * wishspeed;
+					if (acc > add) {
+						acc = add;
+					}
+					mv[0] += acc * wdx;
+					mv[1] += acc * wdz;
+				}
+			}
+
+			g_ModernPrevStyle[mpn] = MOVESTYLE_MODERN;
+
+			spcc.f[0] += mv[0] * dt;
+			spcc.f[2] += mv[1] * dt;
+		} else
 #endif
-		spcc.f[0] += (spd8 * g_Vars.currentplayer->bond2.unk00.f[0] - spdc * g_Vars.currentplayer->bond2.unk00.f[2]) * g_Vars.lvupdate60freal;
-		spcc.f[2] += (spd8 * g_Vars.currentplayer->bond2.unk00.f[2] + spdc * g_Vars.currentplayer->bond2.unk00.f[0]) * g_Vars.lvupdate60freal;
+		{
+#ifndef PLATFORM_N64
+			g_ModernPrevStyle[g_Vars.currentplayerstats->mpindex & 3] = PLAYER_EXTCFG().movementstyle;
+
+			// Optimized: zero smoothed sideways momentum on strafe reversal for an
+			// instant direction change; everything else stays authentic.
+			if (PLAYER_EXTCFG().movementstyle == MOVESTYLE_OPTIMIZED) {
+				f32 ss = g_Vars.currentplayer->speedsideways;
+
+				if ((ss > 0.05f && spdc < 0.0f) || (ss < -0.05f && spdc > 0.0f)) {
+					g_Vars.currentplayer->headpossum.x = 0.0f;
+					spdc = 0.0f;
+				}
+			}
+#endif
+			spcc.f[0] += (spd8 * g_Vars.currentplayer->bond2.unk00.f[0] - spdc * g_Vars.currentplayer->bond2.unk00.f[2]) * g_Vars.lvupdate60freal;
+			spcc.f[2] += (spd8 * g_Vars.currentplayer->bond2.unk00.f[2] + spdc * g_Vars.currentplayer->bond2.unk00.f[0]) * g_Vars.lvupdate60freal;
+		}
 		spcc.f[0] += spb4;
 		spcc.f[2] += spb0;
 

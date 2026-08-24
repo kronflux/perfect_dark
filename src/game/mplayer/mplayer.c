@@ -143,6 +143,9 @@ struct mpweapon g_MpWeapons[NUM_MPWEAPONS] = {
 	.crosshairhealth = CROSSHAIR_HEALTH_OFF, \
 	.usereloads = false, \
 	.movementstyle = MOVESTYLE_VANILLA, \
+	.modernspeed = 8.0f, \
+	.modernaccel = 10.0f, \
+	.modernfriction = 0.6f, \
 }
 
 struct extplayerconfig g_PlayerExtCfg[MAX_PLAYERS] = {

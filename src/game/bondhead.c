@@ -179,6 +179,11 @@ void bheadUpdate(f32 arg0, f32 arg1)
 		}
 
 		headpos.x = g_Vars.currentplayer->bondheadmatrices[0].m[3][0] * g_Vars.currentplayer->headamplitude;
+#ifndef PLATFORM_N64
+		if (PLAYER_EXTCFG().movementstyle == MOVESTYLE_MODERN && g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK) {
+			headpos.y = g_Vars.currentplayer->standheight;
+		} else
+#endif
 		headpos.y = (g_Vars.currentplayer->bondheadmatrices[0].m[3][1] - g_Vars.currentplayer->standheight) *
 			g_Vars.currentplayer->headamplitude + g_Vars.currentplayer->standheight;
 		headpos.z = g_Vars.currentplayer->bondheadmatrices[0].m[3][2] * g_Vars.currentplayer->headamplitude;
