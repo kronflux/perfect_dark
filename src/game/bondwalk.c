@@ -1667,6 +1667,18 @@ void bwalk0f0c69b8(void)
 		}
 #endif
 
+#ifndef PLATFORM_N64
+		// Optimized: zero smoothed sideways momentum on strafe reversal for an
+		// instant direction change; everything else stays authentic.
+		if (PLAYER_EXTCFG().movementstyle == MOVESTYLE_OPTIMIZED) {
+			f32 ss = g_Vars.currentplayer->speedsideways;
+
+			if ((ss > 0.05f && spdc < 0.0f) || (ss < -0.05f && spdc > 0.0f)) {
+				g_Vars.currentplayer->headpossum.x = 0.0f;
+				spdc = 0.0f;
+			}
+		}
+#endif
 		spcc.f[0] += (spd8 * g_Vars.currentplayer->bond2.unk00.f[0] - spdc * g_Vars.currentplayer->bond2.unk00.f[2]) * g_Vars.lvupdate60freal;
 		spcc.f[2] += (spd8 * g_Vars.currentplayer->bond2.unk00.f[2] + spdc * g_Vars.currentplayer->bond2.unk00.f[0]) * g_Vars.lvupdate60freal;
 		spcc.f[0] += spb4;
