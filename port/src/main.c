@@ -186,5 +186,6 @@ PD_CONSTRUCTOR static void gameConfigInit(void)
 		configRegisterUInt(strFmt("Game.Player%d.CrosshairSize", i), &g_PlayerExtCfg[j].crosshairsize, 0, 4);
 		configRegisterInt(strFmt("Game.Player%d.CrosshairHealth", i), &g_PlayerExtCfg[j].crosshairhealth, 0, CROSSHAIR_HEALTH_ON_WHITE);
 		configRegisterInt(strFmt("Game.Player%d.UseKeyReloads", i), &g_PlayerExtCfg[j].usereloads, 0, false);
+		configRegisterInt(strFmt("Game.Player%d.MovementStyle", i), &g_PlayerExtCfg[j].movementstyle, 0, 2);
 	}
 }

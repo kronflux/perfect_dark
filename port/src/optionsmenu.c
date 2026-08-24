@@ -1331,6 +1331,30 @@ static MenuItemHandlerResult menuhandlerCrouchMode(s32 operation, struct menuite
 	return 0;
 }
 
+static MenuItemHandlerResult menuhandlerMovementStyle(s32 operation, struct menuitem *item, union handlerdata *data)
+{
+	static const char *opts[] = {
+		"Vanilla",
+		"Optimized",
+		"Modern"
+	};
+
+	switch (operation) {
+	case MENUOP_GETOPTIONCOUNT:
+		data->dropdown.value = ARRAYCOUNT(opts);
+		break;
+	case MENUOP_GETOPTIONTEXT:
+		return (intptr_t)opts[data->dropdown.value];
+	case MENUOP_SET:
+		g_PlayerExtCfg[g_ExtMenuPlayer].movementstyle = data->dropdown.value;
+		break;
+	case MENUOP_GETSELECTEDINDEX:
+		data->dropdown.value = g_PlayerExtCfg[g_ExtMenuPlayer].movementstyle;
+	}
+
+	return 0;
+}
+
 static MenuItemHandlerResult menuhandlerFieldOfView(s32 operation, struct menuitem *item, union handlerdata *data)
 {
 	switch (operation) {
@@ -1585,6 +1609,14 @@ struct menuitem g_ExtendedGameMenuItems[] = {
 		(uintptr_t)"Crouch Mode",
 		0,
 		menuhandlerCrouchMode,
+	},
+	{
+		MENUITEMTYPE_DROPDOWN,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Movement Style",
+		0,
+		menuhandlerMovementStyle,
 	},
 	{
 		MENUITEMTYPE_SLIDER,
