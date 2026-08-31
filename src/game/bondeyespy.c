@@ -97,7 +97,7 @@ s32 eyespy_try_move_upwards(f32 yvel)
 		f0 = g_Vars.currentplayer->eyespy->oldground - prop->pos.y;
 	}
 
-	func0f065e74(&prop->pos, prop->rooms, &dstpos, dstrooms);
+	los_find_final_room_exhaustive(&prop->pos, prop->rooms, &dstpos, dstrooms);
 	chr0f021fa8(prop->chr, &dstpos, dstrooms);
 	prop_set_perim_enabled(prop, false);
 
@@ -155,7 +155,7 @@ s32 eyespy_calculate_new_position(struct coord *vel)
 		}
 
 		// This must be populating dstrooms at least
-		func0f065dfc(&eyespyprop->pos, eyespyprop->rooms, &dstpos, dstrooms, sp74, 20);
+		los_find_intersecting_rooms_exhaustive(&eyespyprop->pos, eyespyprop->rooms, &dstpos, dstrooms, sp74, 20);
 
 		// Check if dstrooms contains the eyespy's old room.
 		// If so, simplify dstrooms so it only contains that room.
@@ -677,7 +677,7 @@ bool eyespy_try_launch(void)
 
 	player_set_perim_enabled(g_Vars.currentplayer->prop, true);
 	prop_deregister_rooms(g_Vars.currentplayer->eyespy->prop);
-	func0f065e74(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms,
+	los_find_final_room_exhaustive(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms,
 			&g_Vars.currentplayer->eyespy->prop->pos, g_Vars.currentplayer->eyespy->prop->rooms);
 
 	chr0f0220ac(chr);

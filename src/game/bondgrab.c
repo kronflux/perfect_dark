@@ -200,13 +200,13 @@ void bgrab0f0ccbf0(struct coord *delta, f32 angle, struct defaultobj *obj)
 				spc8.z = 1.0f;
 			}
 
-			func0f02e3dc(&spb0, &spa4, &sp98, &spc8, &spd4);
+			chr_calculate_push_contact_pos(&spb0, &spa4, &sp98, &spc8, &spd4);
 
 			spbc.x = (sp98.x - g_Vars.currentplayer->prop->pos.x) / g_Vars.lvupdate60freal;
 			spbc.y = 0.0f;
 			spbc.z = (sp98.z - g_Vars.currentplayer->prop->pos.z) / g_Vars.lvupdate60freal;
 
-			func0f082e84(obj, &spd4, &spc8, &spbc, false);
+			obj_push(obj, &spd4, &spc8, &spbc, false);
 		} else {
 			struct coord sp8c;
 			struct coord sp80;
@@ -236,7 +236,7 @@ void bgrab0f0ccbf0(struct coord *delta, f32 angle, struct defaultobj *obj)
 				sp44.z = obj->prop->pos.z - var8009de70->pos.z;
 			}
 
-			func0f02e3dc(&sp68, &sp5c, &sp50, &sp44, &sp8c);
+			chr_calculate_push_contact_pos(&sp68, &sp5c, &sp50, &sp44, &sp8c);
 
 			sp80.x = delta->x;
 			sp80.y = 0.0f;
@@ -256,7 +256,7 @@ void bgrab0f0ccbf0(struct coord *delta, f32 angle, struct defaultobj *obj)
 				sp74.z += delta->z / g_Vars.lvupdate60freal;
 			}
 
-			func0f082e84(obj, &sp8c, &sp80, &sp74, false);
+			obj_push(obj, &sp8c, &sp80, &sp74, false);
 
 			if (angle != 0.0f) {
 				f32 sp40 = sp8c.x - g_Vars.currentplayer->prop->pos.x;
@@ -294,7 +294,7 @@ bool bgrab_try_move_upwards(f32 y)
 	newpos.z = g_Vars.currentplayer->prop->pos.z;
 
 	player_get_bbox(g_Vars.currentplayer->prop, &radius, &ymax, &ymin);
-	func0f065e74(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms, &newpos, rooms);
+	los_find_final_room_exhaustive(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms, &newpos, rooms);
 	bmove_find_entered_rooms_by_pos(g_Vars.currentplayer, &newpos, rooms);
 	prop_set_perim_enabled(g_Vars.currentplayer->prop, false);
 
@@ -349,7 +349,7 @@ s32 bgrab_calculate_new_position(struct coord *delta, f32 angle, bool arg2)
 		pos.y += delta->y;
 		pos.z += delta->z;
 
-		func0f065e74(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms, &pos, rooms);
+		los_find_final_room_exhaustive(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms, &pos, rooms);
 
 #if VERSION < VERSION_NTSC_1_0
 		{
@@ -804,7 +804,7 @@ void bgrab_update_prev_pos(void)
 
 void bgrab0f0ce178(void)
 {
-	func0f069c70(g_Vars.currentplayer->grabbedprop->obj, 0, 1);
+	obj_onmoved(g_Vars.currentplayer->grabbedprop->obj, 0, 1);
 }
 
 void bgrab_update_vertical(void)

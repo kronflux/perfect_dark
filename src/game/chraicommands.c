@@ -2380,7 +2380,7 @@ bool ai_object_move_to_pad(void)
 
 		rooms[0] = pad.room;
 		rooms[1] = -1;
-		func0f06a730(obj, &pad.pos, &matrix, rooms, &pad.pos);
+		obj_place_3d(obj, &pad.pos, &matrix, rooms, &pad.pos);
 	}
 
 	g_Vars.aioffset += 5;
@@ -7528,7 +7528,7 @@ bool ai_if_dangerous_object_nearby(void)
  */
 bool ai013e(void)
 {
-	if (func0f03aca0(g_Vars.chrdata, 400, true) == 0 && chr_assign_cover_away_from_danger(g_Vars.chrdata, 1000, 12000) != -1) {
+	if (chr_go_to_cover_opposite_runfrompos(g_Vars.chrdata, 400, true) == 0 && chr_assign_cover_away_from_danger(g_Vars.chrdata, 1000, 12000) != -1) {
 		chr_go_to_cover(g_Vars.chrdata, GOPOSFLAG_RUN);
 	}
 
@@ -8862,7 +8862,7 @@ bool ai01aa(void)
 	u8 *cmd = g_Vars.ailist + g_Vars.aioffset;
 	f32 a = 3000;
 
-	func0f0056f4(
+	lights_find_distance_through_rooms_with_limit(
 			g_Vars.currentplayer->prop->rooms[0],
 			&g_Vars.currentplayer->prop->pos,
 			g_Vars.chrdata->prop->rooms[0],

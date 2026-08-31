@@ -238,7 +238,7 @@ void ctc_init_props(void)
 			}
 
 #if VERSION >= VERSION_NTSC_1_0
-			mpindex = func0f18d0e8(k);
+			mpindex = mp_chrslot_to_chrindex(k);
 
 			if (mpindex >= 0) {
 				struct chrdata *chr = mp_get_chr_from_player_index(mpindex);
@@ -248,8 +248,8 @@ void ctc_init_props(void)
 				}
 			}
 #else
-			if (func0f18d0e8(k) >= 0) {
-				struct chrdata *chr = mp_get_chr_from_player_index(func0f18d0e8(k));
+			if (mp_chrslot_to_chrindex(k) >= 0) {
+				struct chrdata *chr = mp_get_chr_from_player_index(mp_chrslot_to_chrindex(k));
 
 				if (chr) {
 					chr->team = 1 << mpchr->team;

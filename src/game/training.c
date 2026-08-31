@@ -96,7 +96,7 @@ void fr_save_score_if_best(s32 weaponindex, s32 difficulty)
 	}
 }
 
-s32 func0f19ca78(u32 weaponnum)
+s32 fr_weaponnum_to_slotnum(u32 weaponnum)
 {
 	s32 slot = -1;
 	s32 i;
@@ -186,7 +186,7 @@ s32 ci_is_stage_complete(s32 stageindex)
 		|| g_GameFile.besttimes[stageindex][2];
 }
 
-bool func0f19cbcc(s32 weapon)
+bool fr_is_weapon_available_for_mp(s32 weapon)
 {
 	if (weapon <= 0 || weapon == WEAPON_PSYCHOSISGUN) {
 		return false;
@@ -1044,7 +1044,7 @@ void fr_init_targets(void)
 			prop->pos.y = pos.y;
 			prop->pos.z = pos.z;
 
-			func0f069c70(obj, true, false);
+			obj_onmoved(obj, true, false);
 		}
 	}
 }
@@ -1730,18 +1730,18 @@ void fr_tick(void)
 
 			switch (g_FrData.menutype) {
 			case FRMENUTYPE_WEAPONLIST:
-				func0f0f85e0(ci_get_fr_weapon_list_menu_dialog(), MENUROOT_TRAINING);
+				menu_push_root_dialog_and_pause(ci_get_fr_weapon_list_menu_dialog(), MENUROOT_TRAINING);
 				break;
 			case FRMENUTYPE_DETAILS:
-				func0f0f85e0(&g_FrTrainingInfoPreGameMenuDialog, MENUROOT_TRAINING);
+				menu_push_root_dialog_and_pause(&g_FrTrainingInfoPreGameMenuDialog, MENUROOT_TRAINING);
 				break;
 			case FRMENUTYPE_FAILED:
 				snd_start(var80095200, SFX_TRAINING_FAIL, NULL, -1, -1, -1, -1, -1);
-				func0f0f85e0(&g_FrFailedMenuDialog, MENUROOT_TRAINING);
+				menu_push_root_dialog_and_pause(&g_FrFailedMenuDialog, MENUROOT_TRAINING);
 				break;
 			case FRMENUTYPE_COMPLETED:
 				snd_start(var80095200, SFX_TRAINING_COMPLETE, NULL, -1, -1, -1, -1, -1);
-				func0f0f85e0(&g_FrCompletedMenuDialog, MENUROOT_TRAINING);
+				menu_push_root_dialog_and_pause(&g_FrCompletedMenuDialog, MENUROOT_TRAINING);
 				filemgr_save_or_load(&g_GameFileGuid, FILEOP_SAVE_GAME_000, 0);
 				break;
 			}
@@ -1944,7 +1944,7 @@ void fr_tick(void)
 				prop->pos.y = -5000;
 				prop->pos.z = 0;
 
-				func0f069c70(obj, true, false);
+				obj_onmoved(obj, true, false);
 
 				// Activate another target
 				for (j = 0; j < ARRAYCOUNT(g_FrData.targets); j++) {
@@ -2076,7 +2076,7 @@ void fr_tick(void)
 				prop->pos.y = newpos.y;
 				prop->pos.z = newpos.z;
 
-				func0f069c70(obj, true, false);
+				obj_onmoved(obj, true, false);
 			}
 
 			if (g_FrData.targets[i].rotateoncloak && g_FrData.targets[i].rotating == false) {
@@ -2178,7 +2178,7 @@ void fr_tick(void)
 	}
 }
 
-void func0f1a0924(struct prop *prop)
+void fr_track_target(struct prop *prop)
 {
 	struct defaultobj *obj = prop->obj;
 	s32 i;
@@ -2786,9 +2786,9 @@ void dt_restore_player(void)
 void dt_push_endscreen(void)
 {
 	if (g_DtData.completed) {
-		func0f0f85e0(&g_DtCompletedMenuDialog, MENUROOT_TRAINING);
+		menu_push_root_dialog_and_pause(&g_DtCompletedMenuDialog, MENUROOT_TRAINING);
 	} else if (g_DtData.failed) {
-		func0f0f85e0(&g_DtFailedMenuDialog, MENUROOT_TRAINING);
+		menu_push_root_dialog_and_pause(&g_DtFailedMenuDialog, MENUROOT_TRAINING);
 	}
 
 	g_DtData.timeleft = 0;
@@ -2832,7 +2832,7 @@ void dt_tick(void)
 	}
 }
 
-void func0f1a1ac0(void)
+void dt_reset(void)
 {
 	if (var80088adc == false) {
 		var80088adc = true;
@@ -3074,9 +3074,9 @@ struct trainingdata *get_holo_training_data(void)
 void ht_push_endscreen(void)
 {
 	if (g_HtData.completed) {
-		func0f0f85e0(&g_HtCompletedMenuDialog, MENUROOT_TRAINING);
+		menu_push_root_dialog_and_pause(&g_HtCompletedMenuDialog, MENUROOT_TRAINING);
 	} else if (g_HtData.failed) {
-		func0f0f85e0(&g_HtFailedMenuDialog, MENUROOT_TRAINING);
+		menu_push_root_dialog_and_pause(&g_HtFailedMenuDialog, MENUROOT_TRAINING);
 	}
 
 	g_HtData.timeleft = 0;
@@ -3122,7 +3122,7 @@ void ht_tick(void)
 	}
 }
 
-void func0f1a2198(void)
+void ht_reset(void)
 {
 	if (var80088bb8 == false) {
 		var80088bb8 = true;
@@ -3147,7 +3147,7 @@ void ht_begin(void)
 	chr_unset_stage_flag(NULL, STAGEFLAG_CI_HOLO_ABORTING);
 	chr_unset_stage_flag(NULL, STAGEFLAG_CI_TRIGGER_HOLO_SUCCESS);
 	chr_unset_stage_flag(NULL, STAGEFLAG_CI_TRIGGER_HOLO_FAILURE);
-	chr_set_stage_flag(NULL, func0f1a25c0(ht_get_index_by_slot(var80088bb4)));
+	chr_set_stage_flag(NULL, ht_get_stageflag(ht_get_index_by_slot(var80088bb4)));
 
 	// Disable segment leading out of the door
 	nav_disable_segment(&waypoints[0x20], &waypoints[0x31]);
@@ -3168,7 +3168,7 @@ void htEnd(void)
 	g_HtData.intraining = false;
 	chr_set_stage_flag(NULL, STAGEFLAG_CI_HOLO_ABORTING);
 	chr_unset_stage_flag(NULL, STAGEFLAG_CI_TRIGGER_HOLO_FAILURE);
-	chr_unset_stage_flag(NULL, func0f1a25c0(ht_get_index_by_slot(var80088bb4)));
+	chr_unset_stage_flag(NULL, ht_get_stageflag(ht_get_index_by_slot(var80088bb4)));
 
 	// Enable segment leading out of the door
 	nav_enable_segment(&waypoints[0x20], &waypoints[0x31]);
@@ -3271,7 +3271,7 @@ char *ht_get_name(s32 index)
 	return lang_get(texts[index]);
 }
 
-u32 func0f1a25c0(s32 index)
+u32 ht_get_stageflag(s32 index)
 {
 	u32 flags[] = {
 		STAGEFLAG_CI_IN_HOLO1,

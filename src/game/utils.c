@@ -41,12 +41,12 @@ u8 *var80084618 = NULL;
 u32 var8008461c = 0x00000004;
 u32 var80084620 = 0x00000000;
 
-void func0f176d70(s32 arg0)
+void utils_set_int(s32 arg0)
 {
 	var800845d8 = arg0;
 }
 
-s32 func0f176d7c(void)
+s32 utils_get_int(void)
 {
 	return var800845d8;
 }
@@ -114,42 +114,42 @@ s32 func0f176eb0(s32 arg0, s32 arg1)
 	return (arg0 / arg1 + 1) * arg1;
 }
 
-void func0f176f34(struct coord *a, struct coord *b, struct coord *out)
+void vec3f_sum2(struct coord *a, struct coord *b, struct coord *out)
 {
 	out->x = a->x + b->x;
 	out->y = a->y + b->y;
 	out->z = a->z + b->z;
 }
 
-void func0f176f68(struct coord *a, struct coord *b, struct coord *c, struct coord *out)
+void vec3f_sum3(struct coord *a, struct coord *b, struct coord *c, struct coord *out)
 {
 	out->x = a->x + b->x + c->x;
 	out->y = a->y + b->y + c->y;
 	out->z = a->z + b->z + c->z;
 }
 
-void func0f176fb4(struct coord *a, struct coord *b, struct coord *c, struct coord *d, struct coord *out)
+void vec3f_sum4(struct coord *a, struct coord *b, struct coord *c, struct coord *d, struct coord *out)
 {
 	out->x = a->x + b->x + c->x + d->x;
 	out->y = a->y + b->y + c->y + d->y;
 	out->z = a->z + b->z + c->z + d->z;
 }
 
-void func0f17701c(struct coord *a, struct coord *b, struct coord *out)
+void vec3f_subtract(struct coord *a, struct coord *b, struct coord *out)
 {
 	out->x = b->x - a->x;
 	out->y = b->y - a->y;
 	out->z = b->z - a->z;
 }
 
-void func0f177050(struct coord *a, f32 mult, struct coord *out)
+void vec3f_multiply_scalar(struct coord *a, f32 mult, struct coord *out)
 {
 	out->x = a->x * mult;
 	out->y = a->y * mult;
 	out->z = a->z * mult;
 }
 
-f32 func0f17707c(struct coord *a, struct coord *b)
+f32 vec3f_sqdist(struct coord *a, struct coord *b)
 {
 	return a->x * b->x + a->y * b->y + a->z * b->z;
 }
@@ -161,21 +161,21 @@ void func0f1770ac(struct coord *a, struct coord *b, struct coord *out)
 	out->z = a->x * b->y - a->y * b->x;
 }
 
-void func0f177120(struct coord *in, struct coord *out)
+void vec3f_copy(struct coord *in, struct coord *out)
 {
 	out->x = in->x;
 	out->y = in->y;
 	out->z = in->z;
 }
 
-void func0f17713c(struct coord *in, struct coord *out)
+void vec3f_invert(struct coord *in, struct coord *out)
 {
 	out->x = -in->x;
 	out->y = -in->y;
 	out->z = -in->z;
 }
 
-bool func0f177164(struct coord *arg0, struct coord *arg1, u32 line, char *file)
+bool vec3f_normalise(struct coord *arg0, struct coord *arg1, u32 line, char *file)
 {
 	f32 sqdist = arg0->x * arg0->x + arg0->y * arg0->y + arg0->z * arg0->z;
 	f32 mult;
@@ -217,7 +217,7 @@ bool func0f177298(struct coord *a, struct coord *b, struct coord *c)
 	return diff.x * c->x + diff.y * c->y + diff.z * c->z < 0;
 }
 
-bool func0f177300(struct coord *a, struct coord *b)
+bool vec3f_is_practically_equal(struct coord *a, struct coord *b)
 {
 	f32 diff = a->x - b->x;
 
@@ -236,7 +236,7 @@ bool func0f177300(struct coord *a, struct coord *b)
 	return false;
 }
 
-bool func0f1773c8(struct coord *a, struct coord *b)
+bool vec3f_is_pos_within_radius(struct coord *a, struct coord *b)
 {
 	if (a->x < b->x && -b->x < a->x
 			&& a->y < b->y && -b->y < a->y
@@ -256,19 +256,19 @@ f32 coords_get_distance(struct coord *a, struct coord *b)
 	return sqrtf(xdiff * xdiff + ydiff * ydiff + zdiff * zdiff);
 }
 
-bool func0f1774b4(struct coord *arg0, struct coord *arg1, struct coord *out)
+bool vec3f_make_normal_to(struct coord *arg0, struct coord *arg1, struct coord *out)
 {
 	struct coord a;
 	struct coord b;
 	struct coord c;
 	f32 mult;
 
-	if (!func0f177164(arg1, &a, 702, "utils.c")) {
+	if (!vec3f_normalise(arg1, &a, 702, "utils.c")) {
 		osSyncPrintf("UTILS -> DEBUG ERROR - UM_fVec3_MakeNormalTo - Cant normalise\n");
 		return false;
 	}
 
-	if (!func0f177164(arg0, &b, 710, "utils.c")) {
+	if (!vec3f_normalise(arg0, &b, 710, "utils.c")) {
 		osSyncPrintf("UTILS -> DEBUG ERROR - UM_fVec3_MakeNormalTo - Cant normalise\n");
 		return false;
 	}
@@ -308,7 +308,7 @@ void func0f177624(struct coord *arg0, struct coord *arg1, struct coord *arg2, st
 	f32 tmpx;
 	f32 tmpz;
 
-	func0f177164(arg0, arg1, 771, "utils.c");
+	vec3f_normalise(arg0, arg1, 771, "utils.c");
 
 	dist = sqrtf(arg1->x * arg1->x + arg1->z * arg1->z);
 
@@ -395,14 +395,14 @@ bool func0f17781c(struct coord *arg0, s32 arg1)
 
 	func0f1770ac(&sp78, &sp6c, &sp60);
 
-	func0f177164(&sp60, &sp60, 1101, "utils.c");
+	vec3f_normalise(&sp60, &sp60, 1101, "utils.c");
 
 	for (i = 3; i < arg1; i++) {
 		sp50.x = arg0[i].x - arg0[0].x;
 		sp50.y = arg0[i].y - arg0[0].y;
 		sp50.z = arg0[i].z - arg0[0].z;
 
-		func0f177164(&sp50, &sp50, 1109, "utils.c");
+		vec3f_normalise(&sp50, &sp50, 1109, "utils.c");
 
 		f0 = sp50.x * sp60.x + sp50.y * sp60.y + sp50.z * sp60.z;
 

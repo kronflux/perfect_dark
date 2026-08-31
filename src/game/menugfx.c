@@ -1453,7 +1453,7 @@ Gfx *menugfx_render_bg_failure(Gfx *gdl)
 
 	g_MenuProjectFromX = g_MenuProjectFromY = 0;
 
-	gdl = func0f0d4a3c(gdl, 0);
+	gdl = ortho_holoray_begin(gdl, 0);
 
 	var8009de90 = -100000;
 	var8009de94 = 100000;
@@ -1535,7 +1535,7 @@ Gfx *menugfx_render_bg_failure(Gfx *gdl)
 		gdl = menugfx_draw_plane(gdl, s2, s0, s1, s7, 0xffffff00 | alpha1, 0xffffff00 | alpha2, MENUPLANE_03);
 	}
 
-	gdl = func0f0d4c80(gdl);
+	gdl = ortho_holoray_end(gdl);
 
 	return gdl;
 }
@@ -1562,7 +1562,7 @@ Gfx *menugfx_render_bg_cone(Gfx *gdl)
 	baseangle = M_TAU * g_20SecIntervalFrac * 2.0f;
 	colourupper = (u32) (menu_get_sin_osc_frac(1.0f) * 255.0f) << 16;
 
-	gdl = func0f0d4a3c(gdl, 0);
+	gdl = ortho_holoray_begin(gdl, 0);
 
 	if (1);
 
@@ -1614,7 +1614,7 @@ Gfx *menugfx_render_bg_cone(Gfx *gdl)
 		gdl = menugfx_draw_plane(gdl, x1, y1, x2, y2, colour, colour, MENUPLANE_09);
 	}
 
-	gdl = func0f0d4c80(gdl);
+	gdl = ortho_holoray_end(gdl);
 
 	return gdl;
 }
@@ -1631,14 +1631,14 @@ Gfx *func0f0e458c(Gfx *gdl)
 	g_MenuProjectFromX = 0;
 	g_MenuProjectFromY = -20 - vi_get_height() / 2;
 
-	gdl = func0f0d4a3c(gdl, 0);
+	gdl = ortho_holoray_begin(gdl, 0);
 
 	var8009de90 = -100000;
 	var8009de94 = 100000;
 
 	gdl = menugfx_draw_plane(gdl, -1000, vi_get_height() + 10, 2000, vi_get_height() + 10, 0x00ff00bf, 0x00ff00bf, MENUPLANE_06);
 	gdl = menugfx_draw_plane(gdl, -1000, vi_get_height() + 10, 2000, vi_get_height() + 10, 0xffff00af, 0xffff00af, MENUPLANE_05);
-	gdl = func0f0d4c80(gdl);
+	gdl = ortho_holoray_end(gdl);
 
 	g_MenuProjectFromX = g_MenuProjectFromY = 0;
 
@@ -1650,7 +1650,7 @@ Gfx *func0f0e46b0(Gfx *gdl, f32 arg1)
 	s32 y1 = (g_MenuProjectFromY + 120) + arg1 * (0.0f - (g_MenuProjectFromY + 120));
 	s32 y2 = (g_MenuProjectFromY + 120) + arg1 * (240.0f - (g_MenuProjectFromY + 120));
 
-	gdl = func0f0d4a3c(gdl, 0);
+	gdl = ortho_holoray_begin(gdl, 0);
 
 	var8009de90 = -100000;
 	var8009de94 = 100000;
@@ -1660,7 +1660,7 @@ Gfx *func0f0e46b0(Gfx *gdl, f32 arg1)
 	gdl = menugfx_draw_plane(gdl, -1000, y2, 2000, y2, 0xffff007f, 0xffff007f, MENUPLANE_05);
 	gdl = menugfx_draw_plane(gdl, -1000, y2, 2000, y2, 0x00aa007f, 0x00aa007f, MENUPLANE_06);
 
-	gdl = func0f0d4c80(gdl);
+	gdl = ortho_holoray_end(gdl);
 
 	return gdl;
 }
@@ -1686,7 +1686,7 @@ Gfx *menugfx_render_bg_failure_copy(Gfx *gdl)
 
 	g_MenuProjectFromX = g_MenuProjectFromY = 0;
 
-	gdl = func0f0d4a3c(gdl, 0);
+	gdl = ortho_holoray_begin(gdl, 0);
 
 	var8009de90 = -100000;
 	var8009de94 = 100000;
@@ -1768,7 +1768,7 @@ Gfx *menugfx_render_bg_failure_copy(Gfx *gdl)
 		gdl = menugfx_draw_plane(gdl, s2, s0, s1, s7, 0xffffff00 | alpha1, 0xffffff00 | alpha2, MENUPLANE_03);
 	}
 
-	gdl = func0f0d4c80(gdl);
+	gdl = ortho_holoray_end(gdl);
 
 	return gdl;
 }
@@ -1862,7 +1862,7 @@ Gfx *menugfx_render_bg_success(Gfx *gdl)
 	g_MenuProjectFromX = 0;
 	g_MenuProjectFromY = 0;
 
-	gdl = func0f0d4a3c(gdl, 0);
+	gdl = ortho_holoray_begin(gdl, 0);
 
 	var8009de90 = -100000;
 	var8009de94 = 100000;
@@ -1876,8 +1876,8 @@ Gfx *menugfx_render_bg_success(Gfx *gdl)
 	}
 
 	// Prepare stuff for drawing the particles
-	gdl = func0f0d4c80(gdl);
-	gdl = func0f0d49c8(gdl);
+	gdl = ortho_holoray_end(gdl);
+	gdl = ortho_end(gdl);
 
 	tex_select(&gdl, &g_TexGeneralConfigs[1], 2, 1, 2, true, NULL);
 
@@ -2013,7 +2013,7 @@ Gfx *menugfx_render_bg_success(Gfx *gdl)
 		}
 	}
 
-	gdl = func0f0d479c(gdl);
+	gdl = ortho_begin(gdl);
 
 	return gdl;
 }

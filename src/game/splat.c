@@ -208,11 +208,11 @@ s32 splats_create(s32 qty, f32 arg1, struct prop *prop, struct shotdata *shotdat
 		mtx4_rotate_vec(&spa4, &spf0, &shotdata->gundir2d);
 
 #if VERSION >= VERSION_NTSC_1_0
-		func0f177164(&shotdata->gundir3d, &shotdata->gundir3d, 403, "splat.c");
-		func0f177164(&shotdata->gundir2d, &shotdata->gundir2d, 404, "splat.c");
+		vec3f_normalise(&shotdata->gundir3d, &shotdata->gundir3d, 403, "splat.c");
+		vec3f_normalise(&shotdata->gundir2d, &shotdata->gundir2d, 404, "splat.c");
 #else
-		func0f177164(&shotdata->gundir3d, &shotdata->gundir3d, 405, "splat.c");
-		func0f177164(&shotdata->gundir2d, &shotdata->gundir2d, 406, "splat.c");
+		vec3f_normalise(&shotdata->gundir3d, &shotdata->gundir3d, 405, "splat.c");
+		vec3f_normalise(&shotdata->gundir2d, &shotdata->gundir2d, 406, "splat.c");
 #endif
 
 		if (splat0f149274(arg1, prop, shotdata, /*reused var*/ dist, isskedar, splattype, timermax, chr, timerspeed)) {

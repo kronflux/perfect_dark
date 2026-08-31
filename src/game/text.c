@@ -497,9 +497,9 @@ Gfx *text0f153ab0(Gfx *gdl)
 
 	gSPDisplayList(gdl++, var800a4634);
 
-	gdl = func0f0d4c80(gdl);
+	gdl = ortho_holoray_end(gdl);
 
-	var800a4634 = func0f0d4a3c(var800a4634, 0);
+	var800a4634 = ortho_holoray_begin(var800a4634, 0);
 	var8007fba4 = -1;
 
 	return gdl;

@@ -22,7 +22,7 @@ void mtx_load_random_rotation(Mtxf *mtx)
 	mtx4_load_rotation(&coord, mtx);
 }
 
-void func0f0964b4(struct coord *coord, Mtxf *mtx)
+void projectile_load_random_speed_rotation(struct coord *coord, Mtxf *mtx)
 {
 	coord->x = RANDOMFRAC() * 1.6666666269302f * 4.0f - 3.3333332538605f;
 	coord->y = RANDOMFRAC() * 1.6666666269302f * 4.0f;
@@ -31,22 +31,22 @@ void func0f0964b4(struct coord *coord, Mtxf *mtx)
 	mtx_load_random_rotation(mtx);
 }
 
-void func0f0965e4(f32 *arg0, f32 *arg1, f32 arg2)
+void projectile_update_fall(f32 *arg0, f32 *arg1, f32 arg2)
 {
 	f32 tmp = arg1[0] - arg2 * 0.27777779f;
 	arg0[0] += arg2 * (arg1[0] + tmp) * 0.5f;
 	arg1[0] = tmp;
 }
 
-void func0f096628(f32 *arg0, f32 *arg1, f32 arg2)
+void projectile_update_3d(f32 *arg0, f32 *arg1, f32 arg2)
 {
-	func0f0965e4(&arg0[1], &arg1[1], arg2);
+	projectile_update_fall(&arg0[1], &arg1[1], arg2);
 
 	arg0[0] += arg2 * arg1[0];
 	arg0[2] += arg2 * arg1[2];
 }
 
-void func0f096698(Mtxf *arg0, Mtxf *arg1, s32 count)
+void projectile_update_matrix(Mtxf *arg0, Mtxf *arg1, s32 count)
 {
 	s32 i;
 

@@ -406,7 +406,7 @@ void setup_create_object(struct defaultobj *obj, s32 cmdindex)
 
 	if (obj->flags & OBJFLAG_INSIDEANOTHEROBJ) {
 		if (obj->type == OBJTYPE_WEAPON) {
-			func0f08ae0c((struct weaponobj *)obj, g_ModelStates[modelnum].modeldef);
+			weapon_init_with_modeldef((struct weaponobj *)obj, g_ModelStates[modelnum].modeldef);
 		} else {
 			obj_init_with_model_def(obj, g_ModelStates[modelnum].modeldef);
 		}
@@ -420,7 +420,7 @@ void setup_create_object(struct defaultobj *obj, s32 cmdindex)
 
 		if (chr && chr->prop && chr->model) {
 			if (obj->type == OBJTYPE_WEAPON) {
-				prop = func0f08ae0c((struct weaponobj *)obj, g_ModelStates[modelnum].modeldef);
+				prop = weapon_init_with_modeldef((struct weaponobj *)obj, g_ModelStates[modelnum].modeldef);
 			} else {
 				prop = obj_init_with_model_def(obj, g_ModelStates[modelnum].modeldef);
 			}
@@ -431,7 +431,7 @@ void setup_create_object(struct defaultobj *obj, s32 cmdindex)
 	} else {
 		if (obj->pad < 0) {
 			if (obj->type == OBJTYPE_WEAPON) {
-				func0f08ae0c((struct weaponobj *)obj, g_ModelStates[modelnum].modeldef);
+				weapon_init_with_modeldef((struct weaponobj *)obj, g_ModelStates[modelnum].modeldef);
 			} else {
 				obj_init_with_model_def(obj, g_ModelStates[modelnum].modeldef);
 			}
@@ -470,7 +470,7 @@ void setup_create_object(struct defaultobj *obj, s32 cmdindex)
 			}
 
 			if (obj->type == OBJTYPE_WEAPON) {
-				prop2 = func0f08ae0c((struct weaponobj *)obj, g_ModelStates[modelnum].modeldef);
+				prop2 = weapon_init_with_modeldef((struct weaponobj *)obj, g_ModelStates[modelnum].modeldef);
 			} else {
 				prop2 = obj_init_with_auto_model(obj);
 			}
@@ -591,9 +591,9 @@ void setup_create_object(struct defaultobj *obj, s32 cmdindex)
 			}
 
 			if (obj->flags & OBJFLAG_00000002) {
-				func0f06ab60(obj, &pos, &mtx, rooms, &centre);
+				obj_place_2d(obj, &pos, &mtx, rooms, &centre);
 			} else {
-				func0f06a730(obj, &pos, &mtx, rooms, &centre);
+				obj_place_3d(obj, &pos, &mtx, rooms, &centre);
 			}
 
 			if (obj->hidden & OBJHFLAG_00008000) {
@@ -628,18 +628,18 @@ void setup_place_weapon(struct weaponobj *weapon, s32 cmdindex)
 				weapon->base.flags &= ~OBJFLAG_DEACTIVATED;
 				weapon->base.flags |= OBJFLAG_WEAPON_AICANNOTUSE;
 				modelmgr_load_projectile_modeldefs(weapon->weaponnum);
-				func0f08b25c(weapon, chr);
+				weapon_assign_to_chr(weapon, chr);
 #else
 				if (g_Vars.stagenum == STAGE_INVESTIGATION
 						&& lv_get_difficulty() == DIFF_PA
 						&& weapon->weaponnum == WEAPON_K7AVENGER) {
 					modelmgr_load_projectile_modeldefs(weapon->weaponnum);
-					func0f08b25c(weapon, chr);
+					weapon_assign_to_chr(weapon, chr);
 				} else if (g_Vars.stagenum == STAGE_ATTACKSHIP) {
 					weapon->base.flags &= ~OBJFLAG_DEACTIVATED;
 					weapon->base.flags |= OBJFLAG_WEAPON_AICANNOTUSE;
 					modelmgr_load_projectile_modeldefs(weapon->weaponnum);
-					func0f08b25c(weapon, chr);
+					weapon_assign_to_chr(weapon, chr);
 				} else {
 					weapon->weaponnum = WEAPON_NONE;
 				}
@@ -696,7 +696,7 @@ void setup_place_weapon(struct weaponobj *weapon, s32 cmdindex)
 				}
 
 				modelmgr_load_projectile_modeldefs(weapon->weaponnum);
-				func0f08b25c(weapon, chr);
+				weapon_assign_to_chr(weapon, chr);
 			}
 		}
 	} else {

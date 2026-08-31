@@ -125,7 +125,7 @@ void vtxstore_tick(void)
 	}
 
 	if (g_VtxstoreTypes[VTXSTORETYPE_OBJVTX].val2 < g_VtxstoreTypes[VTXSTORETYPE_OBJVTX].val1 >> 2) {
-		func0f091030();
+		obj_free_all_offscreen_deformed_objs();
 	}
 }
 

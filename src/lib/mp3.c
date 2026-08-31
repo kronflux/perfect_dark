@@ -40,7 +40,7 @@
 struct mp3vars g_Mp3Vars;
 struct asistream *g_AsiStream;
 
-s32 func00038ba8(s32 arg0, u8 *arg1, s32 arg2, s32 arg3);
+s32 mp3_handle_dma(s32 arg0, u8 *arg1, s32 arg2, s32 arg3);
 
 extern f32 *var8009c6d8;
 extern f32 *var8009c6dc;
@@ -90,21 +90,21 @@ void mp3_init(ALHeap *heap)
 		g_Mp3Vars.var8009c3a6 = 0;
 	}
 
-	func00038b90(func00038ba8);
+	mp3_set_dma_func(mp3_handle_dma);
 }
 
 void mp3_play_file(uintptr_t romaddr, s32 filesize)
 {
-	if (g_Mp3Vars.var8009c3dc == NULL) {
+	if (g_Mp3Vars.dmafunc == NULL) {
 		return;
 	}
 
 	g_Mp3Vars.romaddr = romaddr;
 	g_Mp3Vars.filesize = filesize;
-	g_Mp3Vars.var8009c3c4 = 0;
+	g_Mp3Vars.dmaoffset = 0;
 	g_Mp3Vars.var8009c3e8 = 0;
 	g_Mp3Vars.var8009c3e4 = 0x7fff;
-	g_Mp3Vars.var8009c3f0 = 5;
+	g_Mp3Vars.statetimer = 5;
 #ifndef PLATFORM_N64
 	g_Mp3Vars.reset = 1;
 #endif
@@ -114,27 +114,27 @@ void mp3_play_file(uintptr_t romaddr, s32 filesize)
 	g_Mp3Vars.var8009c3e0 = 4;
 }
 
-void func00037e1c(void)
+void mp3_stop(void)
 {
 	g_Mp3Vars.var8009c3e0 = 3;
 }
 
-void func00037e38(void)
+void mp3_pause(void)
 {
 	if (g_Mp3Vars.var8009c3e0 == 1) {
 		g_Mp3Vars.var8009c3e0 = 2;
 	}
 }
 
-void func00037e68(void)
+void mp3_unpause(void)
 {
 	if (g_Mp3Vars.var8009c3e0 == 2) {
-		g_Mp3Vars.var8009c3f0 = 5;
+		g_Mp3Vars.statetimer = 5;
 		g_Mp3Vars.var8009c3e0 = 5;
 	}
 }
 
-s32 func00037ea4(void)
+s32 mp3_is_busy(void)
 {
 	if (g_Mp3Vars.var8009c3e0 == 1
 			|| g_Mp3Vars.var8009c3e0 == 4
@@ -146,7 +146,7 @@ s32 func00037ea4(void)
 	}
 }
 
-void func00037f08(s32 arg0, bool arg1)
+void mp3_set_vol(s32 arg0, bool arg1)
 {
 	if (arg0 < 0) {
 		g_Mp3Vars.var8009c3e4 = 0;
@@ -159,7 +159,7 @@ void func00037f08(s32 arg0, bool arg1)
 	g_Mp3Vars.var8009c3e8 = arg1;
 }
 
-void func00037f5c(s32 arg0, bool arg1)
+void mp3_set_pan(s32 arg0, bool arg1)
 {
 	if (arg0 > 255) {
 		arg0 = 255;
@@ -176,12 +176,12 @@ void func00037f5c(s32 arg0, bool arg1)
 	}
 }
 
-void func00037fa8(s32 arg0, s32 arg1)
+void mp3_00037fa8(s32 arg0, s32 arg1)
 {
 	// empty
 }
 
-s32 func00037fc0(s32 arg0, Acmd **cmd)
+s32 mp3_make_samples(s32 arg0, Acmd **cmd)
 {
 	s32 i;
 	s32 sp60;
@@ -207,8 +207,8 @@ s32 func00037fc0(s32 arg0, Acmd **cmd)
 	if (g_Mp3Vars.var8009c3e0 == 4) {
 		mp3_dma();
 
-		if (g_Mp3Vars.var8009c3f0 == 0) {
-			g_Mp3Vars.var8009c394 = mp3main00044460(0, g_Mp3Vars.var8009c3dc, g_Mp3Vars.filesize);
+		if (g_Mp3Vars.statetimer == 0) {
+			g_Mp3Vars.var8009c394 = mp3main00044460(0, g_Mp3Vars.dmafunc, g_Mp3Vars.filesize);
 
 			if (g_Mp3Vars.var8009c394 == NULL) {
 				g_Mp3Vars.var8009c3e0 = 0;
@@ -224,17 +224,17 @@ s32 func00037fc0(s32 arg0, Acmd **cmd)
 				bzero(g_Mp3Vars.var8009c3d4[0], 0x440);
 			}
 		} else {
-			g_Mp3Vars.var8009c3f0--;
+			g_Mp3Vars.statetimer--;
 		}
 	}
 
 	if (g_Mp3Vars.var8009c3e0 == 5) {
 		mp3_dma();
 
-		if (g_Mp3Vars.var8009c3f0 == 0) {
+		if (g_Mp3Vars.statetimer == 0) {
 			g_Mp3Vars.var8009c3e0 = 1;
 		} else {
-			g_Mp3Vars.var8009c3f0--;
+			g_Mp3Vars.statetimer--;
 		}
 	}
 
@@ -268,7 +268,7 @@ s32 func00037fc0(s32 arg0, Acmd **cmd)
 
 				g_Mp3Vars.var8009c3d8 = (g_Mp3Vars.var8009c3d8 - 0x24) & 0x1e;
 				g_Mp3Vars.var8009c3cc = 0x240;
-				g_Mp3Vars.var8009c3f1 = sp5c == 2;
+				g_Mp3Vars.dualchannel = sp5c == 2;
 			} else {
 				// empty
 			}
@@ -276,14 +276,14 @@ s32 func00037fc0(s32 arg0, Acmd **cmd)
 
 		mp3_dma();
 
-		if (g_Mp3Vars.var8009c3f1 == 0) {
+		if (g_Mp3Vars.dualchannel == 0) {
 			sp4c = 0;
 		}
 
 		if (sp54 != NULL) {
 			n_aLoadBuffer((*cmd)++, sp50 + sp50, sp4c, osVirtualToPhysical(sp54));
 
-			if (g_Mp3Vars.var8009c3f1) {
+			if (g_Mp3Vars.dualchannel) {
 				sp54++;
 				n_aLoadBuffer((*cmd)++, sp50 + sp50, sp48, osVirtualToPhysical(sp54));
 			}
@@ -298,7 +298,7 @@ s32 func00037fc0(s32 arg0, Acmd **cmd)
 
 			n_aLoadBuffer((*cmd)++, arg0 + arg0, sp4c, osVirtualToPhysical(sp54));
 
-			if (g_Mp3Vars.var8009c3f1) {
+			if (g_Mp3Vars.dualchannel) {
 				sp54++;
 				n_aLoadBuffer((*cmd)++, arg0 + arg0, sp48, osVirtualToPhysical(sp54));
 			}
@@ -306,9 +306,9 @@ s32 func00037fc0(s32 arg0, Acmd **cmd)
 			g_Mp3Vars.var8009c3d0 += arg0;
 		}
 
-		func00038924(&g_Mp3Vars);
+		mp3_update_vars(&g_Mp3Vars);
 
-		if (!g_Mp3Vars.var8009c3f1) {
+		if (!g_Mp3Vars.dualchannel) {
 			aClearBuffer((*cmd)++, N_AL_MAIN_L_OUT, N_AL_TEMP_2);
 
 			if (g_Mp3Vars.var8009c3b4) {
@@ -341,7 +341,7 @@ s32 func00037fc0(s32 arg0, Acmd **cmd)
 	return 1;
 }
 
-void func00038924(struct mp3vars *vars)
+void mp3_update_vars(struct mp3vars *vars)
 {
 	if (vars->var8009c39e != vars->var8009c3e4 || vars->var8009c39c != vars->var8009c3ec) {
 		if (vars->samples >= vars->var8009c3bc) {
@@ -387,30 +387,30 @@ void func00038924(struct mp3vars *vars)
 	}
 }
 
-void func00038b90(void *fn)
+void mp3_set_dma_func(void *fn)
 {
-	g_Mp3Vars.var8009c3dc = fn;
+	g_Mp3Vars.dmafunc = fn;
 }
 
-s32 func00038ba8(s32 arg0, u8 *arg1, s32 arg2, s32 arg3)
+s32 mp3_handle_dma(s32 arg0, u8 *arg1, s32 arg2, s32 arg3)
 {
 	uintptr_t sp1c;
 	ALDMAproc proc;
 
 	if (arg3 != -1) {
-		g_Mp3Vars.var8009c3c4 = arg3;
+		g_Mp3Vars.dmaoffset = arg3;
 	}
 
-	if (g_Mp3Vars.var8009c3c4 + arg2 > g_Mp3Vars.filesize) {
-		arg2 = g_Mp3Vars.filesize - g_Mp3Vars.var8009c3c4;
+	if (g_Mp3Vars.dmaoffset + arg2 > g_Mp3Vars.filesize) {
+		arg2 = g_Mp3Vars.filesize - g_Mp3Vars.dmaoffset;
 	}
 
 	proc = n_syn->dma(&sp1c);
-	sp1c = OS_K0_TO_PHYSICAL(proc(g_Mp3Vars.romaddr + g_Mp3Vars.var8009c3c4, arg2, 0));
+	sp1c = OS_K0_TO_PHYSICAL(proc(g_Mp3Vars.romaddr + g_Mp3Vars.dmaoffset, arg2, 0));
 
 	bcopy((u8 *)sp1c, arg1, arg2);
 
-	g_Mp3Vars.var8009c3c4 += arg2;
+	g_Mp3Vars.dmaoffset += arg2;
 
 	return arg2;
 }
@@ -422,5 +422,5 @@ void mp3_dma(void)
 
 	proc = n_syn->dma(&state);
 
-	proc(g_Mp3Vars.romaddr + g_Mp3Vars.var8009c3c4, 0x400, 0);
+	proc(g_Mp3Vars.romaddr + g_Mp3Vars.dmaoffset, 0x400, 0);
 }

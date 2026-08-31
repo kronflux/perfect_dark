@@ -340,9 +340,9 @@ MenuItemHandlerResult menuhandler_screen_split(s32 operation, struct menuitem *i
 			if (PLAYERCOUNT() > 1) {
 				u32 prevplayernum = g_MpPlayerNum;
 				g_MpPlayerNum = 0;
-				func0f0f8120();
+				menu_save_and_close_all();
 				g_MpPlayerNum = 1;
-				func0f0f8120();
+				menu_save_and_close_all();
 				g_MpPlayerNum = prevplayernum;
 			}
 		}
@@ -838,7 +838,7 @@ struct menudialogdef g_AcceptMissionMenuDialog = {
 	&g_PreAndPostMissionBriefingMenuDialog,
 };
 
-f32 func0f1036ac(u8 value, s32 prop)
+f32 mainmenu_pdmode_handicap_to_value(u8 value, s32 prop)
 {
 	if (prop == PDMODEPROP_REACTION) {
 		return value / 255.0f;
@@ -868,7 +868,7 @@ MenuItemHandlerResult menuhandler_pd_mode_setting(s32 operation, struct menuitem
 		*property = (u16)data->slider.value;
 		break;
 	case MENUOP_GETSLIDERLABEL:
-		fvalue = func0f1036ac(*property, item->param);
+		fvalue = mainmenu_pdmode_handicap_to_value(*property, item->param);
 		if (item->param == 0) {
 			fvalue = fvalue * 4 + 1.0f;
 		}
@@ -883,9 +883,9 @@ MenuItemHandlerResult menuhandler_accept_pd_mode_settings(s32 operation, struct 
 {
 	if (operation == MENUOP_SET) {
 		g_MissionConfig.pdmode = true;
-		g_MissionConfig.pdmodehealthf = func0f1036ac(g_MissionConfig.pdmodehealth, PDMODEPROP_HEALTH);
-		g_MissionConfig.pdmodedamagef = func0f1036ac(g_MissionConfig.pdmodedamage, PDMODEPROP_DAMAGE);
-		g_MissionConfig.pdmodeaccuracyf = func0f1036ac(g_MissionConfig.pdmodeaccuracy, PDMODEPROP_ACCURACY);
+		g_MissionConfig.pdmodehealthf = mainmenu_pdmode_handicap_to_value(g_MissionConfig.pdmodehealth, PDMODEPROP_HEALTH);
+		g_MissionConfig.pdmodedamagef = mainmenu_pdmode_handicap_to_value(g_MissionConfig.pdmodedamage, PDMODEPROP_DAMAGE);
+		g_MissionConfig.pdmodeaccuracyf = mainmenu_pdmode_handicap_to_value(g_MissionConfig.pdmodeaccuracy, PDMODEPROP_ACCURACY);
 		g_MissionConfig.difficulty = DIFF_PA;
 		lv_set_difficulty(g_MissionConfig.difficulty);
 		menu_pop_dialog();
@@ -1801,7 +1801,7 @@ s32 get_num_unlocked_special_stages(void)
 	return count + offsetforduel;
 }
 
-s32 func0f104720(s32 value)
+s32 mainmenu_specialindex_to_stageindex(s32 value)
 {
 	s32 next = 0;
 	s32 d;
@@ -1896,14 +1896,14 @@ MenuItemHandlerResult menuhandler_mission_list(s32 operation, struct menuitem *i
 		}
 
 		// Special stages have no dash and suffix, so just return the name
-		return (uintptr_t) lang_get(g_SoloStages[func0f104720(data->list.value - data->list.unk04u32)].name1);
+		return (uintptr_t) lang_get(g_SoloStages[mainmenu_specialindex_to_stageindex(data->list.value - data->list.unk04u32)].name1);
 	case MENUOP_SET:
 		sp188 = data->list.value;
 		menuhandler_mission_list(MENUOP_GETOPTIONCOUNT, item, &sp178);
 		sp178.list.value -= get_num_unlocked_special_stages();
 
 		if (data->list.value >= sp178.list.value) {
-			sp188 = func0f104720(data->list.value - sp178.list.value);
+			sp188 = mainmenu_specialindex_to_stageindex(data->list.value - sp178.list.value);
 		}
 
 		g_Vars.mplayerisrunning = false;
@@ -1936,7 +1936,7 @@ MenuItemHandlerResult menuhandler_mission_list(s32 operation, struct menuitem *i
 				data->list.value = sp168.list.value - 1;
 
 				for (sp160 = 0; sp160 < sp164; sp160++) {
-					if (func0f104720(sp160) == g_GameFile.autostageindex) {
+					if (mainmenu_specialindex_to_stageindex(sp160) == g_GameFile.autostageindex) {
 						data->list.value = sp168.list.values32 + sp160;
 					}
 				}
@@ -1982,7 +1982,7 @@ MenuItemHandlerResult menuhandler_mission_list(s32 operation, struct menuitem *i
 		}
 
 		if (data->type19.unk04u32 >= data->type19.unk0c) {
-			stageindex = func0f104720(data->type19.unk04u32 - data->type19.unk0c);
+			stageindex = mainmenu_specialindex_to_stageindex(data->type19.unk04u32 - data->type19.unk0c);
 		}
 
 		// Draw the thumbnail
@@ -2189,7 +2189,7 @@ struct menudialogdef g_2PMissionBriefingVMenuDialog = {
 	NULL,
 };
 
-char *func0f105664(struct menuitem *item)
+char *menutext_control_style_p1(struct menuitem *item)
 {
 	union handlerdata data;
 
@@ -2198,7 +2198,7 @@ char *func0f105664(struct menuitem *item)
 	return (char *)menuhandler001024dc(MENUOP_GETOPTIONTEXT, item, &data);
 }
 
-char *func0f1056a0(struct menuitem *item)
+char *menutext_control_style_p2(struct menuitem *item)
 {
 	union handlerdata data;
 
@@ -2245,7 +2245,7 @@ MenuItemHandlerResult menuhandler001057ec(s32 operation, struct menuitem *item, 
 MenuItemHandlerResult menuhandler_change_agent(s32 operation, struct menuitem *item, union handlerdata *data)
 {
 	if (operation == MENUOP_SET) {
-		func0f0f820c(NULL, -7);
+		menu_save_and_push_root_dialog(NULL, -7);
 	}
 
 	return 0;
@@ -3096,7 +3096,7 @@ struct menuitem g_MissionControlOptionsMenuItems[] = {
 		0,
 		0,
 		L_OPTIONS_194, // "Control Style"
-		(uintptr_t)&func0f105664,
+		(uintptr_t)&menutext_control_style_p1,
 		menuhandler_control_style,
 	},
 	{
@@ -3174,7 +3174,7 @@ struct menuitem g_CiControlOptionsMenuItems2[] = {
 		0,
 		0,
 		L_MPWEAPONS_270, // ""
-		(uintptr_t)&func0f105664,
+		(uintptr_t)&menutext_control_style_p1,
 		menuhandler_control_style,
 	},
 	{
@@ -3252,7 +3252,7 @@ struct menuitem g_CiControlOptionsMenuItems[] = {
 		0,
 		MENUITEMFLAG_SELECTABLE_OPENSDIALOG,
 		L_OPTIONS_194, // "Control Style"
-		(uintptr_t)&func0f105664,
+		(uintptr_t)&menutext_control_style_p1,
 		(void *)&g_CiControlStyleMenuDialog,
 	},
 	{
@@ -3329,7 +3329,7 @@ struct menuitem g_CiControlPlayer2MenuItems[] = {
 		0,
 		MENUITEMFLAG_SELECTABLE_OPENSDIALOG,
 		L_OPTIONS_194, // "Control Style"
-		(uintptr_t)&func0f1056a0,
+		(uintptr_t)&menutext_control_style_p2,
 		(void *)&g_CiControlStylePlayer2MenuDialog,
 	},
 	{
@@ -3797,7 +3797,7 @@ char *inv_menu_text_secondary_function(struct menuitem *item)
 	return lang_get(L_OPTIONS_003); // "\n"
 }
 
-void func0f105948(s32 weaponnum)
+void mainmenu_prepare_weapon_menumodel(s32 weaponnum)
 {
 	f32 gunconfig[][5] = {
 		{ 23.299999237061f,   -16.799999237061f,  -153.39999389648f,  6.4140100479126f, 0.48769000172615f },
@@ -3956,7 +3956,7 @@ MenuDialogHandlerResult inventory_menu_dialog(s32 operation, struct menudialogde
 			g_Menus[g_MpPlayerNum].menumodel.newrotz = 0;
 
 			if (var80072d88 != g_InventoryWeapon) {
-				func0f105948(g_InventoryWeapon);
+				mainmenu_prepare_weapon_menumodel(g_InventoryWeapon);
 				var80072d88 = g_InventoryWeapon;
 			}
 
@@ -4268,10 +4268,10 @@ MenuItemHandlerResult menuhandler_fr_inventory_list(s32 operation, struct menuit
 		g_FrFocusedSlotIndex = data->list.value;
 
 		// These items are labels
-		func0f0f139c(&g_SoloMissionInventoryMenuItems[1], -1.0f); // manufacturer
-		func0f0f139c(&g_SoloMissionInventoryMenuItems[2], -1.0f); // weapon name
-		func0f0f139c(&g_SoloMissionInventoryMenuItems[4], -1.0f); // primary function
-		func0f0f139c(&g_SoloMissionInventoryMenuItems[5], -1.0f); // secondary function
+		menu_set_item_redraw_timer(&g_SoloMissionInventoryMenuItems[1], -1.0f); // manufacturer
+		menu_set_item_redraw_timer(&g_SoloMissionInventoryMenuItems[2], -1.0f); // weapon name
+		menu_set_item_redraw_timer(&g_SoloMissionInventoryMenuItems[4], -1.0f); // primary function
+		menu_set_item_redraw_timer(&g_SoloMissionInventoryMenuItems[5], -1.0f); // secondary function
 		break;
 	}
 
@@ -4348,10 +4348,10 @@ MenuItemHandlerResult menuhandler_inventory_list(s32 operation, struct menuitem 
 		g_InventoryWeapon = inv_get_weapon_num_by_index(data->list.value);
 		g_Menus[g_MpPlayerNum].training.weaponnum = g_InventoryWeapon;
 
-		func0f0f139c(&g_SoloMissionInventoryMenuItems[1], -1);
-		func0f0f139c(&g_SoloMissionInventoryMenuItems[2], -1);
-		func0f0f139c(&g_SoloMissionInventoryMenuItems[4], -1);
-		func0f0f139c(&g_SoloMissionInventoryMenuItems[5], -1);
+		menu_set_item_redraw_timer(&g_SoloMissionInventoryMenuItems[1], -1);
+		menu_set_item_redraw_timer(&g_SoloMissionInventoryMenuItems[2], -1);
+		menu_set_item_redraw_timer(&g_SoloMissionInventoryMenuItems[4], -1);
+		menu_set_item_redraw_timer(&g_SoloMissionInventoryMenuItems[5], -1);
 		break;
 	}
 
@@ -4825,8 +4825,8 @@ MenuItemHandlerResult menuhandler_main_menu_combat_simulator(s32 operation, stru
 		g_Vars.antiplayernum = -1;
 		challenge_determine_unlocked_features();
 		g_Vars.mpsetupmenu = MPSETUPMENU_GENERAL;
-		func0f0f820c(&g_CombatSimulatorMenuDialog, MENUROOT_MPSETUP);
-		func0f0f8300();
+		menu_save_and_push_root_dialog(&g_CombatSimulatorMenuDialog, MENUROOT_MPSETUP);
+		menu_hide_pressstart_labels();
 	}
 
 	return 0;

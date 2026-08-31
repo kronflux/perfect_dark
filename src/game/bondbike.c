@@ -134,7 +134,7 @@ void bbike_try_dismount_angle(f32 relativeangle, f32 distance)
 		prop_set_perim_enabled(g_Vars.currentplayer->hoverbike, false);
 		prop_set_perim_enabled(g_Vars.currentplayer->prop, false);
 
-		func0f065e74(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms, &pos, rooms);
+		los_find_final_room_exhaustive(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms, &pos, rooms);
 		bmove_find_entered_rooms_by_pos(g_Vars.currentplayer, &pos, rooms);
 
 		result = cd_test_cyl_move02(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms,
@@ -333,7 +333,7 @@ void bbike0f0d2b40(struct defaultobj *bike, struct coord *arg1, f32 arg2, struct
 	sp54.y = obstacle->prop->pos.y - bike->prop->pos.y;
 	sp54.z = obstacle->prop->pos.z - bike->prop->pos.z;
 
-	func0f02e3dc(&sp78, &sp6c, &sp60, &sp54, &sp9c);
+	chr_calculate_push_contact_pos(&sp78, &sp6c, &sp60, &sp54, &sp9c);
 
 	sp90.x = arg1->f[0];
 	sp90.y = 0;
@@ -353,7 +353,7 @@ void bbike0f0d2b40(struct defaultobj *bike, struct coord *arg1, f32 arg2, struct
 		sp84.z += arg1->z / g_Vars.lvupdate60freal;
 	}
 
-	func0f082e84(obstacle, &sp9c, &sp90, &sp84, false);
+	obj_push(obstacle, &sp9c, &sp90, &sp84, false);
 
 	if (arg2) {
 		f32 xdiff = sp9c.x - bike->prop->pos.x;
@@ -405,7 +405,7 @@ s32 bbike_calculate_new_position(struct coord *vel, f32 angledelta)
 		dstpos.z += vel->z;
 
 		obj_get_bbox(g_Vars.currentplayer->hoverbike, &radius, &ymax, &ymin);
-		func0f065dfc(&g_Vars.currentplayer->hoverbike->pos,
+		los_find_intersecting_rooms_exhaustive(&g_Vars.currentplayer->hoverbike->pos,
 				g_Vars.currentplayer->hoverbike->rooms,
 				&dstpos, dstrooms, spa8, 20);
 
@@ -547,7 +547,7 @@ void bbike_update_vertical(struct coord *pos)
 
 	angle = hoverprop_get_turn_angle(bike);
 
-	func0f065e74(&bike->prop->pos, bike->prop->rooms, pos, newrooms);
+	los_find_final_room_exhaustive(&bike->prop->pos, bike->prop->rooms, pos, newrooms);
 
 #if VERSION < VERSION_NTSC_1_0
 	{
@@ -926,7 +926,7 @@ void bbike_tick(void)
 		bike->speed[1] = sp1f4;
 
 		hov_tick(obj, &bike->hov);
-		func0f069c70(obj, true, true);
+		obj_onmoved(obj, true, true);
 		mtx3_to_mtx4(obj->realrot, &sp1a8);
 		mtx4_set_translation(&obj->prop->pos, &sp1a8);
 		mtx4_transform_vec(&sp1a8, &g_Vars.currentplayer->bondvehicleoffset, &sp1e8);

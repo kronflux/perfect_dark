@@ -2153,7 +2153,7 @@ bool bgun0f09aba4(struct hand *hand, struct handweaponinfo *info, s32 handnum, s
 
 			hand->rotxend = M_BADTAU - (recoilangle * M_BADTAU) / 360.0f;
 
-			hand->posend.x = (func0f0b131c(handnum) - hand->aimpos.x) * recoildist / 1000.0f;
+			hand->posend.x = (hand_get_xpos(handnum) - hand->aimpos.x) * recoildist / 1000.0f;
 			hand->posend.y = 0;
 			hand->posend.z = (weapondef->posz - hand->aimpos.z) * recoildist / 1000.0f;
 
@@ -4326,7 +4326,7 @@ void bgun0f09ebcc(struct defaultobj *obj, struct coord *coord, RoomNum *rooms, M
 		prop_activate(objprop);
 		prop_enable(objprop);
 		mtx00015f04(obj->model->scale, matrix1);
-		func0f06a580(obj, coord, matrix1, rooms);
+		obj_place(obj, coord, matrix1, rooms);
 
 		if (obj->type == OBJTYPE_WEAPON && ((struct weaponobj *) obj)->weaponnum == WEAPON_BOLT) {
 			s32 beamnum = boltbeam_find_by_prop(objprop);
@@ -4341,7 +4341,7 @@ void bgun0f09ebcc(struct defaultobj *obj, struct coord *coord, RoomNum *rooms, M
 			}
 		}
 
-		func0f0685e4(objprop);
+		obj_ensure_projectile(objprop);
 
 		if (obj->hidden & OBJHFLAG_PROJECTILE) {
 			obj->projectile->flags |= PROJECTILEFLAG_AIRBORNE;
@@ -4700,7 +4700,7 @@ void bgun_update_held_rocket(s32 handnum)
 				mtx.m[3][2] = 0;
 
 				mtx00015f04(obj->model->scale, &mtx);
-				func0f06a580(obj, &hand->muzzlepos, &mtx, playerprop->rooms);
+				obj_place(obj, &hand->muzzlepos, &mtx, playerprop->rooms);
 				prop_deregister_rooms(objprop);
 			}
 
@@ -7625,7 +7625,7 @@ void bgun0f0a5550(s32 handnum)
 	}
 
 	if (handnum == HAND_RIGHT) {
-		sp274.x = func0f0b131c(handnum) + hand->damppos.f[0] + hand->adjustpos.f[0];
+		sp274.x = hand_get_xpos(handnum) + hand->damppos.f[0] + hand->adjustpos.f[0];
 		sp274.y = weapondef->posy + hand->damppos.f[1] + hand->adjustpos.f[1];
 		sp274.z = weapondef->posz + hand->damppos.f[2] + hand->adjustpos.f[2];
 	} else if (isdetonator) {
@@ -7633,7 +7633,7 @@ void bgun0f0a5550(s32 handnum)
 		sp274.y = -16.5f + hand->damppos.f[1] + hand->adjustpos.f[1];
 		sp274.z = -16.0f + hand->damppos.f[2] + hand->adjustpos.f[2];
 	} else {
-		sp274.x = func0f0b131c(handnum) + hand->damppos.f[0] - hand->adjustpos.f[0];
+		sp274.x = hand_get_xpos(handnum) + hand->damppos.f[0] - hand->adjustpos.f[0];
 		sp274.y = weapondef->posy + hand->damppos.f[1] + hand->adjustpos.f[1];
 		sp274.z = weapondef->posz + hand->damppos.f[2] + hand->adjustpos.f[2];
 	}

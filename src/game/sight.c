@@ -1102,7 +1102,7 @@ Gfx *sight_draw_skedar(Gfx *gdl, bool sighton, f32 crossx, f32 crossy)
 	gSPSetExtraGeometryModeEXT(gdl++, G_ASPECT_CENTER_EXT);
 #endif
 
-	gdl = func0f0d479c(gdl);
+	gdl = ortho_begin(gdl);
 
 	gSPClearGeometryMode(gdl++, G_CULL_BOTH);
 	gSPSetGeometryMode(gdl++, G_SHADE | G_SHADING_SMOOTH);
@@ -1252,7 +1252,7 @@ Gfx *sight_draw_skedar(Gfx *gdl, bool sighton, f32 crossx, f32 crossy)
 		gdl = sight_draw_skedar_triangle(gdl, x + 2, y + 0, DIR_LEFT, colour);
 	}
 
-	gdl = func0f0d49c8(gdl);
+	gdl = ortho_end(gdl);
 
 #ifndef PLATFORM_N64
 	gSPClearExtraGeometryModeEXT(gdl++, G_ASPECT_CENTER_EXT);
@@ -1457,7 +1457,7 @@ Gfx *sight_draw_maian(Gfx *gdl, bool sighton, f32 crossx, f32 crossy)
 
 	vertices = gfxAllocateVertices(8);
 	colours = gfxAllocateColours(2);
-	gdl = func0f0d479c(gdl);
+	gdl = ortho_begin(gdl);
 
 	gSPClearGeometryMode(gdl++, G_CULL_BOTH);
 	gSPSetGeometryMode(gdl++, G_SHADE | G_SHADING_SMOOTH);
@@ -1522,7 +1522,7 @@ Gfx *sight_draw_maian(Gfx *gdl, bool sighton, f32 crossx, f32 crossy)
 	gSPVertex(gdl++, vertices, 8, 0);
 	gSPTri4(gdl++, 0, 4, 5, 5, 3, 6, 7, 6, 1, 4, 7, 2);
 
-	gdl = func0f0d49c8(gdl);
+	gdl = ortho_end(gdl);
 	gdl = text_set_prim_colour(gdl, SIGHT_COLOUR);
 
 	// Draw border over inner points

@@ -756,7 +756,7 @@ bool inv_has_key_flags(u32 wantkeyflags)
 	return false;
 }
 
-bool func0f11283c(void)
+bool inv_has_goldeneyekey(void)
 {
 	return false;
 }
@@ -779,7 +779,7 @@ bool inv_has_data_uplink(void)
 	return false;
 }
 
-bool func0f1128c4(void)
+bool inv_has_goldengun(void)
 {
 	return false;
 }

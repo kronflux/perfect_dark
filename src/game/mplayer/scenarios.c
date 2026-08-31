@@ -1063,8 +1063,8 @@ bool scenario_chrs_are_same_team(s32 playernum1, s32 playernum2)
 	struct mpchrconfig *bchr;
 
 	if ((g_MpSetup.options & MPOPTION_TEAMSENABLED) && playernum1 >= 0 && playernum2 >= 0) {
-		s32 a = func0f18d074(playernum1);
-		s32 b = func0f18d074(playernum2);
+		s32 a = mp_chrindex_to_chrslot(playernum1);
+		s32 b = mp_chrindex_to_chrslot(playernum2);
 
 		if (a >= 0 && b >= 0) {
 			achr = MPCHR(a);
@@ -1375,7 +1375,7 @@ void scenario_handle_dropped_token(struct chrdata *chr, struct prop *prop)
 				rooms[0] = pad.room;
 				rooms[1] = -1;
 
-				func0f06a730(obj, &pad.pos, &mtx, rooms, &pad.pos);
+				obj_place_3d(obj, &pad.pos, &mtx, rooms, &pad.pos);
 			}
 		}
 	}

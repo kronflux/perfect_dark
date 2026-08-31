@@ -125,7 +125,7 @@ void player_reset(void)
 	s32 headnum;
 
 	player_reset_lo_res_if_4mb();
-	func0f18e558();
+	mp_reset_phead_modeldefs();
 
 	g_InCutscene = false;
 

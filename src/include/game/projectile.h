@@ -5,8 +5,8 @@
 #include "types.h"
 
 void mtx_load_random_rotation(Mtxf *mtx);
-void func0f0964b4(struct coord *arg0, Mtxf *mtx);
-void func0f0965e4(f32 *arg0, f32 *arg1, f32 arg2);
-void func0f096698(Mtxf *arg0, Mtxf *arg1, s32 count);
+void projectile_load_random_speed_rotation(struct coord *arg0, Mtxf *mtx);
+void projectile_update_fall(f32 *arg0, f32 *arg1, f32 arg2);
+void projectile_update_matrix(Mtxf *arg0, Mtxf *arg1, s32 count);
 
 #endif

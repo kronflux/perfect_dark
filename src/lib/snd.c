@@ -889,15 +889,15 @@ u16 snd0000e9dc(void)
 #if VERSION >= VERSION_NTSC_1_0
 	s32 result;
 
-	if (func00033ec4(0) < 0x5000) {
-		result = func00033ec4(0);
+	if (sndp_get_volume_entry(0) < 0x5000) {
+		result = sndp_get_volume_entry(0);
 	} else {
 		result = 0x5000;
 	}
 
 	return result;
 #else
-	return func00033ec4(0);
+	return sndp_get_volume_entry(0);
 #endif
 }
 
@@ -912,7 +912,7 @@ void snd_set_sfx_volume(u16 volume)
 #endif
 
 	for (i = 0; i < NUM_KEYTHINGS; i++) {
-		func00033f44(i, volume);
+		sndp_set_volume_entry(i, volume);
 	}
 
 	g_SfxVolume = volume;
@@ -929,7 +929,7 @@ void snd0000ea80(u16 volume)
 #endif
 
 	for (i = 0; i < NUM_KEYTHINGS; i++) {
-		func00033f44(i, volume);
+		sndp_set_volume_entry(i, volume);
 	}
 }
 
@@ -1566,8 +1566,8 @@ void snd_init(void)
 			osSyncPrintf("RWI : Initialising the new and improved MP3 player\n");
 
 			mp3_init(&g_SndHeap);
-			func00037f08(0x7fff, 1);
-			func00037f5c(0, true);
+			mp3_set_vol(0x7fff, 1);
+			mp3_set_pan(0, true);
 
 			osSyncPrintf("RWI : MP3 player Initialising Done\n");
 		}
@@ -1602,11 +1602,11 @@ bool snd_is_mp3(s16 soundnum)
 bool snd_stop_mp3(s16 arg0)
 {
 	if (!g_SndDisabled && g_SndMp3Enabled) {
-		if (func00037ea4() && g_SndCurMp3.unk08 != 0) {
+		if (mp3_is_busy() && g_SndCurMp3.unk08 != 0) {
 			return false;
 		}
 
-		func00037e1c();
+		mp3_stop();
 
 		g_SndCurMp3.playing = false;
 		g_SndCurMp3.responsetimer240 = -1;
@@ -1759,14 +1759,14 @@ void snd_handle_retrace(void)
 void snd0000fe20(void)
 {
 	if (g_SndMp3Enabled) {
-		func00037e38();
+		mp3_pause();
 	}
 }
 
 void snd0000fe50(void)
 {
 	if (g_SndMp3Enabled) {
-		func00037e68();
+		mp3_unpause();
 	}
 }
 
@@ -1815,7 +1815,7 @@ void snd_tick(void)
 				&& stateptrs[i]->unk48 > 0
 				&& stateptrs[i]->unk48 < curtime) {
 			state->unk48 = 0;
-			func00033db0();
+			sndp_cleanup();
 			break;
 		}
 
@@ -1862,7 +1862,7 @@ void snd_tick(void)
 			}
 		}
 
-		if (func00037ea4() == 0 && g_SndCurMp3.playing) {
+		if (mp3_is_busy() == 0 && g_SndCurMp3.playing) {
 			if (g_SndCurMp3.unk08) {
 				mp3_play_file(g_SndCurMp3.romaddr, g_SndCurMp3.romsize);
 				return;
@@ -2054,11 +2054,11 @@ void snd_adjust(struct sndstate **handle, bool ismp3, s32 vol, s32 pan, s32 soun
 	if (ismp3) {
 		if (vol != -1) {
 			vol = vol * snd0000e9dc() / AL_VOL_FULL;
-			func00037f08(vol, true);
+			mp3_set_vol(vol, true);
 		}
 
 		if (pan != -1) {
-			func00037f5c(pan, true);
+			mp3_set_pan(pan, true);
 		}
 	}
 
@@ -2184,12 +2184,12 @@ struct sndstate *snd_start(s32 arg0, s16 sound, struct sndstate **handle, s32 vo
 
 #if VERSION >= VERSION_NTSC_1_0
 	if (sp40.id < (u32)g_NumSounds) {
-		return func00033820(arg0, sp40.id, volume, pan & 0x7f, pitch, fxmix, IS4MB() ? 0 : fxbus, handle);
+		return sndp_play_sound(arg0, sp40.id, volume, pan & 0x7f, pitch, fxmix, IS4MB() ? 0 : fxbus, handle);
 	}
 
 	return NULL;
 #else
-	return func00033820(arg0, sp40.id, volume, pan & 0x7f, pitch, fxmix, IS4MB() ? 0 : fxbus, handle);
+	return sndp_play_sound(arg0, sp40.id, volume, pan & 0x7f, pitch, fxmix, IS4MB() ? 0 : fxbus, handle);
 #endif
 }
 
@@ -2245,13 +2245,13 @@ void snd_start_mp3(s16 soundnum, s32 volume, s32 pan, s32 responseflags)
 			g_SndCurMp3.romaddr = file_get_rom_address(sp20.id);
 			g_SndCurMp3.romsize = file_get_rom_size(sp20.id);
 
-			func00037f08(volume, true);
-			func00037f5c(pan, true);
+			mp3_set_vol(volume, true);
+			mp3_set_pan(pan, true);
 
 			mp3_play_file(g_SndCurMp3.romaddr, g_SndCurMp3.romsize);
 
-			func00037f08(volume, true);
-			func00037f5c(pan, true);
+			mp3_set_vol(volume, true);
+			mp3_set_pan(pan, true);
 
 			g_SndCurMp3.sfxref.packed = sp20.packed;
 			g_SndCurMp3.playing = true;

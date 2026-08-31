@@ -282,7 +282,7 @@ bool current_player_is_menu_open_in_solo_or_mp(void)
 	return false;
 }
 
-bool func0f0f0c68(void)
+bool menu_has_no_background(void)
 {
 	if (g_MenuData.bg || g_MenuData.nextbg != 255) {
 		return false;
@@ -433,7 +433,7 @@ Gfx *menu_render_banner(Gfx *gdl, s32 x1, s32 y1, s32 x2, s32 y2, bool big, s32 
 
 u32 var80071464 = 0;
 
-struct menudfc *func0f0f1338(struct menuitem *item)
+struct menudfc *menu_find_item_redraw_info(struct menuitem *item)
 {
 	s32 i;
 
@@ -446,16 +446,16 @@ struct menudfc *func0f0f1338(struct menuitem *item)
 	return NULL;
 }
 
-void func0f0f139c(struct menuitem *item, f32 arg1)
+void menu_set_item_redraw_timer(struct menuitem *item, f32 arg1)
 {
-	struct menudfc *thing = func0f0f1338(item);
+	struct menudfc *thing = menu_find_item_redraw_info(item);
 
 	if (thing) {
 		thing->unk04 = arg1;
 		return;
 	}
 
-	thing = func0f0f1338(NULL);
+	thing = menu_find_item_redraw_info(NULL);
 
 	if (thing) {
 		thing->item = item;
@@ -463,16 +463,16 @@ void func0f0f139c(struct menuitem *item, f32 arg1)
 	}
 }
 
-void func0f0f13ec(struct menuitem *item)
+void menu_remove_item_redraw_info(struct menuitem *item)
 {
-	struct menudfc *thing = func0f0f1338(item);
+	struct menudfc *thing = menu_find_item_redraw_info(item);
 
 	if (thing) {
 		thing->item = NULL;
 	}
 }
 
-void func0f0f1418(void)
+void menu_increment_item_redraw_timers(void)
 {
 	s32 i;
 
@@ -487,7 +487,7 @@ void func0f0f1418(void)
 	}
 }
 
-void func0f0f1494(void)
+void menu_remove_all_item_redraw_info(void)
 {
 	s32 i;
 
@@ -921,7 +921,7 @@ const char var7f1b25a8[] = "IG:) style %d gbHead:%d\n";
 const char var7f1b25c4[] = "GRABBED GUN MEM!\n";
 const char var7f1b25d8[] = "Freeing challenge mem\n";
 
-void func0f0f1d6c(struct menudialogdef *dialogdef, struct menudialog *dialog, struct menu *menu)
+void dialog_init_blocks(struct menudialogdef *dialogdef, struct menudialog *dialog, struct menu *menu)
 {
 	s32 colindex = menu->colend - 1;
 	s32 rowindex = menu->rowend;
@@ -1486,7 +1486,7 @@ void menu_open_dialog(struct menudialogdef *dialogdef, struct menudialog *dialog
 		break;
 	}
 
-	func0f0f1d6c(dialogdef, dialog, menu);
+	dialog_init_blocks(dialogdef, dialog, menu);
 	dialog_init_items(dialog);
 
 	dialog->type = dialogdef->type;
@@ -1614,7 +1614,7 @@ void menu_push_dialog(struct menudialogdef *dialogdef)
 }
 
 #if VERSION >= VERSION_NTSC_1_0
-bool func0f0f3220(s32 arg0)
+bool menu_save_file(s32 arg0)
 {
 	bool save = true;
 	s32 i;
@@ -1662,7 +1662,7 @@ bool func0f0f3220(s32 arg0)
 	return save;
 }
 #else
-void func0f0f3220(s32 arg0)
+void menu_save_file(s32 arg0)
 {
 	s32 i;
 
@@ -1730,7 +1730,7 @@ void menu_close_dialog(void)
 		s32 value = g_MenuData.unk66e;
 
 		while (value >= 0) {
-			func0f0f3220(value);
+			menu_save_file(value);
 			value--;
 		}
 	}
@@ -1765,7 +1765,7 @@ void menu_pop_dialog(void)
 	menu_update_cur_frame();
 }
 
-void func0f0f3704(struct menudialogdef *dialogdef)
+void menu_replace_current_dialog(struct menudialogdef *dialogdef)
 {
 	menu_close_dialog();
 	menu_push_dialog(dialogdef);
@@ -1903,7 +1903,7 @@ Gfx *menu_render_model(Gfx *gdl, struct menumodel *menumodel, s32 modeltype)
 						if (mpheadnum < mp_get_num_heads2()) {
 							headnum = mp_get_head_id(mpheadnum);
 						} else {
-							headnum = func0f14a9f8(mpheadnum - mp_get_num_heads2());
+							headnum = phead_get_unk3a4(mpheadnum - mp_get_num_heads2());
 							headnum = mp_get_beau_head_id(headnum);
 							menumodel->perfectheadnum = (mpheadnum - mp_get_num_heads2()) & 0xff;
 						}
@@ -2321,7 +2321,7 @@ Gfx *menu_render_model(Gfx *gdl, struct menumodel *menumodel, s32 modeltype)
 
 		if (modeltype < MENUMODELTYPE_3) {
 			if (modeltype != MENUMODELTYPE_DEFAULT) {
-				gdl = func0f0d49c8(gdl);
+				gdl = ortho_end(gdl);
 				gSPMatrix(gdl++, osVirtualToPhysical(cam_get_perspective_mtxl()), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
 			} else {
 #ifdef PLATFORM_N64
@@ -2346,7 +2346,7 @@ Gfx *menu_render_model(Gfx *gdl, struct menumodel *menumodel, s32 modeltype)
 				main_override_variable("mzn", &znear);
 				main_override_variable("mzf", &zfar);
 
-				gdl = func0f0d49c8(gdl);
+				gdl = ortho_end(gdl);
 
 				vi_set_view_position(x1 * g_ScaleX, g_MenuScissorY1);
 				vi_set_fov_aspect_and_size(g_Vars.currentplayer->fovy, aspect, (x2 - x1) * g_ScaleX, g_MenuScissorY2 - g_MenuScissorY1);
@@ -2498,7 +2498,7 @@ Gfx *menu_render_model(Gfx *gdl, struct menumodel *menumodel, s32 modeltype)
 		mtx00016784();
 
 		if (modeltype < MENUMODELTYPE_3) {
-			gdl = func0f0d479c(gdl);
+			gdl = ortho_begin(gdl);
 		}
 
 		gDPPipeSync(gdl++);
@@ -3247,7 +3247,7 @@ u32 g_MpNumJoined = 1;
  * Choose which direction a new dialog should swipe from in the combat simulator
  * menus.
  */
-void func0f0f7594(s32 arg0, s32 *vdir, s32 *hdir)
+void menu_calculate_swipe_direction(s32 arg0, s32 *vdir, s32 *hdir)
 {
 	if (g_MenuData.root == MENUROOT_MPSETUP) {
 		s32 playernum = g_Menus[g_MpPlayerNum].playernum;
@@ -3518,7 +3518,7 @@ void dialog_calculate_position(struct menudialog *dialog)
 	dialog->dstheight = height;
 
 	if (dialog->swipedir != 0) {
-		func0f0f7594(dialog->swipedir, &vdir, &hdir);
+		menu_calculate_swipe_direction(dialog->swipedir, &vdir, &hdir);
 
 		if (hdir < 0) {
 			dialog->dstx = -4 - dialog->dstwidth;
@@ -3567,7 +3567,7 @@ void menu_close(void)
 	}
 }
 
-void func0f0f8120(void)
+void menu_save_and_close_all(void)
 {
 #ifdef AVOID_UB
 	u32 mpindex = g_MpPlayerNum % MAX_PLAYERS;
@@ -3580,7 +3580,7 @@ void func0f0f8120(void)
 
 	if (g_MenuData.unk66e > 0) {
 		for (i = g_MenuData.unk66e; i >= 0; i--) {
-			func0f0f3220(i);
+			menu_save_file(i);
 		}
 	}
 
@@ -3602,7 +3602,7 @@ void func0f0f8120(void)
 #endif
 }
 
-void func0f0f820c(struct menudialogdef *dialogdef, s32 root)
+void menu_save_and_push_root_dialog(struct menudialogdef *dialogdef, s32 root)
 {
 	s32 i;
 	s32 prevplayernum = g_MpPlayerNum;
@@ -3610,7 +3610,7 @@ void func0f0f820c(struct menudialogdef *dialogdef, s32 root)
 	for (i = 0; i < ARRAYCOUNT(g_Menus); i++) {
 		if (g_Menus[i].curdialog) {
 			g_MpPlayerNum = i;
-			func0f0f8120();
+			menu_save_and_close_all();
 		}
 	}
 
@@ -3641,7 +3641,7 @@ void menu_set_background(s32 bg)
 	}
 }
 
-void func0f0f8300(void)
+void menu_hide_pressstart_labels(void)
 {
 	s32 i;
 
@@ -3666,7 +3666,7 @@ void menu_push_root_dialog(struct menudialogdef *dialogdef, s32 root)
 	inputAutoLockMouse(false);
 #endif
 
-	func0f0f1494();
+	menu_remove_all_item_redraw_info();
 
 	g_MenuData.count++;
 
@@ -3743,7 +3743,7 @@ void menu_push_root_dialog(struct menudialogdef *dialogdef, s32 root)
 	}
 }
 
-void func0f0f85e0(struct menudialogdef *dialogdef, s32 root)
+void menu_push_root_dialog_and_pause(struct menudialogdef *dialogdef, s32 root)
 {
 	if (dialogdef == &g_CiMenuViaPcMenuDialog) {
 		music_start_menu();
@@ -4486,7 +4486,7 @@ void dialog_tick(struct menudialog *dialog, struct menuinputs *inputs, u32 tickf
 
 				if (mp_is_player_locked_out(g_MpPlayerNum) && (item->flags & MENUITEMFLAG_LOCKABLEMINOR)) {
 					inputsptr = &spd8;
-				} else if ((item->flags & MENUITEMFLAG_MPWEAPONSLOT) && mp_get_weapon_set() != func0f189088()) {
+				} else if ((item->flags & MENUITEMFLAG_MPWEAPONSLOT) && mp_get_weapon_set() != mp_get_custom_weaponset_slot()) {
 					inputsptr = &spd8;
 				} else if (g_MenuData.root == MENUROOT_12) {
 					inputsptr = &spd8;
@@ -4686,7 +4686,7 @@ void dialog_init_items(struct menudialog *dialog)
 	}
 }
 
-void func0f0fa6ac(void)
+void menu_consider_unpause(void)
 {
 	switch (g_MenuData.root) {
 	case MENUROOT_MAINMENU:
@@ -4739,7 +4739,7 @@ void menu_process_input(void)
 		g_AmIndex = g_Vars.currentplayernum;
 	}
 
-	func0f0f1418();
+	menu_increment_item_redraw_timers();
 
 	inputs.select = 0;
 	inputs.back = 0;
@@ -5260,13 +5260,13 @@ void menu_process_input(void)
 						&& g_Menus[g_MpPlayerNum].curdialog->definition != &g_MpReadyMenuDialog) {
 					menu_push_dialog(&g_MpReadyMenuDialog);
 				} else if (g_Menus[g_MpPlayerNum].curdialog->definition == &g_MpQuickTeamGameSetupMenuDialog) {
-					func0f17f428();
+					mp_apply_quickstart();
 				}
 			}
 			break;
 		case MENUROOT_MPPAUSE:
 			if (g_InCutscene) {
-				func0f0f8120();
+				menu_save_and_close_all();
 			}
 			g_Menus[g_MpPlayerNum].openinhibit = 10;
 			// fall-through
@@ -5276,7 +5276,7 @@ void menu_process_input(void)
 		case MENUROOT_TRAINING:
 			if (inputs.start && !starttoselect && g_Menus[g_MpPlayerNum].curdialog
 					&& (dialog->definition->flags & MENUDIALOGFLAG_IGNOREBACK) == 0) {
-				func0f0f8120();
+				menu_save_and_close_all();
 			}
 			break;
 		}
@@ -5423,7 +5423,7 @@ Gfx *menu_render(Gfx *gdl)
 	g_ScaleX = g_ViRes == VIRES_HI ? 2 : 1;
 #endif
 
-	gdl = func0f0d479c(gdl);
+	gdl = ortho_begin(gdl);
 
 	gSPDisplayList(gdl++, var800613a0);
 
@@ -5539,7 +5539,7 @@ Gfx *menu_render(Gfx *gdl)
 	// Render the health bar (player_render_health_bar may choose not to render)
 	if ((g_MenuData.bg || g_MenuData.nextbg != 255)
 			&& (!g_Vars.currentplayer->eyespy || !g_Vars.currentplayer->eyespy->active)) {
-		gdl = func0f0d49c8(gdl);
+		gdl = ortho_end(gdl);
 #ifndef PLATFORM_N64
 		gSPClearExtraGeometryModeEXT(gdl++, G_ASPECT_CENTER_EXT);
 #endif
@@ -5547,7 +5547,7 @@ Gfx *menu_render(Gfx *gdl)
 #ifndef PLATFORM_N64
 		gSPSetExtraGeometryModeEXT(gdl++, G_ASPECT_CENTER_EXT);
 #endif
-		gdl = func0f0d479c(gdl);
+		gdl = ortho_begin(gdl);
 	}
 
 	if (g_MenuData.count > 0) {
@@ -5762,7 +5762,7 @@ Gfx *menu_render(Gfx *gdl)
 	gSPClearExtraGeometryModeEXT(gdl++, G_ASPECT_MODE_EXT);
 #endif
 
-	gdl = func0f0d49c8(gdl);
+	gdl = ortho_end(gdl);
 
 	g_ScaleX = 1;
 
@@ -5835,7 +5835,7 @@ u32 menu_choose_music(void)
 	return MUSIC_PAUSEMENU;
 }
 
-bool func0f0fcbcc(void)
+bool menu_is_file_not_yet_selected(void)
 {
 	if (g_FileState == FILESTATE_UNSELECTED && g_Vars.stagenum == STAGE_CITRAINING) {
 		return true;
@@ -5893,7 +5893,7 @@ MenuDialogHandlerResult menudialog000fcd48(s32 operation, struct menudialogdef *
 		if (g_Menus[g_MpPlayerNum].curdialog
 				&& g_Menus[g_MpPlayerNum].curdialog->definition == dialogdef
 				&& joy_get_pak_state(g_Menus[g_MpPlayerNum].fm.device3) == PAKSTATE_NOPAK) {
-			func0f0f3704(&g_PakRemovedMenuDialog);
+			menu_replace_current_dialog(&g_PakRemovedMenuDialog);
 		}
 	}
 
@@ -5904,7 +5904,7 @@ MenuDialogHandlerResult menudialog000fcd48(s32 operation, struct menudialogdef *
 MenuItemHandlerResult func0f0fcdd0(s32 operation, struct menuitem *item, union handlerdata *data)
 {
 	if (operation == MENUOP_SET) {
-		func0f0f3704(&g_PakDamagedMenuDialog);
+		menu_replace_current_dialog(&g_PakDamagedMenuDialog);
 	}
 
 	return 0;
@@ -5915,9 +5915,9 @@ MenuItemHandlerResult menuhandler_repair_pak(s32 operation, struct menuitem *ite
 {
 	if (operation == MENUOP_SET) {
 		if (pak_repair(g_Menus[g_MpPlayerNum].fm.device3)) {
-			func0f0f3704(&g_PakRepairSuccessMenuDialog);
+			menu_replace_current_dialog(&g_PakRepairSuccessMenuDialog);
 		} else {
-			func0f0f3704(&g_PakRepairFailedMenuDialog);
+			menu_replace_current_dialog(&g_PakRepairFailedMenuDialog);
 		}
 	}
 
@@ -6166,7 +6166,7 @@ MenuItemHandlerResult menuhandler_warn_repair_pak(s32 operation, struct menuitem
 #if VERSION >= VERSION_NTSC_1_0
 		menu_push_dialog(&g_PakAttemptRepairMenuDialog);
 #else
-		func0f0f3704(&g_PakAttemptRepairMenuDialog);
+		menu_replace_current_dialog(&g_PakAttemptRepairMenuDialog);
 #endif
 	}
 
@@ -6270,7 +6270,7 @@ void menu_push_pak_error_dialog(s32 paknum, s32 pakerrordialog)
 	g_MpPlayerNum = prevplayernum;
 }
 
-void func0f0fd494(struct coord *pos)
+void menu_set_source_pos(struct coord *pos)
 {
 	f32 xy[2];
 	struct coord coord;
@@ -6289,7 +6289,7 @@ void func0f0fd494(struct coord *pos)
 	g_MenuData.unk5d5_05 = false;
 }
 
-void func0f0fd548(s32 arg0)
+void menu_queue_save(s32 arg0)
 {
 	g_MenuData.unk669[g_MenuData.unk66e++] = arg0;
 	g_MenuData.unk66f = 0;

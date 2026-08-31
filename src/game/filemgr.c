@@ -195,7 +195,7 @@ void filemgr_get_select_name(char *buffer, struct filelistfile *file, u32 filety
 	switch (filetype) {
 	case FILETYPE_GAME:
 	case FILETYPE_MPSETUP:
-		func0f0d564c(file->name, tmpbuffer1, false);
+		savebuffer_bitstring_to_cstring(file->name, tmpbuffer1, false);
 		break;
 	case FILETYPE_MPPLAYER:
 		// MP Player filenames have the play duration appended to the name
@@ -555,9 +555,9 @@ void filemgr_handle_success(void)
 		bossfile_save();
 
 		if (IS4MB()) {
-			func0f0f820c(&g_MainMenu4MbMenuDialog, MENUROOT_4MBMAINMENU);
+			menu_save_and_push_root_dialog(&g_MainMenu4MbMenuDialog, MENUROOT_4MBMAINMENU);
 		} else {
-			func0f0f820c(&g_CiMenuViaPcMenuDialog, MENUROOT_MAINMENU);
+			menu_save_and_push_root_dialog(&g_CiMenuViaPcMenuDialog, MENUROOT_MAINMENU);
 		}
 		break;
 	case FILEOP_READ_GAME:
@@ -701,7 +701,7 @@ MenuItemHandlerResult filemgr_reinserted_cancel_menu_handler(s32 operation, stru
 {
 	if (operation == MENUOP_SET) {
 		if (FILEOP_IS_SAVE(g_Menus[g_MpPlayerNum].fm.fileop) && g_Menus[g_MpPlayerNum].fm.fileop != FILEOP_SAVE_GAME_001) {
-			func0f0f3704(&g_FilemgrSaveElsewhereMenuDialog);
+			menu_replace_current_dialog(&g_FilemgrSaveElsewhereMenuDialog);
 		} else {
 			menu_pop_dialog();
 		}
@@ -755,7 +755,7 @@ void filemgr_retry_save(s32 context)
 		}
 
 		if (context == 2) {
-			func0f0f3704(&g_PakNotOriginalMenuDialog);
+			menu_replace_current_dialog(&g_PakNotOriginalMenuDialog);
 		}
 	} else if (filemgr_attempt_operation(device, true)) {
 		if (context == 2) {
@@ -770,12 +770,12 @@ void filemgr_retry_save(s32 context)
 			filemgr_set_device1_by_serial(g_Menus[g_MpPlayerNum].fm.deviceserial);
 
 			if (FILEOP_IS_SAVE(g_Menus[g_MpPlayerNum].fm.fileop)) {
-				func0f0f3704(&g_FilemgrSaveErrorMenuDialog);
+				menu_replace_current_dialog(&g_FilemgrSaveErrorMenuDialog);
 			} else {
 #if VERSION >= VERSION_NTSC_1_0
 				filemgr_erase_corrupt_file();
 #else
-				func0f0f3704(&g_FilemgrFileLostMenuDialog);
+				menu_replace_current_dialog(&g_FilemgrFileLostMenuDialog);
 #endif
 			}
 		}
@@ -817,7 +817,7 @@ bool filemgr_attempt_operation(s32 device, bool closeonsuccess)
 	case FILEOP_WRITE_MPPLAYER:
 		newfileid = 0;
 #if VERSION >= VERSION_NTSC_1_0
-		func0f0d5690(g_Menus[g_MpPlayerNum].fm.unke44, g_Menus[g_MpPlayerNum].fm.filename);
+		savebuffer_cstring_to_bitstring(g_Menus[g_MpPlayerNum].fm.unke44, g_Menus[g_MpPlayerNum].fm.filename);
 #endif
 		errnum = pak_save_at_guid(device,
 				g_Menus[g_MpPlayerNum].fm.fileid,
@@ -1274,7 +1274,7 @@ void filemgr_get_file_name(char *dst, struct filelistfile *file)
 	switch (g_FileLists[g_Menus[g_MpPlayerNum].fm.listnum]->filetype) {
 	case FILETYPE_GAME:
 	case FILETYPE_MPSETUP:
-		func0f0d564c(file->name, localbuffer, false);
+		savebuffer_bitstring_to_cstring(file->name, localbuffer, false);
 		break;
 	case FILETYPE_MPPLAYER:
 		mpplayerfile_get_overview(file->name, localbuffer, &playtime);

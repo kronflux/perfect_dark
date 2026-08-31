@@ -41,7 +41,7 @@ struct camerafile {
 	u8 unk9e[1024];
 };
 
-struct var800a45a0 *var800a45a0;
+struct headeditordata *headeditordata;
 u32 var800a45a4;
 struct texpool var800a45a8;
 u32 var800a45b8;
@@ -189,7 +189,7 @@ const u32 var7f1b639c[] = {0x0c1857ff};
 
 const char var7f1b63a0[] = "RWI : Cam Alloc : Guid=%d -> Total = %u (%d at %s)\n";
 
-struct var8007f8dc *var8007f8dc = NULL;
+struct headeditor *headeditor = NULL;
 struct var8007f8e0 *var8007f8e0 = NULL;
 u32 var8007f8e4 = 0x00000000;
 u32 var8007f8e8 = 0x00000008;
@@ -234,7 +234,7 @@ u32 var8007f9d0 = 0x00000000;
 /**
  * Fill the texture buffer with a linear gradient: black (left) to white (right).
  */
-void func0f149c90(struct textureconfig *tconfig)
+void camdraw_write_gradient_texture(struct textureconfig *tconfig)
 {
 	s32 x;
 	s32 y;
@@ -249,7 +249,7 @@ void func0f149c90(struct textureconfig *tconfig)
 	}
 }
 
-void *func0f149d58(u32 size, u32 line, char *file)
+void *camdraw_allocate(u32 size, u32 line, char *file)
 {
 	s32 i;
 	void *allocation;
@@ -264,39 +264,39 @@ void *func0f149d58(u32 size, u32 line, char *file)
 	allocation = mema_alloc(size);
 	var8007f9d4++;
 
-	for (i = 0; i < var800a45a0->unk37c; i++) {
-		if (var800a45a0->unk380[i] == NULL) {
+	for (i = 0; i < headeditordata->unk37c; i++) {
+		if (headeditordata->unk380[i] == NULL) {
 			// @bug? Is this meant to be writing to [i]?
 			// Otherwise it's appending to the array without increasing unk37c.
-			var800a45a0->unk380[var800a45a0->unk37c] = allocation;
-			var800a45a0->unk3f8[var800a45a0->unk37c] = size;
+			headeditordata->unk380[headeditordata->unk37c] = allocation;
+			headeditordata->unk3f8[headeditordata->unk37c] = size;
 
 			return allocation;
 		}
 	}
 
-	var800a45a0->unk380[var800a45a0->unk37c] = allocation;
-	var800a45a0->unk3f8[var800a45a0->unk37c] = size;
-	var800a45a0->unk37c++;
+	headeditordata->unk380[headeditordata->unk37c] = allocation;
+	headeditordata->unk3f8[headeditordata->unk37c] = size;
+	headeditordata->unk37c++;
 
 	return allocation;
 }
 
-void func0f149e58(u8 *arg0, u32 size)
+void camdraw_free(u8 *arg0, u32 size)
 {
 	s32 i;
 
 	var8007f9d0 -= size;
 
-	for (i = 0; i < var800a45a0->unk37c; i++) {
-		if (arg0 == NULL || arg0 == var800a45a0->unk380[i]) {
-			mema_free(var800a45a0->unk380[i], var800a45a0->unk3f8[i]);
-			var800a45a0->unk380[i] = 0;
+	for (i = 0; i < headeditordata->unk37c; i++) {
+		if (arg0 == NULL || arg0 == headeditordata->unk380[i]) {
+			mema_free(headeditordata->unk380[i], headeditordata->unk3f8[i]);
+			headeditordata->unk380[i] = 0;
 		}
 	}
 
 	if (arg0 == NULL) {
-		var800a45a0->unk37c = 0;
+		headeditordata->unk37c = 0;
 	}
 }
 
@@ -310,21 +310,21 @@ void func0f149f18(void)
 	struct var8007f8e0 *thing;
 	s32 i;
 
-	func0f14b394(func0f14a06c(-1));
+	phead_randomise_textures(phead_find(-1));
 
-	thing = func0f14a06c(-1);
+	thing = phead_find(-1);
 	thing->unk3f4_00 = false;
 
-	if (var800a45a0->unk470) {
+	if (headeditordata->unk470) {
 		for (i = 0; i < 0x4000; i++) {
-			var800a45a0->unk470[i] = rngRandom() % 255;
+			headeditordata->unk470[i] = rngRandom() % 255;
 		}
 	}
 }
 
-void func0f149fc8(s32 index)
+void camdraw_copy_editor_to_index(s32 index)
 {
-	func0f14c50c(func0f14a06c(index), func0f14a06c(-1), 1040, "camdraw.c");
+	camdraw_copy(phead_find(index), phead_find(-1), 1040, "camdraw.c");
 }
 
 const char var7f1b63e0[] = "Cam -> Dumping head vertex colour information\n";
@@ -334,51 +334,51 @@ const char var7f1b6470[] = "Cam_Tick (%d Total Slots)";
 const char var7f1b648c[] = "Current Camera Slot = %d\n";
 const char var7f1b64a8[] = "Slot %d -> Active = %d";
 
-void func0f14a00c(bool arg0)
+void phead_set_unk3f4_04(bool arg0)
 {
 	struct var8007f8e0 *thing;
 
-	thing = func0f14a06c(-1);
+	thing = phead_find(-1);
 	thing->unk3f4_04 = arg0;
 
-	thing = func0f14a06c(-2);
+	thing = phead_find(-2);
 	thing->unk3f4_04 = arg0;
 }
 
-struct var8007f8e0 *func0f14a06c(s32 index)
+struct var8007f8e0 *phead_find(s32 index)
 {
 	if (index == -1) {
-		return &var8007f8e0[var800a45a0->unk16c];
+		return &var8007f8e0[headeditordata->unk16c];
 	}
 
 	if (index == -4) {
-		return &var8007f8e0[var800a45a0->unk174];
+		return &var8007f8e0[headeditordata->unk174];
 	}
 
 	if (index == -5) {
-		return &var8007f8e0[var800a45a0->unk178];
+		return &var8007f8e0[headeditordata->unk178];
 	}
 
 	if (index == -2) {
-		return &var8007f8e0[var800a45a0->unk014[var800a45a0->unk004]];
+		return &var8007f8e0[headeditordata->unk014[headeditordata->unk004]];
 	}
 
 	if (index == -3) {
-		return &var8007f8e0[var800a45a0->unk170];
+		return &var8007f8e0[headeditordata->unk170];
 	}
 
-	return &var8007f8e0[var800a45a0->unk014[index]];
+	return &var8007f8e0[headeditordata->unk014[index]];
 }
 
-void func0f14a16c(s32 arg0)
+void editor_set_unk100(s32 arg0)
 {
-	struct var8007f8dc *thing = func0f14a20c();
+	struct headeditor *thing = camdraw_current_editor();
 	thing->unk100 = arg0;
 }
 
-bool func0f14a194(void)
+bool editor_get_unk0d4_04(void)
 {
-	return var8007f8dc[var800a45a0->unk000].unk0d4_04 & 0xff;
+	return headeditor[headeditordata->unk000].unk0d4_04 & 0xff;
 }
 
 /**
@@ -403,27 +403,27 @@ char *ph_get_colour_name(s32 colournum)
 	return lang_get(L_MISC_433 + colournum);
 }
 
-struct var8007f8dc *func0f14a20c(void)
+struct headeditor *camdraw_current_editor(void)
 {
-	return &var8007f8dc[func0f14a5a4()];
+	return &headeditor[camdraw_get_editor_index()];
 }
 
-void func0f14a240(void)
+void camdraw_init2(void)
 {
 	s32 i;
 	s32 j;
 
-	var800a45a0->unk48c = 0;
-	var800a45a0->unk484 = 0;
-	var800a45a0->unk470 = 0;
-	var800a45a0->unk474 = 0;
-	var800a45a0->unk478 = 0;
-	var800a45a0->unk47c = 0;
-	var800a45a0->unk480 = 0;
-	var800a45a0->unk37c = 0;
-	var800a45a0->unk000 = 0;
-	var800a45a0->unk004 = -1;
-	var800a45a0->unk008 = 1;
+	headeditordata->unk48c = 0;
+	headeditordata->unk484 = 0;
+	headeditordata->unk470 = 0;
+	headeditordata->unk474 = 0;
+	headeditordata->unk478 = 0;
+	headeditordata->unk47c = 0;
+	headeditordata->unk480 = 0;
+	headeditordata->unk37c = 0;
+	headeditordata->unk000 = 0;
+	headeditordata->unk004 = -1;
+	headeditordata->unk008 = 1;
 
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < 8; j++) {
@@ -438,9 +438,9 @@ void func0f14a240(void)
 	}
 }
 
-bool func0f14a2fc(s32 index, u32 line, char *file)
+bool phead_is_active(s32 index, u32 line, char *file)
 {
-	struct var8007f8e0 *thing = func0f14a06c(index);
+	struct var8007f8e0 *thing = phead_find(index);
 	return thing->unk3f4_00;
 }
 
@@ -449,16 +449,16 @@ void phead_init(void)
 	s32 i;
 
 	if (IS8MB()) {
-		u32 size1 = align16(sizeof(struct var8007f8dc) * 4);
-		u32 size2 = align16(sizeof(struct var800a45a0));
+		u32 size1 = align16(sizeof(struct headeditor) * 4);
+		u32 size2 = align16(sizeof(struct headeditordata));
 
-		var8007f8dc = memp_alloc(size1, MEMPOOL_PERMANENT);
-		var800a45a0 = memp_alloc(size2, MEMPOOL_PERMANENT);
+		headeditor = memp_alloc(size1, MEMPOOL_PERMANENT);
+		headeditordata = memp_alloc(size2, MEMPOOL_PERMANENT);
 
-		func0f14a240();
+		camdraw_init2();
 
 		for (i = 0; i < 4; i++) {
-			func0f14ad58(i);
+			editor_init(i);
 		}
 	}
 }
@@ -472,24 +472,24 @@ void phead_reset(void)
 {
 	s32 i;
 
-	var800a45a0->unk37c = 0;
+	headeditordata->unk37c = 0;
 
 	for (i = 0; i < 4; i++) {
-		var8007f8dc[i].unk0d4_03 = false;
+		headeditor[i].unk0d4_03 = false;
 	}
 }
 
-void func0f14a404(void)
+void camdraw_free_all_heads(void)
 {
-	func0f149e58(NULL, 0);
+	camdraw_free(NULL, 0);
 }
 
-void func0f14a428(void)
+void camdraw_print_head_state(void)
 {
 	s32 i;
 
 	for (i = 0; i < 22; i++) {
-		func0f14a2fc(i, 1296, "camdraw.c");
+		phead_is_active(i, 1296, "camdraw.c");
 	}
 }
 
@@ -508,48 +508,48 @@ void func0f14a488(void)
 	func0f14aed0(-1);
 
 	for (i = 0; i < 32; i++) {
-		func0f149c90(&var800a45a0->unk484[i]);
+		camdraw_write_gradient_texture(&headeditordata->unk484[i]);
 	}
 
 	for (i = 0; i < 4; i++) {
-		var8007f8dc[i].unk0f4 = 0;
+		headeditor[i].unk0f4 = 0;
 		pak0f11d478(i);
 	}
 }
 
-void func0f14a52c(void)
+void camdraw_start_gbpaks(void)
 {
 	s32 i;
 
 	for (i = 0; i < 4; i++) {
-		var8007f8dc[i].unk0d4_03 = true;
+		headeditor[i].unk0d4_03 = true;
 	}
 }
 
-void func0f14a560(void)
+void camdraw_stop_gbpaks(void)
 {
 	s32 i;
 
 	for (i = 0; i < 4; i++) {
-		var8007f8dc[i].unk0d4_03 = false;
+		headeditor[i].unk0d4_03 = false;
 	}
 }
 
-void func0f14a594(s32 arg0)
+void camdraw_set_editor_index(s32 arg0)
 {
-	var800a45a0->unk000 = arg0;
+	headeditordata->unk000 = arg0;
 }
 
-s32 func0f14a5a4(void)
+s32 camdraw_get_editor_index(void)
 {
-	return var800a45a0->unk000;
+	return headeditordata->unk000;
 }
 
 void func0f14a5b4(s32 index)
 {
-	var800a45a0->unk004 = index;
+	headeditordata->unk004 = index;
 
-	func0f14b394(func0f14a06c(index));
+	phead_randomise_textures(phead_find(index));
 }
 
 void func0f14a5e4(void)
@@ -560,48 +560,48 @@ void func0f14a5e4(void)
 void func0f14a610(void)
 {
 	func0f14def0(-1, 1415, "camdraw.c");
-	func0f14c50c(func0f14a06c(-2), func0f14a06c(-1), 1416, "camdraw.c");
+	camdraw_copy(phead_find(-2), phead_find(-1), 1416, "camdraw.c");
 }
 
 s32 func0f14a668(void)
 {
-	return var800a45a0->unk004;
+	return headeditordata->unk004;
 }
 
 void func0f14a678(void)
 {
-	func0f14c50c(func0f14a06c(-2), func0f14a06c(-1), 1433, "camdraw.c");
+	camdraw_copy(phead_find(-2), phead_find(-1), 1433, "camdraw.c");
 }
 
-void func0f14a6bc(void)
+void phead_undo(void)
 {
-	func0f14c50c(func0f14a06c(-4), func0f14a06c(-1), 1441, "camdraw.c");
-	func0f14c50c(func0f14a06c(-1), func0f14a06c(-3), 1442, "camdraw.c");
-	func0f14c50c(func0f14a06c(-3), func0f14a06c(-4), 1443, "camdraw.c");
+	camdraw_copy(phead_find(-4), phead_find(-1), 1441, "camdraw.c");
+	camdraw_copy(phead_find(-1), phead_find(-3), 1442, "camdraw.c");
+	camdraw_copy(phead_find(-3), phead_find(-4), 1443, "camdraw.c");
 }
 
 const char var7f1b6584[] = "Cam_CopyEditorToUndo\n";
 
 void func0f14a760(void)
 {
-	func0f14c50c(func0f14a06c(-3), func0f14a06c(-1), 1452, "camdraw.c");
+	camdraw_copy(phead_find(-3), phead_find(-1), 1452, "camdraw.c");
 }
 
 const char var7f1b65a8[] = "Cam_CopyUndoToEditor\n";
 
 void func0f14a7a4(void)
 {
-	func0f14c50c(func0f14a06c(-1), func0f14a06c(-3), 1461, "camdraw.c");
+	camdraw_copy(phead_find(-1), phead_find(-3), 1461, "camdraw.c");
 }
 
-void func0f14a7e8(s32 index)
+void camdraw_copy_index_to_editor(s32 index)
 {
-	func0f14c50c(func0f14a06c(-1), func0f14a06c(index), 1470, "camdraw.c");
+	camdraw_copy(phead_find(-1), phead_find(index), 1470, "camdraw.c");
 }
 
 void func0f14a830(void)
 {
-	struct var8007f8dc *thing = func0f14a20c();
+	struct headeditor *thing = camdraw_current_editor();
 
 	if (thing->unk0d4_00) {
 		thing->unk0d4_00 = false;
@@ -616,28 +616,28 @@ void func0f14a830(void)
 
 struct textureconfig *func0f14a89c(s32 index)
 {
-	struct var8007f8e0 *thing = func0f14a06c(index);
+	struct var8007f8e0 *thing = phead_find(index);
 
 	return &thing->unk004;
 }
 
-bool func0f14a8c0(void)
+bool editor_get_unk0d4_00(void)
 {
-	struct var8007f8dc *thing = func0f14a20c();
+	struct headeditor *thing = camdraw_current_editor();
 
 	return thing->unk0d4_00;
 }
 
-bool func0f14a8e8(void)
+bool editor_is_autocalibrating(void)
 {
-	struct var8007f8dc *thing = func0f14a20c();
+	struct headeditor *thing = camdraw_current_editor();
 
 	return thing->unk0f8 == 0 ? false : true;
 }
 
-void func0f14a91c(s32 arg0)
+void phead_set_unk3bc(s32 arg0)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 
 	thing->unk3bc = arg0;
 
@@ -647,58 +647,58 @@ void func0f14a91c(s32 arg0)
 const char var7f1b65f0[] = "Cam -> Setting current hair colour to %s\n";
 const char var7f1b661c[] = "Cam -> Setting current face colour to %s\n";
 
-void func0f14a95c(void)
+void phead_reset_unk3bc(void)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 
 	thing->unk3bc = 0x80;
 }
 
-s32 func0f14a984(void)
+s32 phead_get_unk3bc(void)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 
 	return thing->unk3bc;
 }
 
-void func0f14a9a8(s32 arg0)
+void phead_set_unk3a4(s32 arg0)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 
 	thing->unk3a4 = arg0;
 }
 
-void func0f14a9d4(void)
+void phead_reset_unk3a4(void)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 
 	thing->unk3a4 = 0;
 }
 
-s32 func0f14a9f8(s32 index)
+s32 phead_get_unk3a4(s32 index)
 {
-	struct var8007f8e0 *thing = func0f14a06c(index);
+	struct var8007f8e0 *thing = phead_find(index);
 
 	return thing->unk3a4;
 }
 
-void func0f14aa1c(s32 arg0)
+void phead_set_unk3b8(s32 arg0)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 
 	thing->unk3b8 = arg0;
 }
 
-void func0f14aa48(void)
+void phead_reset_unk3b8(void)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 
 	thing->unk3b8 = 6;
 }
 
-s32 func0f14aa70(void)
+s32 phead_get_unk3b8(void)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 
 	return thing->unk3b8;
 }
@@ -709,77 +709,77 @@ void func0f14aa94(s32 colournum)
 
 	ph_get_colour_name(colournum);
 
-	thing = func0f14a06c(-1);
+	thing = phead_find(-1);
 	thing->colournum = colournum;
 }
 
-void func0f14aac4(void)
+void phead_reset_colournum(void)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 
 	thing->colournum = 0;
 }
 
-s32 func0f14aae8(void)
+s32 phead_get_colournum(void)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 
 	return thing->colournum;
 }
 
-void func0f14ab0c(s32 stylenum)
+void phead_set_stylenum(s32 stylenum)
 {
 	struct var8007f8e0 *thing;
 
 	ph_get_style_name(stylenum);
 
-	thing = func0f14a06c(-1);
+	thing = phead_find(-1);
 	thing->stylenum = stylenum;
 }
 
-void func0f14ab3c(void)
+void phead_reset_stylenum(void)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 	thing->stylenum = 0;
 }
 
-s32 func0f14ab60(void)
+s32 phead_get_stylenum(void)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 	return thing->stylenum;
 }
 
-void func0f14ab84(s32 arg0)
+void phead_set_unk3b4(s32 arg0)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 	thing->unk3b4 = arg0;
 }
 
-s32 func0f14abb0(void)
+s32 phead_get_unk3b4(void)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 	return thing->unk3b4;
 }
 
-void func0f14abd4(s32 index, s32 arg1)
+void editor_set_unk06c(s32 index, s32 arg1)
 {
-	var8007f8dc[index].unk06c = arg1;
+	headeditor[index].unk06c = arg1;
 }
 
-s32 func0f14abf4(s32 index)
+s32 editor_get_unk06c(s32 index)
 {
-	return var8007f8dc[index].unk06c;
+	return headeditor[index].unk06c;
 }
 
-bool func0f14ac14(void)
+bool phead_get_unk3f4_02(void)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 	return thing->unk3f4_02;
 }
 
-void func0f14ac3c(bool arg0)
+void phead_set_unk3f4_02(bool arg0)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 	thing->unk3f4_02 = arg0;
 
 	func0f14def0(-1, 1681, "camdraw.c");
@@ -789,13 +789,13 @@ const char var7f1b6654[] = "Cam_SetAutoDeArtefact -> State = %d\n";
 
 bool func0f14ac90(void)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 	return thing->unk3f4_01;
 }
 
-void func0f14acb8(bool arg0)
+void phead_set_autodeartefact(bool arg0)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 
 	if (arg0) {
 		thing->unk3f4_01 = true;
@@ -806,22 +806,22 @@ void func0f14acb8(bool arg0)
 	func0f14def0(-1, 1699, "camdraw.c");
 }
 
-u16 func0f14ad14(s32 device)
+u16 editor_get_unk05c(s32 device)
 {
-	return var8007f8dc[device].unk05c & 0xffff;
+	return headeditor[device].unk05c & 0xffff;
 }
 
-s32 func0f14ad38(s32 device)
+s32 editor_get_unk060(s32 device)
 {
-	return var8007f8dc[device].unk060;
+	return headeditor[device].unk060;
 }
 
 const char var7f1b6688[] = "Cam_ClearCameraLoadBuffer -> Camera=%d\n";
 const char var7f1b66b0[] = "Cam_StartTemp : Need %u bytes for temp cam images buffer\n";
 
-void func0f14ad58(s32 index)
+void editor_init(s32 index)
 {
-	struct var8007f8dc *thing = &var8007f8dc[index];
+	struct headeditor *thing = &headeditor[index];
 
 	thing->unk000 = 0;
 	thing->unk004 = 1.0f;
@@ -874,9 +874,9 @@ void func0f14ad58(s32 index)
 	thing->unk07c = 0;
 }
 
-bool func0f14aea0(s32 device)
+bool editor_needs_gbpak(s32 device)
 {
-	return var8007f8dc[device].unk0d4_03;
+	return headeditor[device].unk0d4_03;
 }
 
 void func0f14aec8(void)
@@ -899,7 +899,7 @@ void func0f14aee0(void)
 	s32 i;
 	s32 j;
 
-	if (var800a45a0->unk484 == NULL) {
+	if (headeditordata->unk484 == NULL) {
 		struct textureconfig tconfig;
 		u8 *ptr;
 		s32 texturesize;
@@ -909,41 +909,41 @@ void func0f14aee0(void)
 
 		func0f14c7dc(&tconfig);
 
-		texturesize = align32(func0f14c814(&tconfig));
+		texturesize = align32(camdraw_get_texture_size(&tconfig));
 
 		totalsize = align16(sizeof(struct textureconfig) * count);
 		totalsize += align16(texturesize * count);
 
 		ptr = memp_alloc(totalsize, MEMPOOL_STAGE);
 
-		var800a45a0->unk484 = (struct textureconfig *)ptr;
+		headeditordata->unk484 = (struct textureconfig *)ptr;
 		ptr += sizeof(struct textureconfig) * count;
 
 		for (i = 0; i < count; i++) {
-			func0f14c7dc(&var800a45a0->unk484[i]);
-			var800a45a0->unk484[i].textureptr = ptr;
+			func0f14c7dc(&headeditordata->unk484[i]);
+			headeditordata->unk484[i].textureptr = ptr;
 			ptr += texturesize;
 		}
 
 		for (i = 0; i < count; i++) {
-			func0f149c90(&var800a45a0->unk484[i]);
+			camdraw_write_gradient_texture(&headeditordata->unk484[i]);
 		}
 
-		var800a45a0->unk488 = var800a45a0->unk484 + 32;
+		headeditordata->unk488 = headeditordata->unk484 + 32;
 	}
 
-	var800a45a0->unk37c = 0;
+	headeditordata->unk37c = 0;
 
-	var800a45a0->unk470 = func0f149d58(0x4000, 1915, "camdraw.c");
-	var800a45a0->unk474 = func0f149d58(0x10000, 1916, "camdraw.c");
-	var800a45a0->unk478 = func0f149d58(0x10000, 1917, "camdraw.c");
-	var800a45a0->unk47c = func0f149d58(0x78, 1918, "camdraw.c");
-	var800a45a0->unk480 = func0f149d58(0x1000, 1919, "camdraw.c");
+	headeditordata->unk470 = camdraw_allocate(0x4000, 1915, "camdraw.c");
+	headeditordata->unk474 = camdraw_allocate(0x10000, 1916, "camdraw.c");
+	headeditordata->unk478 = camdraw_allocate(0x10000, 1917, "camdraw.c");
+	headeditordata->unk47c = camdraw_allocate(0x78, 1918, "camdraw.c");
+	headeditordata->unk480 = camdraw_allocate(0x1000, 1919, "camdraw.c");
 
 	for (i = 0; i < 4; i++) {
-		struct var8007f8dc *thing = &var8007f8dc[i];
-		thing->unk0dc = (u32 *)var800a45a0->unk47c;
-		thing->unk0d8 = var800a45a0->unk480;
+		struct headeditor *thing = &headeditor[i];
+		thing->unk0dc = (u32 *)headeditordata->unk47c;
+		thing->unk0d8 = headeditordata->unk480;
 		thing->unk07c = -1;
 		thing->unk078 = 0;
 
@@ -959,7 +959,7 @@ void func0f14aee0(void)
 		}
 	}
 
-	func0f14a594(0);
+	camdraw_set_editor_index(0);
 }
 
 const char var7f1b6728[] = "Camera -> Cam_Start for Camera %d\n";
@@ -970,23 +970,23 @@ const char var7f1b67a8[] = "Camera -> CD_DeleteSlot - Dumping slot %d\n";
 
 void func0f14b150(void)
 {
-	var800a45a0->unk48c = 0;
+	headeditordata->unk48c = 0;
 
-	func0f14b178();
+	camdraw_finish();
 }
 
-void func0f14b178(void)
+void camdraw_finish(void)
 {
 	s32 i;
 
-	func0f149e58(var800a45a0->unk470, 0x4000);
-	func0f149e58(var800a45a0->unk474, 0x10000);
-	func0f149e58(var800a45a0->unk478, 0x10000);
-	func0f149e58(var800a45a0->unk47c, 0x78);
-	func0f149e58(var800a45a0->unk480, 0x1000);
+	camdraw_free(headeditordata->unk470, 0x4000);
+	camdraw_free(headeditordata->unk474, 0x10000);
+	camdraw_free(headeditordata->unk478, 0x10000);
+	camdraw_free(headeditordata->unk47c, 0x78);
+	camdraw_free(headeditordata->unk480, 0x1000);
 
 	for (i = 0; i < 4; i++) {
-		struct var8007f8dc *thing = &var8007f8dc[i];
+		struct headeditor *thing = &headeditor[i];
 
 		thing->unk0d4_03 = false;
 		thing->unk0dc = NULL;
@@ -994,7 +994,7 @@ void func0f14b178(void)
 	}
 }
 
-void func0f14b228(struct var8007f8e0 *arg0)
+void phead_set_defaults(struct var8007f8e0 *arg0)
 {
 	s32 i;
 
@@ -1052,35 +1052,35 @@ void func0f14b358(void)
 
 void func0f14b360(s32 index)
 {
-	struct var8007f8e0 *thing = func0f14a06c(index);
+	struct var8007f8e0 *thing = phead_find(index);
 
-	func0f14b228(thing);
-	func0f14b394(thing);
+	phead_set_defaults(thing);
+	phead_randomise_textures(thing);
 }
 
-void func0f14b394(struct var8007f8e0 *arg0)
+void phead_randomise_textures(struct var8007f8e0 *arg0)
 {
 	s32 size;
 	s32 i;
 
-	size = align32(func0f14c814(&arg0->unk004));
+	size = align32(camdraw_get_texture_size(&arg0->unk004));
 
 	for (i = 0; i < size; i++) {
 		arg0->unk004.textureptr[i] = rngRandom() % 0xff;
 	}
 
-	size = align32(func0f14c814(&arg0->unk010));
+	size = align32(camdraw_get_texture_size(&arg0->unk010));
 
 	for (i = 0; i < size; i++) {
 		arg0->unk010.textureptr[i] = rngRandom() % 0xff;
 	}
 
-	func0f14b228(arg0);
+	phead_set_defaults(arg0);
 }
 
 bool func0f14b484(s32 index)
 {
-	struct var8007f8dc *thing = &var8007f8dc[index];
+	struct headeditor *thing = &headeditor[index];
 
 	thing->unk004 = var8007f8e8 * 0.01f;
 	thing->unk008 = var8007f8ec * 0.01f;
@@ -1172,7 +1172,7 @@ bool func0f14b484(s32 index)
 
 void func0f14b8ac(s32 index)
 {
-	struct var8007f8dc *thing = &var8007f8dc[index];
+	struct headeditor *thing = &headeditor[index];
 
 	main_override_variable("kg", &var8007f8e8);
 	main_override_variable("Kp", &var8007f8ec);
@@ -1183,72 +1183,72 @@ void func0f14b8ac(s32 index)
 	main_override_variable("aim", &var8007f900);
 
 	if (thing->unk0d4_00) {
-		func0f14cf6c();
+		editor_stop_autocalibrate();
 		return;
 	}
 
-	func0f14a95c();
+	phead_reset_unk3bc();
 
-	if (pak0f11d3f8(func0f14a5a4())) {
-		pak0f11d620(func0f14a5a4());
+	if (pak0f11d3f8(camdraw_get_editor_index())) {
+		pak0f11d620(camdraw_get_editor_index());
 
-		if (thing->unk0f8 == 0 && var8007f8dc[var800a45a0->unk000].unk0d4_04 == false) {
-			func0f14e790(var800a45a0->unk470);
-			func0f14a16c(1);
-			func0f14bc04();
+		if (thing->unk0f8 == 0 && headeditor[headeditordata->unk000].unk0d4_04 == false) {
+			func0f14e790(headeditordata->unk470);
+			editor_set_unk100(1);
+			editor_make_textures();
 			return;
 		}
 
-		switch (pak_get_unk008(func0f14a5a4())) {
+		switch (pak_get_unk008(camdraw_get_editor_index())) {
 		case PAK008_12:
-			func0f14a95c();
-			func0f14aa48();
-			func0f14e790(var800a45a0->unk470);
-			func0f14cf6c();
-			pak0f11e3bc(func0f14a5a4());
-			func0f14a16c(1);
-			func0f14bc04();
+			phead_reset_unk3bc();
+			phead_reset_unk3b8();
+			func0f14e790(headeditordata->unk470);
+			editor_stop_autocalibrate();
+			pak0f11e3bc(camdraw_get_editor_index());
+			editor_set_unk100(1);
+			editor_make_textures();
 			break;
 		case PAK008_01:
-			pak0f11d4dc(func0f14a5a4());
+			pak0f11d4dc(camdraw_get_editor_index());
 			break;
 		case PAK008_11:
-			pak0f11d9c4(func0f14a5a4(), var800a45a0->unk470, 0, 0);
-			func0f14d064(index, var800a45a0->unk470);
-			pak0f11d478(func0f14a5a4());
+			pak0f11d9c4(camdraw_get_editor_index(), headeditordata->unk470, 0, 0);
+			editor_autocalibrate(index, headeditordata->unk470);
+			pak0f11d478(camdraw_get_editor_index());
 
 			if (thing->unk0f8 == 0) {
-				func0f14a16c(3);
-				func0f14bc04();
+				editor_set_unk100(3);
+				editor_make_textures();
 
-				if (var8007f8dc[var800a45a0->unk000].unk0d4_04) {
-					struct var8007f8e0 *thing2 = func0f14a06c(-1);
+				if (headeditor[headeditordata->unk000].unk0d4_04) {
+					struct var8007f8e0 *thing2 = phead_find(-1);
 					thing2->unk3f4_00 = true;
 				}
 			} else {
-				func0f14a16c(4);
-				func0f14bc04();
+				editor_set_unk100(4);
+				editor_make_textures();
 			}
 
-			if (!func0f14a8e8()) {
-				func0f14b484(var800a45a0->unk000);
+			if (!editor_is_autocalibrating()) {
+				func0f14b484(headeditordata->unk000);
 			}
 			break;
 		}
 	} else {
-		func0f14cf6c();
-		func0f14e7e0(var800a45a0->unk470);
-		func0f14a16c(3);
-		func0f14bc04();
+		editor_stop_autocalibrate();
+		func0f14e7e0(headeditordata->unk470);
+		editor_set_unk100(3);
+		editor_make_textures();
 	}
 }
 
 const char var7f1b67f8[] = "CAM : Cam_MakeTextures\n";
 
-void func0f14bc04(void)
+void editor_make_textures(void)
 {
-	struct var8007f8e0 *thing1 = func0f14a06c(-1);
-	struct var8007f8dc *thing2 = func0f14a20c();
+	struct var8007f8e0 *thing1 = phead_find(-1);
+	struct headeditor *thing2 = camdraw_current_editor();
 
 	thing1->unk3f4_02 = true;
 
@@ -1257,26 +1257,26 @@ void func0f14bc04(void)
 		break;
 	case 1:
 		thing1->unk3f4_02 = false;
-		func0f14d714(var800a45a0->unk470, thing1->unk01c);
+		editor_make_texture_type4(headeditordata->unk470, thing1->unk01c);
 		break;
 	case 4:
-		func0f14d714(var800a45a0->unk470, thing1->unk01c);
+		editor_make_texture_type4(headeditordata->unk470, thing1->unk01c);
 		break;
 	case 2:
-		func0f14d2c8(var800a45a0->unk470, thing1->unk01c);
+		editor_make_texture_type2(headeditordata->unk470, thing1->unk01c);
 		break;
 	case 3:
-		func0f14d4f0(var800a45a0->unk470, thing1->unk01c);
+		editor_make_texture_type3(headeditordata->unk470, thing1->unk01c);
 		break;
 	case 5:
-		func0f14ff94(thing1);
+		editor_make_texture_type5(thing1);
 		break;
 	}
 
 	func0f14def0(-1, 2433, "camdraw.c");
 
 	if (thing2->unk100 != 4) {
-		phead0f14dac0(var800a45a0->unk470, &thing1->unk010);
+		phead0f14dac0(headeditordata->unk470, &thing1->unk010);
 	}
 
 	thing1->unk3f4_03 = false;
@@ -1317,17 +1317,17 @@ const char var7f1b6cd8[] = "Cam_BuildFaceTexture (slot=%d): %d of %s\n";
 
 void func0f14bd34(s32 index)
 {
-	struct var8007f8dc *thing = &var8007f8dc[index];
+	struct headeditor *thing = &headeditor[index];
 
 	if (thing->unk080 != -1) {
-		pak0f1171b4(func0f14a5a4(), PAK00C_03, 0);
-		pak0f11d540(func0f14a5a4(), thing->unk0b6[thing->unk080]);
+		pak0f1171b4(camdraw_get_editor_index(), PAK00C_03, 0);
+		pak0f11d540(camdraw_get_editor_index(), thing->unk0b6[thing->unk080]);
 	}
 }
 
 void func0f14bdbc(s32 index)
 {
-	struct var8007f8dc *thing = &var8007f8dc[index];
+	struct headeditor *thing = &headeditor[index];
 	struct var8007f8e0 *thing2;
 	s32 i;
 	s32 value;
@@ -1343,14 +1343,14 @@ void func0f14bdbc(s32 index)
 		thing->unk0b6[i] = 0xff;
 	}
 
-	value = var8007f8dc[index].unk0f4;
+	value = headeditor[index].unk0f4;
 
 	if (value == 4 || value == 5) {
 		thing->unk0f4 = 6;
 		g_MpPlayerNum = index;
 		menu_set_banner(-1, false);
 
-		thing2 = func0f14a06c(-1);
+		thing2 = phead_find(-1);
 		thing2->unk3f4_00 = false;
 
 		g_MpPlayerNum = index;
@@ -1359,16 +1359,16 @@ void func0f14bdbc(s32 index)
 
 		g_MpPlayerNum = 0;
 	} else {
-		pak0f11e3bc(func0f14a5a4());
+		pak0f11e3bc(camdraw_get_editor_index());
 
 		thing->unk0f4 = 0;
 	}
 }
 
-void func0f14bec8(s32 index)
+void editor_cycle_handle_read(s32 index)
 {
-	struct var8007f8dc *thing = &var8007f8dc[index];
-	struct var8007f8e0 *thing2 = func0f14a06c(-1);
+	struct headeditor *thing = &headeditor[index];
+	struct var8007f8e0 *thing2 = phead_find(-1);
 	struct textureconfig *thing3;
 	s32 i;
 
@@ -1402,26 +1402,26 @@ void func0f14bec8(s32 index)
 
 		for (i = 0; i < ARRAYCOUNT(thing->unk0b6); i++);
 
-		pak0f1171b4(func0f14a5a4(), PAK00C_03, 0);
-		pak0f11d478(func0f14a5a4());
+		pak0f1171b4(camdraw_get_editor_index(), PAK00C_03, 0);
+		pak0f11d478(camdraw_get_editor_index());
 		break;
 	case 3:
-		pak0f11d9c4(func0f14a5a4(), var800a45a0->unk470, 0, 1);
-		thing3 = &var800a45a0->unk484[thing->unk080];
-		func0f14a16c(2);
-		func0f14bc04();
-		func0f14c75c(thing3, &thing2->unk004);
+		pak0f11d9c4(camdraw_get_editor_index(), headeditordata->unk470, 0, 1);
+		thing3 = &headeditordata->unk484[thing->unk080];
+		editor_set_unk100(2);
+		editor_make_textures();
+		camdraw_copy_texture(thing3, &thing2->unk004);
 		thing->unk0dc[thing->unk080] = 1;
-		pak0f11d478(func0f14a5a4());
+		pak0f11d478(camdraw_get_editor_index());
 		break;
 	case 4:
-		pak0f11d478(func0f14a5a4());
+		pak0f11d478(camdraw_get_editor_index());
 		break;
 	case 5:
-		pak0f11d9c4(func0f14a5a4(), var800a45a0->unk470, 0, 1);
-		func0f14a16c(3);
-		func0f14bc04();
-		pak0f11d478(func0f14a5a4());
+		pak0f11d9c4(camdraw_get_editor_index(), headeditordata->unk470, 0, 1);
+		editor_set_unk100(3);
+		editor_make_textures();
+		pak0f11d478(camdraw_get_editor_index());
 		g_MpPlayerNum = index;
 		menu_set_banner(-1, false);
 		func0f14a678();
@@ -1439,15 +1439,15 @@ void func0f14bec8(s32 index)
 
 void func0f14c1cc(s32 index)
 {
-	struct var8007f8dc *thing = &var8007f8dc[index];
-	s32 count = func0f14f008(index);
+	struct headeditor *thing = &headeditor[index];
+	s32 count = editor_get_num_valid_images(index);
 	s32 max = count / 2 + 1;
 	s32 i;
 
 	switch (thing->unk0f4) {
 	case 0:
-		pak0f1171b4(func0f14a5a4(), PAK00C_00, 0);
-		pak0f11d5b0(func0f14a5a4());
+		pak0f1171b4(camdraw_get_editor_index(), PAK00C_00, 0);
+		pak0f11d5b0(camdraw_get_editor_index());
 		thing->unk0f4 = 1;
 		break;
 	case 2:
@@ -1493,10 +1493,10 @@ void func0f14c1cc(s32 index)
 
 void func0f14c3a4(s32 index)
 {
-	struct var8007f8dc *thing = &var8007f8dc[index];
+	struct headeditor *thing = &headeditor[index];
 	s32 i;
 
-	if (pak0f11d3f8(func0f14a5a4()) == 0) {
+	if (pak0f11d3f8(camdraw_get_editor_index()) == 0) {
 		for (i = 0; i < 30; i++) {
 			thing->unk0dc[i] = 0;
 		}
@@ -1507,14 +1507,14 @@ void func0f14c3a4(s32 index)
 			thing->unk0b6[i] = 0xff;
 		}
 	} else {
-		pak0f11d620(func0f14a5a4());
+		pak0f11d620(camdraw_get_editor_index());
 
-		switch (pak_get_unk008(func0f14a5a4())) {
+		switch (pak_get_unk008(camdraw_get_editor_index())) {
 		case PAK008_01:
 			func0f14c1cc(index);
 			break;
 		case PAK008_11:
-			func0f14bec8(index);
+			editor_cycle_handle_read(index);
 			break;
 		case PAK008_12:
 			func0f14bdbc(index);
@@ -1523,15 +1523,15 @@ void func0f14c3a4(s32 index)
 	}
 }
 
-void func0f14c4c0(s32 index)
+void editor_begin_download(s32 index)
 {
-	var8007f8dc[index].unk0f4 = 4;
+	headeditor[index].unk0f4 = 4;
 	g_MpPlayerNum = index;
 
 	menu_set_banner(MENUBANNER_DOWNLOADINGIMAGE, false);
 }
 
-void func0f14c50c(struct var8007f8e0 *dst, struct var8007f8e0 *src, u32 line, char *file)
+void camdraw_copy(struct var8007f8e0 *dst, struct var8007f8e0 *src, u32 line, char *file)
 {
 	struct var8007f8e0 *thing;
 	s32 i;
@@ -1587,10 +1587,10 @@ void func0f14c50c(struct var8007f8e0 *dst, struct var8007f8e0 *src, u32 line, ch
 		}
 	}
 
-	func0f14c75c(&dst->unk004, &src->unk004);
+	camdraw_copy_texture(&dst->unk004, &src->unk004);
 
 	if (dst->unk010.textureptr && src->unk010.textureptr) {
-		func0f14c75c(&dst->unk010, &src->unk010);
+		camdraw_copy_texture(&dst->unk010, &src->unk010);
 	}
 
 	if (src->unk3f4_03) {
@@ -1600,12 +1600,12 @@ void func0f14c50c(struct var8007f8e0 *dst, struct var8007f8e0 *src, u32 line, ch
 	}
 }
 
-void func0f14c75c(struct textureconfig *arg0, struct textureconfig *arg1)
+void camdraw_copy_texture(struct textureconfig *arg0, struct textureconfig *arg1)
 {
 	s32 i;
-	u32 size = align32(func0f14c814(arg0));
+	u32 size = align32(camdraw_get_texture_size(arg0));
 
-	align32(func0f14c814(arg1));
+	align32(camdraw_get_texture_size(arg1));
 
 	for (i = 0; i < size; i++) {
 		arg0->textureptr[i] = arg1->textureptr[i];
@@ -1629,7 +1629,7 @@ void func0f14c80c(void)
 	// empty
 }
 
-u32 func0f14c814(struct textureconfig *tconfig)
+u32 camdraw_get_texture_size(struct textureconfig *tconfig)
 {
 	u32 size = tconfig->width * tconfig->height;
 
@@ -1650,7 +1650,7 @@ u32 func0f14c814(struct textureconfig *tconfig)
 	return size;
 }
 
-Gfx *func0f14c870(Gfx *gdl, struct textureconfig *tconfig, f32 *arg2, f32 arg3, f32 arg4)
+Gfx *phead_draw_texture(Gfx *gdl, struct textureconfig *tconfig, f32 *arg2, f32 arg3, f32 arg4)
 {
 	u32 x = (arg2[0] + 0.5f) * 4.0f;
 	u32 y = (arg2[1] + 0.5f) * 4.0f;
@@ -1684,74 +1684,74 @@ Gfx *func0f14c870(Gfx *gdl, struct textureconfig *tconfig, f32 *arg2, f32 arg3, 
 	return gdl;
 }
 
-void func0f14cdb8(s32 index, u8 *arg1)
+void editor_recalc_intensity_table(s32 index, u8 *arg1)
 {
 	s32 count;
 	s32 i;
 	s32 j;
 
-	var8007f8dc[index].unk04c = 0;
+	headeditor[index].unk04c = 0;
 
 	count = 0;
 
 	for (i = 0x1000; i < 0x3000; i += 0x80) {
 		for (j = 0x20; j < 0x60; j++) {
 			count++;
-			var8007f8dc[index].unk04c += arg1[i + j];
+			headeditor[index].unk04c += arg1[i + j];
 		}
 	}
 
 	if (count > 0) {
-		var8007f8dc[index].unk04c /= count;
+		headeditor[index].unk04c /= count;
 		return;
 	}
 
-	var8007f8dc[index].unk04c = 0;
+	headeditor[index].unk04c = 0;
 }
 
-void func0f14ce84(void)
+void editor_reset_autocalibrate(void)
 {
-	if (pak0f11d3f8(func0f14a5a4())) {
-		if (pak_get_unk008(func0f14a5a4()) != PAK008_12) {
-			var8007f8dc[func0f14a5a4()].unk0f8 = 1;
-			var8007f8dc[func0f14a5a4()].unk0d4_00 = false;
+	if (pak0f11d3f8(camdraw_get_editor_index())) {
+		if (pak_get_unk008(camdraw_get_editor_index()) != PAK008_12) {
+			headeditor[camdraw_get_editor_index()].unk0f8 = 1;
+			headeditor[camdraw_get_editor_index()].unk0d4_00 = false;
 
-			func0f14a95c();
-			func0f14aa48();
-			func0f14aac4();
-			func0f14ab3c();
+			phead_reset_unk3bc();
+			phead_reset_unk3b8();
+			phead_reset_colournum();
+			phead_reset_stylenum();
 		} else {
-			pak0f11e3bc(func0f14a5a4());
+			pak0f11e3bc(camdraw_get_editor_index());
 		}
 	}
 }
 
-void func0f14cf6c(void)
+void editor_stop_autocalibrate(void)
 {
 	g_MpPlayerNum = 0;
 
 	menu_set_banner(-1, false);
 
-	if (var8007f8dc[func0f14a5a4()].unk0f8) {
-		switch (var8007f8dc[func0f14a5a4()].unk0f8) {
+	if (headeditor[camdraw_get_editor_index()].unk0f8) {
+		switch (headeditor[camdraw_get_editor_index()].unk0f8) {
 		case 2:
 		case 3:
 		case 4:
 		case 5:
 		case 6:
-			pak0f1171b4(func0f14a5a4(), PAK00C_03, 0);
+			pak0f1171b4(camdraw_get_editor_index(), PAK00C_03, 0);
 			g_MpPlayerNum = 0;
 			menu_set_banner(-1, false);
 			break;
 		}
 
-		var8007f8dc[func0f14a5a4()].unk0f8 = 0;
+		headeditor[camdraw_get_editor_index()].unk0f8 = 0;
 	}
 }
 
-void func0f14d064(s32 index, u8 *arg1)
+void editor_autocalibrate(s32 index, u8 *arg1)
 {
-	struct var8007f8dc *thing = &var8007f8dc[index];
+	struct headeditor *thing = &headeditor[index];
 	f32 a;
 	f32 b;
 
@@ -1761,14 +1761,14 @@ void func0f14d064(s32 index, u8 *arg1)
 		thing->unk060 = 6;
 		g_MpPlayerNum = index;
 		menu_set_banner(MENUBANNER_CALIBRATINGCAMERA, false);
-		func0f14a16c(1);
-		pak0f1171b4(func0f14a5a4(), PAK00C_01, 1);
+		editor_set_unk100(1);
+		pak0f1171b4(camdraw_get_editor_index(), PAK00C_01, 1);
 		thing->unk0f8 = 3;
 		return;
 	}
 
 	if (thing->unk0f8 == 3) {
-		func0f14cdb8(index, arg1);
+		editor_recalc_intensity_table(index, arg1);
 		a = thing->unk04c;
 
 		if (a > 130) {
@@ -1791,7 +1791,7 @@ void func0f14d064(s32 index, u8 *arg1)
 	}
 
 	if (thing->unk0f8 == 2) {
-		func0f14cdb8(index, arg1);
+		editor_recalc_intensity_table(index, arg1);
 
 		if (thing->unk060 == 12 || thing->unk04c > 120) {
 			thing->unk0f8 = 6;
@@ -1801,25 +1801,25 @@ void func0f14d064(s32 index, u8 *arg1)
 	}
 
 	if (thing->unk0f8 == 6) {
-		pak0f1171b4(func0f14a5a4(), PAK00C_03, 0);
+		pak0f1171b4(camdraw_get_editor_index(), PAK00C_03, 0);
 		thing->unk0f8 = 6;
 		thing->unk100 = thing->unk0fc;
 		g_MpPlayerNum = index;
 		menu_set_banner(-1, false);
-		pak0f1171b4(func0f14a5a4(), PAK00C_03, 0);
-		var8007f8dc[var800a45a0->unk000].unk0d4_04 = true;
+		pak0f1171b4(camdraw_get_editor_index(), PAK00C_03, 0);
+		headeditor[headeditordata->unk000].unk0d4_04 = true;
 		thing->unk0f8 = 0;
 	}
 
 	if (thing->unk0f8 == 0) {
-		func0f14cdb8(index, arg1);
+		editor_recalc_intensity_table(index, arg1);
 	}
 }
 
-void func0f14d2c8(u8 *arg0, u8 *arg1)
+void editor_make_texture_type2(u8 *arg0, u8 *arg1)
 {
-	f32 *s1 = (f32 *)var800a45a0->unk474;
-	f32 *s0 = (f32 *)var800a45a0->unk478;
+	f32 *s1 = (f32 *)headeditordata->unk474;
+	f32 *s0 = (f32 *)headeditordata->unk478;
 	s32 size = 128;
 	s32 i;
 	s32 j;
@@ -1860,10 +1860,10 @@ void func0f14d2c8(u8 *arg0, u8 *arg1)
 /**
  * Generate a 64x64 thumbnail from a 128x128 source.
  */
-void func0f14d4f0(u8 *src, u8 *dst)
+void editor_make_texture_type3(u8 *src, u8 *dst)
 {
-	f32 *s1 = (f32 *) var800a45a0->unk474;
-	f32 *s0 = (f32 *) var800a45a0->unk478;
+	f32 *s1 = (f32 *) headeditordata->unk474;
+	f32 *s0 = (f32 *) headeditordata->unk478;
 	s32 i;
 	s32 j;
 	s32 x;
@@ -1925,7 +1925,7 @@ void func0f14d4f0(u8 *src, u8 *dst)
 	}
 }
 
-void func0f14d714(u8 *arg0, u8 *arg1)
+void editor_make_texture_type4(u8 *arg0, u8 *arg1)
 {
 	s32 x;
 	s32 y;
@@ -2057,12 +2057,12 @@ void phead0f14dac0(u8 *arg0, struct textureconfig *arg1)
 
 void func0f14dc30(s32 index, bool arg1)
 {
-	f32 f26 = func0f14a984() - 128;
+	f32 f26 = phead_get_unk3bc() - 128;
 	s32 sp80;
 	s32 sp7c;
 	s32 y;
 	s32 j;
-	struct var8007f8e0 *thing = func0f14a06c(index);
+	struct var8007f8e0 *thing = phead_find(index);
 	f32 f22;
 
 	f22 = thing->unk3f4_02 ? func0f14e4ac(0, &sp80, &sp7c) : 0.0f;
@@ -2089,7 +2089,7 @@ void func0f14dc30(s32 index, bool arg1)
 					f2 *= -1.0f;
 				}
 
-				f2 *= var8007f8dc->unk088;
+				f2 *= headeditor->unk088;
 			} else {
 				f2 = 0.0f;
 			}
@@ -2111,12 +2111,12 @@ void func0f14dc30(s32 index, bool arg1)
 
 void func0f14def0(s32 index, u32 line, char *file)
 {
-	struct var8007f8e0 *a = func0f14a06c(-1);
-	struct var8007f8e0 *b = (index != -1 ? func0f14a06c(index) : NULL);
-	struct var8007f8e0 *c = func0f14a06c(-4);
-	struct var8007f8e0 *d = func0f14a06c(-5);
+	struct var8007f8e0 *a = phead_find(-1);
+	struct var8007f8e0 *b = (index != -1 ? phead_find(index) : NULL);
+	struct var8007f8e0 *c = phead_find(-4);
+	struct var8007f8e0 *d = phead_find(-5);
 
-	func0f14c50c(d, a, 3508, "camdraw.c");
+	camdraw_copy(d, a, 3508, "camdraw.c");
 
 	func0f14dc30(-1, false);
 
@@ -2127,7 +2127,7 @@ void func0f14def0(s32 index, u32 line, char *file)
 	func0f14dc30(-5, true);
 
 	func0f14e1c4(d);
-	func0f14c50c(c, d, 3519, "camdraw.c");
+	camdraw_copy(c, d, 3519, "camdraw.c");
 }
 
 const char var7f1b6d1c[] = "Cam %d -> Balance : No Data Available\n";
@@ -2222,7 +2222,7 @@ void func0f14e1c4(struct var8007f8e0 *arg0)
 
 f32 func0f14e4ac(s32 arg0, s32 *arg1, s32 *arg2)
 {
-	struct var8007f8e0 *spa4 = func0f14a06c(-1);
+	struct var8007f8e0 *spa4 = phead_find(-1);
 	s32 i;
 	s32 j;
 	s32 sp98;
@@ -2331,7 +2331,7 @@ f32 func0f14e4ac(s32 arg0, s32 *arg1, s32 *arg2)
 
 		if (1);
 
-		var8007f8dc[arg0].unk090 = result;
+		headeditor[arg0].unk090 = result;
 
 		return result;
 	}
@@ -2416,7 +2416,7 @@ void func0f14e884(struct textureconfig *tconfig, s32 numrows, s32 arg2, u64 arg3
 	*sp34 = (*sp34 & ~(mask << sp40)) + (arg3 << sp40);
 }
 
-Gfx *func0f14eb04(Gfx *gdl, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5)
+Gfx *phead_draw_fullsize_texture(Gfx *gdl, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5)
 {
 	f32 sp30[2];
 	struct var8007f8e0 *thing;
@@ -2425,14 +2425,14 @@ Gfx *func0f14eb04(Gfx *gdl, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5)
 	sp30[0] = arg2;
 	sp30[1] = arg3;
 
-	thing = func0f14a06c(arg1);
+	thing = phead_find(arg1);
 
-	gdl = func0f14c870(gdl, &thing->unk004, sp30, (arg4 - arg2) * 0.015625f, (arg5 - arg3) * 0.015625f);
+	gdl = phead_draw_texture(gdl, &thing->unk004, sp30, (arg4 - arg2) * 0.015625f, (arg5 - arg3) * 0.015625f);
 
 	return gdl;
 }
 
-Gfx *func0f14eb98(Gfx *gdl, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5)
+Gfx *phead_draw_thumbnail_texture(Gfx *gdl, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5)
 {
 	f32 sp30[2];
 	struct var8007f8e0 *thing;
@@ -2441,17 +2441,17 @@ Gfx *func0f14eb98(Gfx *gdl, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5)
 	sp30[0] = arg2;
 	sp30[1] = arg3;
 
-	thing = func0f14a06c(arg1);
+	thing = phead_find(arg1);
 
-	gdl = func0f14c870(gdl, &thing->unk010, sp30, (arg4 - arg2) * 0.0625f, (arg5 - arg3) * 0.0625f);
+	gdl = phead_draw_texture(gdl, &thing->unk010, sp30, (arg4 - arg2) * 0.0625f, (arg5 - arg3) * 0.0625f);
 
 	return gdl;
 }
 
 void func0f14ec2c(u32 arg0, u32 arg1, u32 arg2, u32 arg3)
 {
-	struct var8007f8e0 *thing1 = func0f14a06c(-1);
-	struct var8007f8e0 *thing2 = func0f14a06c(-2);
+	struct var8007f8e0 *thing1 = phead_find(-1);
+	struct var8007f8e0 *thing2 = phead_find(-2);
 
 	if (thing1) {
 		thing1->unk3c0 = arg0;
@@ -2478,7 +2478,7 @@ const char var7f1b6d50[] = "Cam_SetSquashZ : %u, %u, %f\n";
 
 void func0f14ecd8(s32 *arg0, s32 *arg1, s32 *arg2, s32 *arg3)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-2);
+	struct var8007f8e0 *thing = phead_find(-2);
 
 	*arg0 = thing->unk3c0;
 	*arg1 = thing->unk3c8;
@@ -2495,7 +2495,7 @@ u32 func0f14ed64(void)
 {
 	f32 foo[7];
 
-	func0f14ef50(foo);
+	phead_get_unk3d0(foo);
 
 	return (u32)(foo[6] * 100) - 25;
 }
@@ -2506,7 +2506,7 @@ void func0f14ee18(u32 arg0)
 
 	arg0 += 25;
 
-	func0f14ef50(foo);
+	phead_get_unk3d0(foo);
 
 	foo[6] = arg0 * 0.01f;
 
@@ -2524,8 +2524,8 @@ void func0f14ee18(u32 arg0)
 // @bug? Nothing is done with tmp
 void func0f14eeb0(f32 arg0[7])
 {
-	struct var8007f8e0 *thing1 = func0f14a06c(-1);
-	struct var8007f8e0 *thing2 = func0f14a06c(-2);
+	struct var8007f8e0 *thing1 = phead_find(-1);
+	struct var8007f8e0 *thing2 = phead_find(-2);
 	s32 i;
 
 	for (i = 0; i < ARRAYCOUNT(thing1->unk3d0); i++) {
@@ -2551,13 +2551,13 @@ void func0f14eeb0(f32 arg0[7])
 	func0f14def0(-1, 4240, "camdraw.c");
 }
 
-void func0f14ef50(f32 *arg0)
+void phead_get_unk3d0(f32 *arg0)
 {
 	struct var8007f8e0 *thing;
 	s32 i;
 
 	for (i = 0; i < ARRAYCOUNT(thing->unk3d0); i++) {
-		thing = func0f14a06c(-2);
+		thing = phead_find(-2);
 
 		arg0[i] = thing->unk3d0[i];
 	}
@@ -2572,41 +2572,41 @@ void func0f14efa8(void)
 	func0f14eeb0(array);
 }
 
-s32 func0f14f008(s32 index)
+s32 editor_get_num_valid_images(s32 index)
 {
 	if (index == -1) {
-		index = var800a45a0->unk000;
+		index = headeditordata->unk000;
 	}
 
-	return var8007f8dc[index].unk094;
+	return headeditor[index].unk094;
 }
 
-void func0f14f03c(s32 index, s32 value)
+void editor_set_unk074(s32 index, s32 value)
 {
-	var8007f8dc[index].unk074 = value;
+	headeditor[index].unk074 = value;
 }
 
-s32 func0f14f05c(s32 index)
+s32 editor_get_unk074(s32 index)
 {
-	return var8007f8dc[index].unk074;
+	return headeditor[index].unk074;
 }
 
 Gfx *func0f14f07c(Gfx *gdl, s32 headorbodynum, s32 x1, s32 y1, s32 x2, s32 y2)
 {
-	struct textureconfig *thing = &var800a45a0->unk484[headorbodynum];
+	struct textureconfig *thing = &headeditordata->unk484[headorbodynum];
 	f32 sp34[2];
 	u32 stack;
 
 	sp34[0] = x1;
 	sp34[1] = y1;
 
-	if (func0f14a20c()->unk0b6[headorbodynum] != 0xff) {
-		if (func0f14a20c()->unk0dc[headorbodynum] == 0) {
-			gdl = func0f14c870(gdl, var800a45a0->unk488, sp34,
+	if (camdraw_current_editor()->unk0b6[headorbodynum] != 0xff) {
+		if (camdraw_current_editor()->unk0dc[headorbodynum] == 0) {
+			gdl = phead_draw_texture(gdl, headeditordata->unk488, sp34,
 					(x2 - x1) * (1.0f / 64.0f),
 					(y2 - y1) * (1.0f / 64.0f));
 		} else {
-			gdl = func0f14c870(gdl, thing, sp34,
+			gdl = phead_draw_texture(gdl, thing, sp34,
 					(x2 - x1) * (1.0f / 64.0f),
 					(y2 - y1) * (1.0f / 64.0f));
 		}
@@ -2652,7 +2652,7 @@ void func0f14f1d4(s16 *src, s32 len, s32 *dst)
 	}
 }
 
-s32 func0f14f2b4(struct modeldef *modeldef, Vtx **dst, u32 *len)
+s32 camdraw_copy_vertices(struct modeldef *modeldef, Vtx **dst, u32 *len)
 {
 	struct modelnode *node1 = model_get_part(modeldef, MODELPART_HEAD_0190);
 	struct modelnode *node2 = model_get_part(modeldef, MODELPART_HEAD_0191);
@@ -2679,7 +2679,7 @@ s32 func0f14f2b4(struct modeldef *modeldef, Vtx **dst, u32 *len)
 		size = align16(totalverts * sizeof(Vtx));
 
 		if (*dst == 0) {
-			*dst = func0f149d58(size, 4429, "camdraw.c");
+			*dst = camdraw_allocate(size, 4429, "camdraw.c");
 		}
 
 		memcpy(*dst, node1rodata->vertices, node1numverts * sizeof(Vtx));
@@ -2824,16 +2824,16 @@ void func0f14f510(s32 arg0)
 
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 8; j++) {
-			var800a45a0->unk06c[i][j] = (i + 1 + j) * arg0 + 1;
+			headeditordata->unk06c[i][j] = (i + 1 + j) * arg0 + 1;
 		}
 	}
 
-	var800a45a0->unk010 = 0;
-	var800a45a0->unk00c = 0;
+	headeditordata->unk010 = 0;
+	headeditordata->unk00c = 0;
 
 	for (j = 0; j < 8; j++) {
-		var800a45a0->unk17c[0][j] = 1 / sqrtf(8.0f);
-		var800a45a0->unk27c[j][0] = var800a45a0->unk17c[0][j];
+		headeditordata->unk17c[0][j] = 1 / sqrtf(8.0f);
+		headeditordata->unk27c[j][0] = headeditordata->unk17c[0][j];
 	}
 
 	for (i = 1; i < 8; i++) {
@@ -2841,8 +2841,8 @@ void func0f14f510(s32 arg0)
 			s32 v0 = j * 2 + 1;
 			f32 angle = v0 * 3.141592502594f * i / 16;
 
-			var800a45a0->unk17c[i][j] = sqrtf(0.25f) * cosf(angle);
-			var800a45a0->unk27c[j][i] = var800a45a0->unk17c[i][j];
+			headeditordata->unk17c[i][j] = sqrtf(0.25f) * cosf(angle);
+			headeditordata->unk27c[j][i] = headeditordata->unk17c[i][j];
 		}
 	}
 }
@@ -2889,15 +2889,15 @@ s32 phead0f14f7d4(struct var8007f8e0 *arg0)
 	s32 sp24;
 	s32 v0;
 
-	if (var800a45a0->unk00c > 0) {
-		var800a45a0->unk00c--;
+	if (headeditordata->unk00c > 0) {
+		headeditordata->unk00c--;
 		return 0;
 	}
 
 	sp24 = func0f14f76c(arg0, 2);
 
 	if (sp24 == 0) {
-		var800a45a0->unk00c = func0f14f76c(arg0, 4);
+		headeditordata->unk00c = func0f14f76c(arg0, 4);
 		return 0;
 	}
 
@@ -2926,7 +2926,7 @@ void phead0f14f8cc(struct var8007f8e0 *arg0, s32 arg1[8][8])
 		s32 upper = var7f1b60a0[i][0];
 		s32 lower = var7f1b60a0[i][1];
 
-		arg1[upper][lower] = var800a45a0->unk06c[upper][lower] * v0;
+		arg1[upper][lower] = headeditordata->unk06c[upper][lower] * v0;
 	}
 }
 
@@ -2937,20 +2937,20 @@ void func0f14f974(struct var8007f8e0 *arg0, s32 arg1)
 	s32 sp24;
 
 	if (arg1 == 0) {
-		var800a45a0->unk010++;
+		headeditordata->unk010++;
 		return;
 	}
 
-	if (var800a45a0->unk010 != 0) {
-		while (var800a45a0->unk010 > 0) {
+	if (headeditordata->unk010 != 0) {
+		while (headeditordata->unk010 > 0) {
 			func0f14f700(arg0, 0, 2);
 
-			if (var800a45a0->unk010 < 17) {
-				func0f14f700(arg0, var800a45a0->unk010 - 1, 4);
-				var800a45a0->unk010 = 0;
+			if (headeditordata->unk010 < 17) {
+				func0f14f700(arg0, headeditordata->unk010 - 1, 4);
+				headeditordata->unk010 = 0;
 			} else {
 				func0f14f700(arg0, 15, 4);
-				var800a45a0->unk010 -= 16;
+				headeditordata->unk010 -= 16;
 			}
 		}
 	}
@@ -2984,7 +2984,7 @@ void func0f14faf8(struct var8007f8e0 *arg0, s32 arg1[8][8])
 	for (i = 0; i < ARRAYCOUNT(var7f1b60a0); i++) {
 		u32 upper = var7f1b60a0[i][0];
 		u32 lower = var7f1b60a0[i][1];
-		f32 f0 = (f32) arg1[upper][lower] / (f32) var800a45a0->unk06c[upper][lower];
+		f32 f0 = (f32) arg1[upper][lower] / (f32) headeditordata->unk06c[upper][lower];
 		s32 a1;
 
 		if (f0 < 0.0f) {
@@ -3009,7 +3009,7 @@ void func0f14fbfc(u8 *arg0[8], s32 arg1[8][8])
 			sp30[i][j] = 0.0f;
 
 			for (k = 0; k < 8; k++) {
-				sp30[i][j] += (arg0[i][k] - 0x80) * var800a45a0->unk27c[k][j];
+				sp30[i][j] += (arg0[i][k] - 0x80) * headeditordata->unk27c[k][j];
 			}
 		}
 	}
@@ -3019,7 +3019,7 @@ void func0f14fbfc(u8 *arg0[8], s32 arg1[8][8])
 			f32 f0 = 0.0f;
 
 			for (k = 0; k < 8; k++) {
-				f0 += var800a45a0->unk17c[i][k] * sp30[k][j];
+				f0 += headeditordata->unk17c[i][k] * sp30[k][j];
 			}
 
 			if (f0 < 0.0f) {
@@ -3043,7 +3043,7 @@ void phead0f14fdb0(s32 arg0[8][8], u8 **arg1)
 			sp30[i][j] = 0.0f;
 
 			for (k = 0; k < 8; k++) {
-				sp30[i][j] += arg0[i][k] * var800a45a0->unk17c[k][j];
+				sp30[i][j] += arg0[i][k] * headeditordata->unk17c[k][j];
 			}
 		}
 	}
@@ -3053,7 +3053,7 @@ void phead0f14fdb0(s32 arg0[8][8], u8 **arg1)
 			f32 f0 = 0.0f;
 
 			for (k = 0; k < 8; k++) {
-				f0 += var800a45a0->unk27c[i][k] * sp30[k][j];
+				f0 += headeditordata->unk27c[i][k] * sp30[k][j];
 			}
 
 			f0 += 128.0f;
@@ -3075,7 +3075,7 @@ void phead0f14fdb0(s32 arg0[8][8], u8 **arg1)
 	}
 }
 
-void func0f14ff94(struct var8007f8e0 *arg0)
+void editor_make_texture_type5(struct var8007f8e0 *arg0)
 {
 	s32 i;
 	s32 j;
@@ -3101,7 +3101,7 @@ void func0f14ff94(struct var8007f8e0 *arg0)
 	}
 }
 
-void func0f150068(struct var8007f8e0 *arg0, s32 arg1)
+void phead_compress(struct var8007f8e0 *arg0, s32 arg1)
 {
 	s32 i;
 	s32 j;
@@ -3129,7 +3129,7 @@ void func0f150068(struct var8007f8e0 *arg0, s32 arg1)
 	arg0->unk034 = arg0->unk02c / 8;
 }
 
-bool func0f15015c(s8 device, s32 filenum, u8 *arg2)
+bool camdraw_get_filemgr_preview(s8 device, s32 filenum, u8 *arg2)
 {
 	u8 stack[0x420];
 	u8 buffer[128];
@@ -3167,8 +3167,8 @@ bool phead_load_file(s8 device, s32 fileid, u16 serial, s32 arg3)
 	struct camerafile file;
 	u32 stack;
 
-	struct var8007f8e0 *s0 = func0f14a06c(arg3 == -1 ? -1 : arg3);
-	struct var8007f8e0 *s1 = func0f14a06c(-1);
+	struct var8007f8e0 *s0 = phead_find(arg3 == -1 ? -1 : arg3);
+	struct var8007f8e0 *s1 = phead_find(-1);
 
 	ret = pak_read_body_at_guid(device, fileid, (u8 *)&file, 0);
 
@@ -3205,19 +3205,19 @@ bool phead_load_file(s8 device, s32 fileid, u16 serial, s32 arg3)
 		}
 
 		if (s1 != s0) {
-			func0f14c50c(s1, s0, 6494, "camdraw.c");
+			camdraw_copy(s1, s0, 6494, "camdraw.c");
 		}
 
-		func0f14a00c(false);
-		func0f14a16c(5);
-		func0f14bc04();
+		phead_set_unk3f4_04(false);
+		editor_set_unk100(5);
+		editor_make_textures();
 
 		for (i = 0; i < 128; i++) {
 			s1->unk010.textureptr[i] = file.unk00[i];
 		}
 
 		if (s1 != s0) {
-			func0f14c50c(s0, s1, 6509, "camdraw.c");
+			camdraw_copy(s0, s1, 6509, "camdraw.c");
 		}
 
 		return true;
@@ -3242,7 +3242,7 @@ s32 phead_save_file(s8 device, s32 fileid, u16 serial)
 {
 	u32 stack[2];
 	struct camerafile file;
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 	s32 ret;
 	s32 writtenfileid;
 	u8 sp44[0x1000];
@@ -3253,7 +3253,7 @@ s32 phead_save_file(s8 device, s32 fileid, u16 serial)
 		thing->unk024 = sp44;
 
 		while (true) {
-			func0f150068(thing, thing->unk036);
+			phead_compress(thing, thing->unk036);
 
 			file.unk80 = thing->unk02c / 8;
 
@@ -3313,7 +3313,7 @@ s32 phead_save_file(s8 device, s32 fileid, u16 serial)
 	if (ret == 0) {
 		s32 i;
 		for (i = 0; i < 18; i++) {
-			struct var8007f8e0 *thing2 = func0f14a06c(i);
+			struct var8007f8e0 *thing2 = phead_find(i);
 
 			if (thing2->fileguid.fileid == thing->fileguid.fileid
 					&& thing2->fileguid.deviceserial == thing->fileguid.deviceserial) {
@@ -3339,7 +3339,7 @@ s32 phead_save_file(s8 device, s32 fileid, u16 serial)
 
 void ph_get_guid(s32 index, struct fileguid *guid)
 {
-	struct var8007f8e0 *thing = func0f14a06c(index);
+	struct var8007f8e0 *thing = phead_find(index);
 
 	guid->fileid = thing->fileguid.fileid;
 	guid->deviceserial = thing->fileguid.deviceserial;
@@ -3347,7 +3347,7 @@ void ph_get_guid(s32 index, struct fileguid *guid)
 
 void ph_set_file_id(s32 fileid)
 {
-	struct var8007f8e0 *thing = func0f14a06c(-1);
+	struct var8007f8e0 *thing = phead_find(-1);
 
 	thing->fileguid.deviceserial = 0;
 	thing->fileguid.fileid = fileid;

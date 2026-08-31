@@ -2104,7 +2104,7 @@ Gfx *menuitem_label_render(Gfx *gdl, struct menurendercontext *context)
 				g_MenuWave1Colours[context->dialog->type].item_disabled);
 	}
 
-	menudfc = func0f0f1338(context->item);
+	menudfc = menu_find_item_redraw_info(context->item);
 
 	if (menudfc) {
 		if (menudfc->unk04 < 0) {
@@ -2171,7 +2171,7 @@ Gfx *menuitem_label_render(Gfx *gdl, struct menurendercontext *context)
 
 	if (menudfc) {
 		if (context->width + 200 < menudfc->unk04 * 300 && context->dialog->redrawtimer < 0) {
-			func0f0f13ec(context->item);
+			menu_remove_item_redraw_info(context->item);
 		}
 
 		var8007fb9c = savedvalue;

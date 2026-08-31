@@ -177,7 +177,7 @@ f32 mp_handicap_to_damage_scale(u8 value)
 	return tmp * tmp * 3 - 2;
 }
 
-void func0f187838(struct mpchrconfig *mpchr)
+void mp_reset_mpchrconfig_for_match(struct mpchrconfig *mpchr)
 {
 	s32 i = 0;
 
@@ -313,7 +313,7 @@ void mp_reset(void)
 	for (i = 0; i < MAX_MPCHRS; i++) {
 		struct mpchrconfig *mpchr = MPCHR(i);
 
-		func0f187838(mpchr);
+		mp_reset_mpchrconfig_for_match(mpchr);
 
 #if VERSION >= VERSION_NTSC_1_0
 		g_MpAllChrPtrs[i] = NULL;
@@ -414,14 +414,14 @@ void mp_calculate_team_is_only_ai(void)
 	}
 }
 
-void func0f187fbc(s32 playernum)
+void mp_init_handicaps(s32 playernum)
 {
 	g_PlayerConfigsArray[playernum].base.unk18 = 80;
 	g_PlayerConfigsArray[playernum].base.unk1a = 80;
 	g_PlayerConfigsArray[playernum].base.unk1c = 75;
 }
 
-void func0f187fec(void)
+void mp_init_limits(void)
 {
 	g_MpSetup.timelimit = 9;
 	g_MpSetup.scorelimit = 9;
@@ -433,7 +433,7 @@ void mp_player_set_defaults(s32 playernum, bool autonames)
 	s32 i;
 	s32 j;
 
-	func0f187fbc(playernum);
+	mp_init_handicaps(playernum);
 
 	g_PlayerConfigsArray[playernum].controlmode = CONTROLMODE_11;
 
@@ -521,7 +521,7 @@ void mp_player_set_defaults(s32 playernum, bool autonames)
 	}
 }
 
-void func0f1881d4(s32 index)
+void mp_init_botconfig(s32 index)
 {
 	g_BotConfigsArray[index].base.name[0] = '\0';
 	g_BotConfigsArray[index].base.mpheadnum = MPHEAD_DARK_COMBAT;
@@ -556,7 +556,7 @@ void mp_init(bool resetplayers)
 
 	g_Vars.mphilltime = 10;
 
-	func0f187fec();
+	mp_init_limits();
 
 	g_MpSetup.fileguid.fileid = 0;
 	g_MpSetup.fileguid.deviceserial = 0;
@@ -570,7 +570,7 @@ void mp_init(bool resetplayers)
 	}
 
 	for (i = 0; i < MAX_BOTS; i++) {
-		func0f1881d4(i);
+		mp_init_botconfig(i);
 	}
 
 	if (arg_find_by_prefix(1, "-mpwpnset")) {
@@ -944,7 +944,7 @@ s32 mp_get_team_rankings(struct ranking *rankings)
 	return count;
 }
 
-s32 func0f188bcc(void)
+s32 mp_get_num_mpweapons(void)
 {
 	return NUM_MPWEAPONS;
 }
@@ -1082,7 +1082,7 @@ s32 mp_count_weapon_set_thing(s32 weaponsetindex)
 	return count;
 }
 
-s32 func0f188f9c(s32 arg0)
+s32 mp_slotnum_to_mpweaponset(s32 arg0)
 {
 	s32 i;
 
@@ -1104,19 +1104,19 @@ s32 func0f188f9c(s32 arg0)
 	return i + arg0;
 }
 
-s32 func0f189058(bool full)
+s32 mp_get_num_weaponset_slots(bool full)
 {
 	return mp_count_weapon_set_thing(full ? ARRAYCOUNT(g_MpWeaponSets) + 3 : ARRAYCOUNT(g_MpWeaponSets));
 }
 
-s32 func0f189088(void)
+s32 mp_get_custom_weaponset_slot(void)
 {
 	return mp_count_weapon_set_thing(ARRAYCOUNT(g_MpWeaponSets) + 2);
 }
 
 char *mp_get_weapon_set_name(s32 index)
 {
-	index = func0f188f9c(index);
+	index = mp_slotnum_to_mpweaponset(index);
 
 	if (index < 0 || index >= ARRAYCOUNT(g_MpWeaponSets) + 2) {
 		return lang_get(L_MPWEAPONS_041); // "Custom"
@@ -1133,7 +1133,7 @@ char *mp_get_weapon_set_name(s32 index)
 	return lang_get(g_MpWeaponSets[index].name);
 }
 
-void func0f18913c(void)
+void mp_find_weaponsetnum_by_weapons(void)
 {
 	s32 i;
 	bool done = false;
@@ -1284,11 +1284,11 @@ void mp_apply_weapon_set(void)
 
 void mp_set_weapon_set(s32 weaponsetnum)
 {
-	g_MpWeaponSetNum = func0f188f9c(weaponsetnum);
+	g_MpWeaponSetNum = mp_slotnum_to_mpweaponset(weaponsetnum);
 	mp_apply_weapon_set();
 }
 
-void func0f1895e8(void)
+void mp_apply_weaponset_if_standard(void)
 {
 	if (g_MpWeaponSetNum < ARRAYCOUNT(g_MpWeaponSets)) {
 		mp_apply_weapon_set();
@@ -2077,7 +2077,7 @@ void mp_calculate_awards(void)
 
 	duration60 = player_get_mission_time();
 
-	func00033dd8();
+	sndp_stop_all();
 
 	numchrs = mp_get_player_rankings(playerrankings);
 #if VERSION >= VERSION_NTSC_1_0
@@ -2548,7 +2548,7 @@ void mp_end_match(void)
 	}
 #endif
 
-	func0f0f820c(NULL, -6);
+	menu_save_and_push_root_dialog(NULL, -6);
 }
 
 s32 mp_get_num_heads2(void)
@@ -3210,7 +3210,7 @@ void mp_remove_simulant(s32 index)
 {
 	g_MpSetup.chrslots &= ~(1 << (index + 4));
 	g_BotConfigsArray[index].base.name[0] = '\0';
-	func0f1881d4(index);
+	mp_init_botconfig(index);
 	mp_generate_bot_names();
 }
 
@@ -3386,7 +3386,7 @@ struct chrdata *mp_get_chr_from_player_index(s32 index)
 	return NULL;
 }
 
-s32 func0f18d074(s32 index)
+s32 mp_chrindex_to_chrslot(s32 index)
 {
 	s32 i;
 
@@ -3405,7 +3405,7 @@ s32 func0f18d074(s32 index)
 	return -1;
 }
 
-s32 func0f18d0e8(s32 arg0)
+s32 mp_chrslot_to_chrindex(s32 arg0)
 {
 	s32 i;
 
@@ -3881,7 +3881,7 @@ void mp_apply_config(struct mpconfigfull *config)
 		}
 	}
 
-	func0f18913c();
+	mp_find_weaponsetnum_by_weapons();
 	challenge_remove_force_unlocks();
 }
 
@@ -4091,7 +4091,7 @@ void mpsetupfile_get_overview(char *arg0, char *filename, u16 *numsims, u16 *sta
 	*scenarionum = savebuffer_read_bits(&buffer, 3);
 }
 
-void func0f18e558(void)
+void mp_reset_phead_modeldefs(void)
 {
 	s32 i;
 
@@ -4100,7 +4100,7 @@ void func0f18e558(void)
 	}
 }
 
-struct modeldef *func0f18e57c(s32 index, s32 *headnum)
+struct modeldef *mp_get_phead_modeldef(s32 index, s32 *headnum)
 {
 	return var800acc28[index];
 }

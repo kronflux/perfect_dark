@@ -172,13 +172,13 @@ void bwalk0f0c3b38(struct coord *reltarget, struct defaultobj *obj)
 		vector.z = 1;
 	}
 
-	func0f02e3dc(&globalthinga, &globalthingb, &abstarget, &vector, &posunk);
+	chr_calculate_push_contact_pos(&globalthinga, &globalthingb, &abstarget, &vector, &posunk);
 
 	tween.x = (abstarget.x - g_Vars.currentplayer->prop->pos.x) / g_Vars.lvupdate60freal;
 	tween.y = 0;
 	tween.z = (abstarget.z - g_Vars.currentplayer->prop->pos.z) / g_Vars.lvupdate60freal;
 
-	func0f082e84(obj, &posunk, &vector, &tween, false);
+	obj_push(obj, &posunk, &vector, &tween, false);
 }
 
 /**
@@ -214,7 +214,7 @@ s32 bwalk_try_move_upwards(f32 amount)
 	types = g_Vars.bondcollisions ? CDTYPE_ALL : CDTYPE_BG;
 
 	player_get_bbox(g_Vars.currentplayer->prop, &radius, &ymax, &ymin);
-	func0f065e74(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms, &newpos, rooms);
+	los_find_final_room_exhaustive(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms, &newpos, rooms);
 	bmove_find_entered_rooms_by_pos(g_Vars.currentplayer, &newpos, rooms);
 	prop_set_perim_enabled(g_Vars.currentplayer->prop, false);
 
@@ -261,7 +261,7 @@ bool bwalkCanMoveUpwards(f32 amount)
 	types = g_Vars.bondcollisions ? CDTYPE_ALL : CDTYPE_BG;
 
 	player_get_bbox(g_Vars.currentplayer->prop, &radius, &ymax, &ymin);
-	func0f065e74(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms, &newpos, rooms);
+	los_find_final_room_exhaustive(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms, &newpos, rooms);
 	bmove_find_entered_rooms_by_pos(g_Vars.currentplayer, &newpos, rooms);
 	prop_set_perim_enabled(g_Vars.currentplayer->prop, false);
 
@@ -320,7 +320,7 @@ bool bwalk_calculate_new_position(struct coord *vel, f32 rotateamount, bool appl
 		player_get_bbox(g_Vars.currentplayer->prop, &radius, &ymax, &ymin);
 		radius += extrawidth;
 
-		func0f065dfc(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms,
+		los_find_intersecting_rooms_exhaustive(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms,
 				&dstpos, dstrooms, sp64, 20);
 
 #if VERSION < VERSION_NTSC_1_0
@@ -1170,7 +1170,7 @@ void bwalk_update_vertical(void)
 	if (newpos.x != g_Vars.currentplayer->prop->pos.x
 			|| newpos.y != g_Vars.currentplayer->prop->pos.y
 			|| newpos.z != g_Vars.currentplayer->prop->pos.z) {
-		func0f065e74(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms, &newpos, newrooms);
+		los_find_final_room_exhaustive(&g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms, &newpos, newrooms);
 
 		g_Vars.currentplayer->prop->pos.x = newpos.x;
 		g_Vars.currentplayer->prop->pos.y = newpos.y;

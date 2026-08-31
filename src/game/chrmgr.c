@@ -34,7 +34,7 @@ void chrmgr_reset(void)
 	g_NumChrs = 0;
 	g_Chrnums = NULL;
 	g_ChrIndexes = NULL;
-	var80062960 = memp_alloc(ALIGN16(15 * sizeof(struct var80062960)), MEMPOOL_STAGE);
+	onscreendoor = memp_alloc(ALIGN16(15 * sizeof(struct onscreendoor)), MEMPOOL_STAGE);
 
 	for (i = 0; i < ARRAYCOUNT(var8009ccc0); i++) {
 #ifdef PLATFORM_N64

@@ -1963,7 +1963,7 @@ Gfx *bview_draw_eyespy_metrics(Gfx *gdl)
 				yoffset = 0;
 			}
 
-			gdl = func0f0d479c(gdl);
+			gdl = ortho_begin(gdl);
 
 			gSPClearGeometryMode(gdl++, G_CULL_BOTH);
 			gSPSetGeometryMode(gdl++, G_SHADE | G_SHADING_SMOOTH);
@@ -2103,7 +2103,7 @@ Gfx *bview_draw_eyespy_metrics(Gfx *gdl)
 			}
 		}
 
-		gdl = func0f0d49c8(gdl);
+		gdl = ortho_end(gdl);
 	}
 
 	return gdl;

@@ -3466,7 +3466,7 @@ s32 cd_test_cyl_move02(struct coord *pos, RoomNum *rooms, struct coord *coord2, 
 	RoomNum sp44[20];
 	RoomNum sp34[8];
 
-	func0f065d1c(pos, rooms, coord2, sp34, sp44, 20);
+	los_find_intersecting_rooms_properly(pos, rooms, coord2, sp34, sp44, 20);
 
 	if (array_intersects(sp34, rooms2)) {
 		result = cd_test_a_to_b(pos, coord2, sp44, types, GEOFLAG_WALL, CHECKVERTICAL_NO, arg5, ymax, ymin);
@@ -3502,7 +3502,7 @@ s32 cd_exam_cyl_move05(struct coord *pos, RoomNum *rooms, struct coord *pos2, Ro
 	RoomNum sp34[8];
 	s32 result;
 
-	func0f065d1c(pos, rooms, pos2, sp34, sp44, 20);
+	los_find_intersecting_rooms_properly(pos, rooms, pos2, sp34, sp44, 20);
 
 	result = cd_exam_a_to_b(pos, pos2, sp44, types, GEOFLAG_WALL, CHECKVERTICAL_NO, arg5, ymax, ymin);
 
@@ -3521,7 +3521,7 @@ s32 cd_exam_cyl_move06(struct coord *arg0, RoomNum *arg1, struct coord *arg2, Ro
 	struct coord sp40;
 	s32 result;
 
-	func0f065d1c(arg0, arg1, arg2, sp4c, sp5c, 20);
+	los_find_intersecting_rooms_properly(arg0, arg1, arg2, sp4c, sp5c, 20);
 
 	result = cd_exam_a_to_b(arg0, arg2, sp5c, types, GEOFLAG_WALL, CHECKVERTICAL_NO, arg6, ymax, ymin);
 
@@ -3590,7 +3590,7 @@ bool cd_test_los05(struct coord *coord, RoomNum *rooms, struct coord *coord2, Ro
 	RoomNum sp44[20];
 	RoomNum sp34[8];
 
-	func0f065d1c(coord, rooms, coord2, sp34, sp44, 20);
+	los_find_intersecting_rooms_properly(coord, rooms, coord2, sp34, sp44, 20);
 
 	if (array_intersects(sp34, rooms2)) {
 		result = cd_test_a_to_b(coord, coord2, sp44, types, geoflags, CHECKVERTICAL_YES, 1, 0, 0);
@@ -3611,7 +3611,7 @@ bool cd_test_los07(struct coord *pos, RoomNum *rooms, struct coord *pos2, RoomNu
 	bool result;
 	RoomNum sp34[20];
 
-	func0f065d1c(pos, rooms, pos2, rooms3, sp34, 20);
+	los_find_intersecting_rooms_properly(pos, rooms, pos2, rooms3, sp34, 20);
 
 	if (array_intersects(rooms3, rooms2)) {
 		result = cd_test_a_to_b(pos, pos2, sp34, types, geoflags, CHECKVERTICAL_YES, 1, 0, 0);

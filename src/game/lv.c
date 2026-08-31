@@ -1028,7 +1028,7 @@ Gfx *lv_render(Gfx *gdl)
 	gSPSegment(gdl++, SPSEGMENT_PHYSICAL, 0x00000000);
 
 #if VERSION >= VERSION_NTSC_1_0
-	func0f0d5a7c();
+	ortho_reset();
 #endif
 
 	if (g_Vars.stagenum == STAGE_TITLE
@@ -1292,7 +1292,7 @@ Gfx *lv_render(Gfx *gdl)
 					if (fr_is_in_training()
 							&& g_Vars.currentplayer->lookingatprop.prop
 							&& bmove_is_in_sight_aim_mode()) {
-						func0f1a0924(g_Vars.currentplayer->lookingatprop.prop);
+						fr_track_target(g_Vars.currentplayer->lookingatprop.prop);
 					} else if (lv_update_tracked_prop(&g_Vars.currentplayer->lookingatprop, -1) == 0) {
 						g_Vars.currentplayer->lookingatprop.prop = NULL;
 					}
@@ -2481,7 +2481,7 @@ void lv_stop(void)
 		bg_stop();
 	}
 
-	func00033dd8();
+	sndp_stop_all();
 
 	if (g_FileState == FILESTATE_CHANGINGAGENT) {
 		menu_play_sound(MENUSOUND_EXPLOSION);

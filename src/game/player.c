@@ -904,7 +904,7 @@ bool player_spawn_anti(struct chrdata *hostchr, bool force)
 
 		player_tick_chr_body();
 		model_copy_anim_data(hostchr->model, playerchr->model);
-		func0f02e9a0(playerchr, 12);
+		chr_stand_immediate(playerchr, 12);
 
 		chrrootrwdata = model_get_node_rw_data(hostchr->model, hostchr->model->definition->rootnode);
 		playerrootrwdata = model_get_node_rw_data(playerchr->model, playerchr->model->definition->rootnode);
@@ -1019,7 +1019,7 @@ void player_spawn(void)
 
 					if (g_Vars.lvframenum > 0
 							&& (g_ChrSlots[i].hidden & CHRHFLAG_ONBONDSSCREEN)
-							&& func0f06b39c(&sp78, &sp90, &g_ChrSlots[i].prop->pos, model_get_effective_scale(g_ChrSlots[i].model))
+							&& pos_is_facing_pos(&sp78, &sp90, &g_ChrSlots[i].prop->pos, model_get_effective_scale(g_ChrSlots[i].model))
 							&& (rngRandom() % 8)) {
 						sqdist += 1000 * 1000;
 					}
@@ -1495,7 +1495,7 @@ void player_tick_chr_body(void)
 			if (g_HeadsAndBodies[bodynum].unk00_01) {
 				headnum = -1;
 			} else if (sp60) {
-				headmodeldef = func0f18e57c(headnum, &headnum);
+				headmodeldef = mp_get_phead_modeldef(headnum, &headnum);
 			} else if (g_Vars.normmplayerisrunning && IS8MB()) {
 				g_HeadsAndBodies[headnum].modeldef = modeldef_load_to_new(g_HeadsAndBodies[headnum].filenum);
 				headmodeldef = g_HeadsAndBodies[headnum].modeldef;
@@ -1570,14 +1570,14 @@ void player_tick_chr_body(void)
 		}
 
 		chr->fireslots[0] = bgun_allocate_fireslot();
-		func0f02e9a0(chr, 0);
+		chr_stand_immediate(chr, 0);
 		bmove_update_rooms(g_Vars.currentplayer);
 	} else {
 		struct chrdata *chr = g_Vars.currentplayer->prop->chr;
 
 		if (chr->model->anim == NULL) {
 			chr->chrflags |= CHRCFLAG_FORCETOGROUND;
-			func0f02e9a0(chr, 0);
+			chr_stand_immediate(chr, 0);
 			model_set_root_position(g_Vars.currentplayer->model00d4, &g_Vars.currentplayer->prop->pos);
 			chr_set_look_angle(g_Vars.currentplayer->prop->chr, turnangle);
 			bmove_update_rooms(g_Vars.currentplayer);
@@ -4689,7 +4689,7 @@ Gfx *player_render_hud(Gfx *gdl)
 
 	if (g_Vars.currentplayer->cameramode != CAMERAMODE_EYESPY
 			&& player_is_health_visible()
-			&& func0f0f0c68()) {
+			&& menu_has_no_background()) {
 		gdl = player_render_health_bar(gdl);
 	}
 
@@ -4968,7 +4968,7 @@ void player_die_by_shooter(u32 shooter, bool force)
 	{
 		u32 prevplayernum = g_MpPlayerNum;
 		g_MpPlayerNum = g_Vars.currentplayerstats->mpindex;
-		func0f0f8120();
+		menu_save_and_close_all();
 		g_MpPlayerNum = prevplayernum;
 
 		hudmsgs_remove_for_dead_player(g_Vars.currentplayernum);

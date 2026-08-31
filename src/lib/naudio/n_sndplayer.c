@@ -24,7 +24,7 @@ void (*g_SndpRemoveRefCallback)(ALSound *) = NULL;
 void sndp_set_addref_callback(void *fn);
 void sndp_set_removeref_callback(void *fn);
 void sndp_free_state2(struct sndstate *state);
-void func00033bc0(struct sndstate *state);
+void sndp_post_end_event(struct sndstate *state);
 
 void n_alSndpNew(ALSndpConfig *config)
 {
@@ -194,10 +194,10 @@ void _n_handleEvent(N_ALSndpEvent *event)
 						state->unk34 = 2;
 						n_alEvtqPostEvent(&g_SndPlayer->evtq, &event->msg, 1001, 0);
 					} else {
-						func00033090(state);
+						sndp_free_state(state);
 					}
 				} else {
-					func00033090(state);
+					sndp_free_state(state);
 				}
 				return;
 			}
@@ -222,7 +222,7 @@ void _n_handleEvent(N_ALSndpEvent *event)
 			}
 
 			if (delta > 5500000) {
-				func00033090(state);
+				sndp_free_state(state);
 				return;
 			}
 
@@ -261,7 +261,7 @@ void _n_handleEvent(N_ALSndpEvent *event)
 
 #if VERSION >= VERSION_NTSC_1_0
 					if (delta > 5500000) {
-						func00033090(state);
+						sndp_free_state(state);
 						return;
 					}
 #endif
@@ -276,7 +276,7 @@ void _n_handleEvent(N_ALSndpEvent *event)
 					n_alEvtqPostEvent(&g_SndPlayer->evtq, &sp94.msg, delta, 0);
 
 					if (state->flags & SNDSTATEFLAG_20) {
-						func00033100(state);
+						sndp_apply_detune_pitch(state);
 					}
 				} else {
 					sp94.common.type = AL_SNDP_DECAY_EVT;
@@ -285,7 +285,7 @@ void _n_handleEvent(N_ALSndpEvent *event)
 
 #if VERSION >= VERSION_NTSC_1_0
 					if (delta > 5500000) {
-						func00033090(state);
+						sndp_free_state(state);
 						return;
 					}
 #endif
@@ -305,7 +305,7 @@ void _n_handleEvent(N_ALSndpEvent *event)
 
 #if VERSION >= VERSION_NTSC_1_0
 					if (delta > 5500000) {
-						func00033090(state);
+						sndp_free_state(state);
 						break;
 					}
 #endif
@@ -318,12 +318,12 @@ void _n_handleEvent(N_ALSndpEvent *event)
 						n_alEvtqPostEvent(&g_SndPlayer->evtq, &sp94.msg, delta, 0);
 						state->state = AL_STOPPING;
 					} else {
-						func00033090(state);
+						sndp_free_state(state);
 					}
 					break;
 				case AL_STATE4:
 				case AL_STATE5:
-					func00033090(state);
+					sndp_free_state(state);
 					break;
 				default:
 					break;
@@ -351,7 +351,7 @@ void _n_handleEvent(N_ALSndpEvent *event)
 				n_alSynSetPitch(&state->voice, state->pitch * state->basepitch);
 
 				if (state->flags & SNDSTATEFLAG_20) {
-					func00033100(state);
+					sndp_apply_detune_pitch(state);
 				}
 			}
 			break;
@@ -403,7 +403,7 @@ void _n_handleEvent(N_ALSndpEvent *event)
 
 #if VERSION >= VERSION_NTSC_1_0
 				if (delta > 5500000) {
-					func00033090(state);
+					sndp_free_state(state);
 					break;
 				}
 #endif
@@ -421,7 +421,7 @@ void _n_handleEvent(N_ALSndpEvent *event)
 
 #if VERSION >= VERSION_NTSC_1_0
 				if (delta > 5500000) {
-					func00033090(state);
+					sndp_free_state(state);
 					break;
 				}
 #endif
@@ -436,16 +436,16 @@ void _n_handleEvent(N_ALSndpEvent *event)
 				n_alEvtqPostEvent(&g_SndPlayer->evtq, &sp94.msg, delta, 0);
 
 				if (state->flags & SNDSTATEFLAG_20) {
-					func00033100(state);
+					sndp_apply_detune_pitch(state);
 				}
 			}
 			break;
 		case AL_SNDP_END_EVT:
-			func00033090(state);
+			sndp_free_state(state);
 			break;
 		case AL_SNDP_0200_EVT:
 			if (state->flags & SNDSTATEFLAG_10) {
-				func00033820(event->msg.msg.generic.data2, event->msg.msg.generic.data, state->vol, state->pan,
+				sndp_play_sound(event->msg.msg.generic.data2, event->msg.msg.generic.data, state->vol, state->pan,
 						state->pitch, state->fxmix, state->fxbus, state->unk30);
 			}
 			break;
@@ -465,7 +465,7 @@ void _n_handleEvent(N_ALSndpEvent *event)
 	} while (!done && state && !isspecial);
 }
 
-void func00033090(struct sndstate *state)
+void sndp_free_state(struct sndstate *state)
 {
 	if (state->flags & SNDSTATEFLAG_04) {
 		n_alSynStopVoice(&state->voice);
@@ -478,7 +478,7 @@ void func00033090(struct sndstate *state)
 	_removeEvents(&g_SndPlayer->evtq, (N_ALSoundState *)state, 0xffff);
 }
 
-void func00033100(struct sndstate *state)
+void sndp_apply_detune_pitch(struct sndstate *state)
 {
 	N_ALSndpEvent evt;
 	f32 pitch = alCents2Ratio(state->sound->keyMap->detune) * state->pitch;
@@ -551,7 +551,7 @@ void sndp_set_addref_callback(void *fn)
 	g_SndpAddRefCallback = fn;
 }
 
-struct sndstate *func00033390(s32 arg0, ALSound *sound)
+struct sndstate *sndp_alloc_state(s32 arg0, ALSound *sound)
 {
 	struct sndstate *state;
 	ALKeyMap *keymap;
@@ -687,7 +687,7 @@ s32 sndp_get_state(struct sndstate *state)
 	}
 }
 
-struct sndstate *func00033820(s32 arg0, s16 soundnum, u16 vol, ALPan pan, f32 pitch, u8 fxmix, u8 fxbus, struct sndstate **handleptr)
+struct sndstate *sndp_play_sound(s32 arg0, s16 soundnum, u16 vol, ALPan pan, f32 pitch, u8 fxmix, u8 fxbus, struct sndstate **handleptr)
 {
 	struct sndstate *state;
 	struct sndstate *state2 = NULL;
@@ -708,7 +708,7 @@ struct sndstate *func00033820(s32 arg0, s16 soundnum, u16 vol, ALPan pan, f32 pi
 	if (soundnum != 0) {
 		do {
 			sound = snd_load_sound(soundnum);
-			state = func00033390(arg0, sound);
+			state = sndp_alloc_state(arg0, sound);
 
 			if (state != NULL) {
 				g_SndPlayer->target = state;
@@ -781,7 +781,7 @@ void sndp_stop_sound(struct sndstate *state)
 
 #if VERSION >= VERSION_NTSC_FINAL
 	if (state && (state->flags & SNDSTATEFLAG_02)) {
-		func00033bc0(state);
+		sndp_post_end_event(state);
 	} else {
 		evt.type = AL_SNDP_0400_EVT;
 		evt.msg.generic.sndstate = state;
@@ -795,7 +795,7 @@ void sndp_stop_sound(struct sndstate *state)
 #elif VERSION >= VERSION_NTSC_1_0
 	// NTSC 1.0 lacks the null state check
 	if (state->flags & SNDSTATEFLAG_02) {
-		func00033bc0(state);
+		sndp_post_end_event(state);
 	} else {
 		evt.type = AL_SNDP_0400_EVT;
 		evt.msg.generic.sndstate = state;
@@ -819,7 +819,7 @@ void sndp_stop_sound(struct sndstate *state)
 }
 
 #if VERSION >= VERSION_NTSC_1_0
-void func00033bc0(struct sndstate *state)
+void sndp_post_end_event(struct sndstate *state)
 {
 	N_ALEvent evt;
 
@@ -834,7 +834,7 @@ void func00033bc0(struct sndstate *state)
 }
 #endif
 
-void func00033c30(u8 flags)
+void sndp_post_stopall_event_bulk(u8 flags)
 {
 	OSIntMask mask = osSetIntMask(1);
 	N_ALEvent evt;
@@ -856,7 +856,7 @@ void func00033c30(u8 flags)
 }
 
 #if VERSION >= VERSION_NTSC_1_0
-void func00033cf0(u8 flags)
+void sndp_post_end_event_bulk(u8 flags)
 {
 	OSIntMask mask = osSetIntMask(1);
 	N_ALEvent evt;
@@ -879,25 +879,25 @@ void func00033cf0(u8 flags)
 #endif
 
 #if VERSION >= VERSION_NTSC_1_0
-void func00033db0(void)
+void sndp_cleanup(void)
 {
-	func00033cf0(SNDSTATEFLAG_01);
+	sndp_post_end_event_bulk(SNDSTATEFLAG_01);
 }
 #endif
 
-void func00033dd8(void)
+void sndp_stop_all(void)
 {
-	func00033c30(SNDSTATEFLAG_01);
+	sndp_post_stopall_event_bulk(SNDSTATEFLAG_01);
 }
 
-void func00033e00(void)
+void sndp_stop_specials(void)
 {
-	func00033c30(SNDSTATEFLAG_01 | SNDSTATEFLAG_10);
+	sndp_post_stopall_event_bulk(SNDSTATEFLAG_01 | SNDSTATEFLAG_10);
 }
 
-void func00033e28(void)
+void sndp_stop_nodecays(void)
 {
-	func00033c30(SNDSTATEFLAG_01 | SNDSTATEFLAG_02);
+	sndp_post_stopall_event_bulk(SNDSTATEFLAG_01 | SNDSTATEFLAG_02);
 }
 
 void sndp_post_event(struct sndstate *state, s16 type, s32 data)
@@ -915,7 +915,7 @@ void sndp_post_event(struct sndstate *state, s16 type, s32 data)
 	}
 }
 
-u16 func00033ec4(u8 index)
+u16 sndp_get_volume_entry(u8 index)
 {
 	return var8009c334 ? var8009c334[index] : 0;
 }
@@ -934,7 +934,7 @@ ALMicroTime sndp_get_curtime(void)
 }
 #endif
 
-void func00033f44(u8 index, u16 volume)
+void sndp_set_volume_entry(u8 index, u16 volume)
 {
 	if (var8009c334) {
 		OSIntMask mask = osSetIntMask(1);

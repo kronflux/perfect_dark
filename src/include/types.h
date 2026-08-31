@@ -5321,7 +5321,7 @@ struct light {
 	/*0x0a*/ struct vec3s16 bbox[4];
 };
 
-struct var80061420 {
+struct transfertableentry {
 	u8 *unk00;
 	u8 *unk04;
 };
@@ -5406,7 +5406,7 @@ struct pakfileheader {
 	u32 version : 1;        // 0, but can be set to 1 using -forceversion argument
 };
 
-struct var80067e6c {
+struct animdist {
 	s16 animnum;
 	f32 value;
 };
@@ -5715,20 +5715,20 @@ struct mp3vars {
 	/*0x28*/ s32 samples;
 	/*0x2c*/ s32 var8009c3bc;
 	/*0x30*/ s32 filesize;
-	/*0x34*/ s32 var8009c3c4;
+	/*0x34*/ s32 dmaoffset;
 	/*0x38*/ struct mp3thing *var8009c3c8;
 	/*0x3c*/ s32 var8009c3cc;
 	/*0x40*/ s32 var8009c3d0;
 	/*0x44*/ u32 *var8009c3d4[1];
 	/*0x48*/ u32 var8009c3d8;
-	/*0x4c*/ void *var8009c3dc;
+	/*0x4c*/ void *dmafunc;
 	/*0x50*/ u32 var8009c3e0;
 	/*0x54*/ u32 var8009c3e4;
 	/*0x58*/ u32 var8009c3e8;
 	/*0x5c*/ s16 var8009c3ec;
 	/*0x5e*/ s16 var8009c3ee;
-	/*0x60*/ u8 var8009c3f0;
-	/*0x61*/ u8 var8009c3f1;
+	/*0x60*/ u8 statetimer;
+	/*0x61*/ u8 dualchannel;
 #ifndef PLATFORM_N64
 	/*0x62*/ u8 reset;
 #endif
@@ -5785,7 +5785,7 @@ struct shotdata {
 	/*0x3c*/ struct hit hits[10];
 };
 
-struct var800a45a0 {
+struct headeditordata {
 	/*0x000*/ u32 unk000;
 	/*0x004*/ u32 unk004;
 	/*0x008*/ u32 unk008;
@@ -5929,7 +5929,7 @@ struct var8007f8e0 { // perfect head?
 	/*0x3f8*/ struct fileguid fileguid;
 };
 
-struct var8007f8dc {
+struct headeditor {
 	/*0x000*/ u32 unk000;
 	/*0x004*/ f32 unk004;
 	/*0x008*/ f32 unk008;
@@ -5997,7 +5997,7 @@ struct hatposition {
 	f32 unk14;
 };
 
-struct var80062960 {
+struct onscreendoor {
 	/*0x000*/ struct prop *prop;
 	/*0x004*/ bool unk004;
 	/*0x008*/ f32 unk008;

@@ -112,7 +112,7 @@ void menu_tick(void)
 		}
 
 		if (g_MenuData.unk66f > bVar12 || !bVar11) {
-			func0f0f3220(g_MenuData.unk66e - 1);
+			menu_save_file(g_MenuData.unk66e - 1);
 		} else {
 			g_MenuData.unk66f++;
 		}
@@ -192,7 +192,7 @@ void menu_tick(void)
 				}
 
 				if (g_MenuData.bg == 0) {
-					func0f0fa6ac();
+					menu_consider_unpause();
 				}
 			}
 
@@ -232,7 +232,7 @@ void menu_tick(void)
 
 						if (g_Vars.mpsetupmenu == MPSETUPMENU_ADVSETUP) {
 							g_MpNumJoined++;
-							func0f17fcb0(true);
+							mp_open_advanced_setup(true);
 						} else if (g_MpNumJoined == 0) {
 							g_MpNumJoined++;
 
@@ -394,7 +394,7 @@ void menu_tick(void)
 						} else {
 							// Joining from advanced setup
 							g_MpNumJoined++;
-							func0f17fcb0(false);
+							mp_open_advanced_setup(false);
 						}
 					}
 
@@ -422,7 +422,7 @@ void menu_tick(void)
 								// reached the adv setup layer - open the dialog
 								g_Vars.waitingtojoin[i] = false;
 								g_MpNumJoined++;
-								func0f17fcb0(false);
+								mp_open_advanced_setup(false);
 							}
 						}
 					}
@@ -468,7 +468,7 @@ void menu_tick(void)
 
 		if (sp340 &&
 				(g_MenuData.root == MENUROOT_MPSETUP || g_MenuData.root == MENUROOT_4MBMAINMENU)) {
-			func0f0f820c(NULL, -5);
+			menu_save_and_push_root_dialog(NULL, -5);
 		}
 	} else {
 		var8006294c = 0;
@@ -529,7 +529,7 @@ void menu_tick(void)
 				s32 playernum = 0;
 
 				if (g_Vars.normmplayerisrunning) {
-					func0f0fd548(4);
+					menu_queue_save(4);
 				}
 
 				for (i = 0; i < MAX_PLAYERS; i++) {
@@ -560,7 +560,7 @@ void menu_tick(void)
 							isdialogopen = true;
 
 							if (g_PlayerConfigsArray[i].fileguid.fileid && g_PlayerConfigsArray[i].fileguid.deviceserial) {
-								func0f0fd548(i);
+								menu_queue_save(i);
 							}
 						}
 

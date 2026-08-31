@@ -24,7 +24,7 @@ s32 var8009de94;
 s32 g_MenuProjectFromX;
 s32 g_MenuProjectFromY;
 
-void func0f0d4690(Mtxf *mtx)
+void ortho_configure_full_mtx(Mtxf *mtx)
 {
 	struct coord pos;
 
@@ -46,14 +46,14 @@ void func0f0d4690(Mtxf *mtx)
 	}
 }
 
-void func0f0d475c(Mtxf *mtx)
+void ortho_configure_mtx(Mtxf *mtx)
 {
-	func0f0d4690(mtx);
+	ortho_configure_full_mtx(mtx);
 	mtx00015df0(0.1f, mtx);
 	mtx00015e4c(0.1f, mtx);
 }
 
-Gfx *func0f0d479c(Gfx *gdl)
+Gfx *ortho_begin(Gfx *gdl)
 {
 	Mtxf mtx;
 	Mtxf *mtx1;
@@ -63,7 +63,7 @@ Gfx *func0f0d479c(Gfx *gdl)
 	mtx2 = gfxAllocateMatrix();
 
 	mtx00016760();
-	func0f0d475c(&mtx);
+	ortho_configure_mtx(&mtx);
 	mtx_f2l(&mtx, mtx2);
 	mtx4_load_identity(&mtx);
 
@@ -126,7 +126,7 @@ Gfx *func0f0d479c(Gfx *gdl)
 	return gdl;
 }
 
-Gfx *func0f0d49c8(Gfx *gdl)
+Gfx *ortho_end(Gfx *gdl)
 {
 	gSPViewport(gdl++, OS_K0_TO_PHYSICAL(vi_get_current_player_viewport()));
 	gSPMatrix(gdl++, osVirtualToPhysical(cam_get_perspective_mtxl()), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
@@ -134,7 +134,7 @@ Gfx *func0f0d49c8(Gfx *gdl)
 	return gdl;
 }
 
-Gfx *func0f0d4a3c(Gfx *gdl, s32 arg1)
+Gfx *ortho_holoray_begin(Gfx *gdl, s32 arg1)
 {
 	Mtxf mtx;
 	Mtxf *mtxptr = gfxAllocateMatrix();
@@ -159,7 +159,7 @@ Gfx *func0f0d4a3c(Gfx *gdl, s32 arg1)
 	gDPSetRenderMode(gdl++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
 	gDPSetTexturePersp(gdl++, G_TP_PERSP);
 
-	func0f0d4690(&mtx);
+	ortho_configure_full_mtx(&mtx);
 	mtx_f2l(&mtx, mtxptr);
 
 	gSPMatrix(gdl++, osVirtualToPhysical(mtxptr), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
@@ -167,12 +167,12 @@ Gfx *func0f0d4a3c(Gfx *gdl, s32 arg1)
 	return gdl;
 }
 
-Gfx *func0f0d4c80(Gfx *gdl)
+Gfx *ortho_holoray_end(Gfx *gdl)
 {
 	Mtxf mtx;
 	Mtxf *mtxptr = gfxAllocateMatrix();
 
-	func0f0d4690(&mtx);
+	ortho_configure_full_mtx(&mtx);
 	mtx00015df0(0.1f, &mtx);
 	mtx00015e4c(0.1f, &mtx);
 	mtx_f2l(&mtx, mtxptr);
@@ -543,13 +543,13 @@ void func0f0d564c_ext(u8 *data, char *dst, bool addlinebreak, u8 len)
 	savebufferReadString_ext(&buffer, dst, addlinebreak, len);
 }
 
-void func0f0d564c(u8 *data, char *dst, bool addlinebreak)
+void savebuffer_bitstring_to_cstring(u8 *data, char *dst, bool addlinebreak)
 {
 	func0f0d564c_ext(data, dst, addlinebreak, 10);
 }
 
 #if VERSION >= VERSION_NTSC_1_0
-void func0f0d5690(u8 *dst, char *src)
+void savebuffer_cstring_to_bitstring(u8 *dst, char *src)
 {
 	struct savebuffer buffer;
 	bool done = false;
@@ -616,7 +616,7 @@ void format_time(char *dst, s32 time60, s32 precision)
 }
 
 #if VERSION >= VERSION_NTSC_1_0
-void func0f0d5a7c(void)
+void ortho_reset(void)
 {
 	var80070f10 = 0;
 }

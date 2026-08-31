@@ -259,7 +259,7 @@ void bot_spawn(struct chrdata *chr, u8 respawning)
 		chr->aibot->lookangle = model_get_chr_rot_y(chr->model);
 		chr->aibot->moveratex = 0;
 		chr->aibot->moveratey = 0;
-		func0f02e9a0(chr, 0);
+		chr_stand_immediate(chr, 0);
 
 #ifndef PLATFORM_N64
 		if (g_Vars.normmplayerisrunning
@@ -491,7 +491,7 @@ bool bot_test_prop_for_pickup(struct prop *prop, struct chrdata *chr)
 		return false;
 	}
 
-	if (func0f085194(obj) && obj->type != OBJTYPE_HAT) {
+	if (obj_defaults_to_bounceable_invincible_pickupable(obj) && obj->type != OBJTYPE_HAT) {
 		if (obj->flags & OBJFLAG_UNCOLLECTABLE) {
 			return false;
 		}
@@ -1023,7 +1023,7 @@ s32 bot_tick(struct prop *prop)
 				bool left = chr->weapons_held[HAND_LEFT] ? true : false;
 				bool right = (0, chr->weapons_held[HAND_RIGHT] ? true : false);
 
-				func0f03e9f4(chr, aibot->attackanimconfig, left, right, 0);
+				chr_calculate_aimend(chr, aibot->attackanimconfig, left, right, 0);
 			} else {
 				chr_reset_aim_end_properties(chr);
 			}
@@ -2360,7 +2360,7 @@ s32 bot_get_num_opponents_in_hill(struct chrdata *chr)
 
 	for (i = 0; i < g_MpNumChrs; i++) {
 		if (g_MpAllChrPtrs[i]->prop->rooms[0] == g_ScenarioData.koh.hillrooms[0]) {
-			s32 mpindex = func0f18d074(i);
+			s32 mpindex = mp_chrindex_to_chrslot(i);
 
 			loopmpchr = MPCHR(mpindex);
 
@@ -3031,7 +3031,7 @@ void bot_tick_unpaused(struct chrdata *chr)
 					s32 i;
 
 					for (i = 0; i < count; i++) {
-						s32 playernum = func0f18d0e8(rankings[i].chrnum);
+						s32 playernum = mp_chrslot_to_chrindex(rankings[i].chrnum);
 						struct chrdata *otherchr = mp_get_chr_from_player_index(playernum);
 
 						if (otherchr != chr && !chr_is_dead(otherchr)) {

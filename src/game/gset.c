@@ -158,7 +158,7 @@ f32 hand_get_x_shift(s32 handnum)
 	return g_Vars.currentplayer->hands[handnum].xshift;
 }
 
-f32 func0f0b131c(s32 hand)
+f32 hand_get_xpos(s32 hand)
 {
 	f32 x;
 	struct weapon *weapon;
@@ -330,12 +330,12 @@ bool weapon_has_ammo_flag(s32 weaponnum, s32 funcnum, u32 flag)
 	return false;
 }
 
-void func0f0b18ac(s32 arg0)
+void gset_stub1(s32 arg0)
 {
 	// empty
 }
 
-void func0f0b18b4(s32 arg0)
+void gset_stub2(s32 arg0)
 {
 	// empty
 }

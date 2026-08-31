@@ -498,7 +498,7 @@ void weapon_play_whoosh_sound(s32 weaponnum, struct prop *prop)
  * This is similar to the above but the sound numbers seem wrong...
  * Perhaps the function was from GE and not updated for PD.
  */
-void func0f060bac(s32 weaponnum, struct prop *prop)
+void weapon_play_melee_hit_sound(s32 weaponnum, struct prop *prop)
 {
 	s32 soundnum = -1;
 	f32 speed = 1;
@@ -805,7 +805,7 @@ struct prop *shot_calculate_hits(s32 handnum, bool isshooting, struct coord *gun
 					exppos.y = shotdata.hits[i].pos.y;
 					exppos.z = shotdata.hits[i].pos.z;
 
-					func0f065e74(&root->pos, root->rooms, &exppos, exprooms);
+					los_find_final_room_exhaustive(&root->pos, root->rooms, &exppos, exprooms);
 					explosion_create_simple(0, &exppos, exprooms, EXPLOSIONTYPE_PHOENIX, g_Vars.currentplayernum);
 				}
 			}
@@ -923,7 +923,7 @@ struct prop *shot_calculate_hits(s32 handnum, bool isshooting, struct coord *gun
 		}
 
 		if (hitaprop || hitbg) {
-			func0f060bac(shotdata.gset.weaponnum, g_Vars.currentplayer->prop);
+			weapon_play_melee_hit_sound(shotdata.gset.weaponnum, g_Vars.currentplayer->prop);
 
 			if (shotdata.gset.weaponnum != WEAPON_UNARMED && shotdata.gset.weaponnum != WEAPON_TRANQUILIZER) {
 				if (hitaprop) {
@@ -1335,7 +1335,7 @@ void hand_inflict_melee_damage(s32 handnum, struct gset *gset, bool arg2)
 					model = chr->model;
 				}
 
-				if (func0f0679ac(model, &distance, &sp110, spfc, spf4)
+				if (obj_is_any_node_in_range(model, &distance, &sp110, spfc, spf4)
 						&& sp110 <= 0
 						&& distance >= -rangelimit) {
 					cdtypes = CDTYPE_OBJS | CDTYPE_DOORS | CDTYPE_PATHBLOCKER | CDTYPE_BG;
@@ -2501,7 +2501,7 @@ void props_test_for_pickup(void)
 	}
 }
 
-f32 func0f06438c(struct prop *prop, struct coord *arg1, f32 *arg2, f32 *arg3, f32 *arg4, bool throughobjects, bool cangangsta, s32 arg7)
+f32 prop_calculate_autoaim_score(struct prop *prop, struct coord *arg1, f32 *arg2, f32 *arg3, f32 *arg4, bool throughobjects, bool cangangsta, s32 arg7)
 {
 	f32 spa0[2];
 	struct coord sp94;
@@ -2836,7 +2836,7 @@ void autoaim_tick(void)
 								|| (chr->chrflags & CHRCFLAG_FORCEAUTOAIM)
 								|| chr->gunprop)
 							&& chr_calculate_auto_aim(prop, &sp94, sp8c, sp84)) {
-						f32 thing = func0f06438c(prop, &sp94, sp8c, sp84, sp78, false, cangangsta, 0);
+						f32 thing = prop_calculate_autoaim_score(prop, &sp94, sp8c, sp84, sp78, false, cangangsta, 0);
 
 						if (thing > bestthing) {
 							bestthing = thing;
@@ -3205,7 +3205,7 @@ void prop_register_rooms(struct prop *prop)
 	}
 }
 
-void func0f065d1c(struct coord *pos, RoomNum *rooms, struct coord *newpos, RoomNum *newrooms, RoomNum *morerooms, u32 arg5)
+void los_find_intersecting_rooms_properly(struct coord *pos, RoomNum *rooms, struct coord *newpos, RoomNum *newrooms, RoomNum *morerooms, u32 arg5)
 {
 	RoomNum stackrooms[8];
 	s32 index;
@@ -3225,17 +3225,17 @@ void func0f065d1c(struct coord *pos, RoomNum *rooms, struct coord *newpos, RoomN
 	newrooms[index] = -1;
 }
 
-void func0f065dd8(struct coord *pos, RoomNum *rooms, struct coord *newpos, RoomNum *newrooms)
+void los_find_final_room_properly(struct coord *pos, RoomNum *rooms, struct coord *newpos, RoomNum *newrooms)
 {
-	func0f065d1c(pos, rooms, newpos, newrooms, NULL, 0);
+	los_find_intersecting_rooms_properly(pos, rooms, newpos, newrooms, NULL, 0);
 }
 
-void func0f065dfc(struct coord *pos, RoomNum *rooms, struct coord *newpos, RoomNum *newrooms, RoomNum *morerooms, u32 arg5)
+void los_find_intersecting_rooms_exhaustive(struct coord *pos, RoomNum *rooms, struct coord *newpos, RoomNum *newrooms, RoomNum *morerooms, u32 arg5)
 {
-	func0f065d1c(pos, rooms, newpos, newrooms, morerooms, arg5);
+	los_find_intersecting_rooms_properly(pos, rooms, newpos, newrooms, morerooms, arg5);
 
 	if (newrooms[0] == -1) {
-		func0f065e98(pos, rooms, newpos, newrooms);
+		los_find_final_room_fast(pos, rooms, newpos, newrooms);
 
 		if (morerooms) {
 			rooms_append(newrooms, morerooms, arg5);
@@ -3243,12 +3243,12 @@ void func0f065dfc(struct coord *pos, RoomNum *rooms, struct coord *newpos, RoomN
 	}
 }
 
-void func0f065e74(struct coord *pos, RoomNum *rooms, struct coord *newpos, RoomNum *newrooms)
+void los_find_final_room_exhaustive(struct coord *pos, RoomNum *rooms, struct coord *newpos, RoomNum *newrooms)
 {
-	func0f065dfc(pos, rooms, newpos, newrooms, NULL, 0);
+	los_find_intersecting_rooms_exhaustive(pos, rooms, newpos, newrooms, NULL, 0);
 }
 
-void func0f065e98(struct coord *pos, RoomNum *rooms, struct coord *pos2, RoomNum *dstrooms)
+void los_find_final_room_fast(struct coord *pos, RoomNum *rooms, struct coord *pos2, RoomNum *dstrooms)
 {
 	RoomNum inrooms[21];
 	RoomNum aboverooms[21];
@@ -3402,7 +3402,7 @@ void props_defrag_room_props(void)
 	}
 }
 
-void func0f0661fc(void)
+void prop_debug_roomblocks(void)
 {
 	// empty
 }

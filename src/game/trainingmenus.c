@@ -68,7 +68,7 @@ MenuItemHandlerResult fr_details_ok_menu_handler(s32 operation, struct menuitem 
 			fr_begin_session(weapon);
 		}
 
-		func0f0f8120();
+		menu_save_and_close_all();
 		break;
 	}
 
@@ -224,7 +224,7 @@ MenuDialogHandlerResult fr_training_info_menu_dialog(s32 operation, struct menud
 	case MENUOP_OPEN:
 		weaponnum = fr_get_weapon_by_slot(fr_get_slot());
 		g_Menus[g_MpPlayerNum].training.weaponnum = weaponnum;
-		func0f105948(weaponnum);
+		mainmenu_prepare_weapon_menumodel(weaponnum);
 
 		if (!fr_is_in_training()) {
 			fr_init_ammo(weaponnum);
@@ -887,7 +887,7 @@ MenuItemHandlerResult menuhandler_fr_failed_continue(s32 operation, struct menui
 {
 	if (operation == MENUOP_SET) {
 		if (g_Vars.currentplayer->prop->rooms[0] == 0xa) {
-			func0f0f3704(&g_FrWeaponListMenuDialog);
+			menu_replace_current_dialog(&g_FrWeaponListMenuDialog);
 		} else {
 			menu_pop_dialog();
 		}
@@ -1764,7 +1764,7 @@ MenuItemHandlerResult menuhandler_dt_ok_or_resume(s32 operation, struct menuitem
 		// @bug: dt_begin() should not be called if training is already in
 		// progress. Doing this resets the training timer.
 		dt_begin();
-		func0f0f8120();
+		menu_save_and_close_all();
 	}
 
 	return 0;
@@ -1921,9 +1921,9 @@ MenuDialogHandlerResult dt_training_details_menu_dialog(s32 operation, struct me
 		{
 			s32 weaponnum = dt_get_weapon_by_device_index(dt_get_index_by_slot(g_DtSlot));
 			u16 unused[] = {64250, 38500, 25650, 25700, 12950};
-			func0f1a1ac0();
+			dt_reset();
 			g_Menus[g_MpPlayerNum].training.weaponnum = weaponnum;
-			func0f105948(weaponnum);
+			mainmenu_prepare_weapon_menumodel(weaponnum);
 
 #ifdef PLATFORM_N64
 #if VERSION == VERSION_PAL_FINAL
@@ -2116,7 +2116,7 @@ MenuItemHandlerResult menuhandler001a6a34(s32 operation, struct menuitem *item, 
 {
 	if (operation == MENUOP_SET) {
 		ht_begin();
-		func0f0f8120();
+		menu_save_and_close_all();
 	}
 
 	return 0;
@@ -2135,7 +2135,7 @@ MenuDialogHandlerResult menudialog001a6aa4(s32 operation, struct menudialogdef *
 {
 	switch (operation) {
 	case MENUOP_OPEN:
-		func0f1a2198();
+		ht_reset();
 		break;
 	case MENUOP_CLOSE:
 		break;

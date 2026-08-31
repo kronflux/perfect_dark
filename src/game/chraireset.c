@@ -173,7 +173,7 @@ void stage_load_all_ailist_models(void)
 	} while (cmd);
 }
 
-void func0f00c230(void)
+void stage_load_projectile_models(void)
 {
 	// empty
 }

@@ -5,14 +5,14 @@
 #include "types.h"
 
 f32 mp_handicap_to_damage_scale(u8 value);
-void func0f187838(struct mpchrconfig *mpchr);
+void mp_reset_mpchrconfig_for_match(struct mpchrconfig *mpchr);
 void mp_start_match(void);
 void mp_reset(void);
 void mp_calculate_team_is_only_ai(void);
-void func0f187fbc(s32 playernum);
-void func0f187fec(void);
+void mp_init_handicaps(s32 playernum);
+void mp_init_limits(void);
 void mp_player_set_defaults(s32 playernum, bool autonames);
-void func0f1881d4(s32 index);
+void mp_init_botconfig(s32 index);
 void mp_init(bool resetplayers);
 void mp_get_teams_with_default_name(u8 *mask);
 void mp_set_team_names_to_default(u8 mask);
@@ -22,24 +22,24 @@ void mp_apply_limits(void);
 s32 mp_get_player_rankings(struct ranking *rankings);
 s32 mp_calculate_team_score(s32 arg0, s32 *arg1);
 s32 mp_get_team_rankings(struct ranking *rankings);
-s32 func0f188bcc(void);
+s32 mp_get_num_mpweapons(void);
 s32 mp_get_num_weapon_options(void);
 char *mp_get_weapon_label(s32 weaponnum);
 void mp_set_weapon_slot(s32 slot, s32 mpweaponnum);
 s32 mp_get_weapon_slot(s32 slot);
 struct mpweapon *mp_get_mp_weapon_by_location(s32 locationindex);
 s32 mp_count_weapon_set_thing(s32 weaponsetindex);
-s32 func0f188f9c(s32 arg0);
-s32 func0f189058(bool full);
-s32 func0f189088(void);
+s32 mp_slotnum_to_mpweaponset(s32 arg0);
+s32 mp_get_num_weaponset_slots(bool full);
+s32 mp_get_custom_weaponset_slot(void);
 char *mp_get_weapon_set_name(s32 arg0);
-void func0f18913c(void);
+void mp_find_weaponsetnum_by_weapons(void);
 #ifndef PLATFORM_N64
 void mpSetRandomWeapons(u8 weapons[]);
 #endif
 void mp_apply_weapon_set(void);
 void mp_set_weapon_set(s32 weaponsetnum);
-void func0f1895e8(void);
+void mp_apply_weaponset_if_standard(void);
 s32 mp_get_weapon_set(void);
 bool mp_is_paused(void);
 void mp_set_paused(u8 mode);
@@ -103,8 +103,8 @@ s32 mp_find_bot_profile(s32 type, s32 difficulty);
 void mp_generate_bot_names(void);
 s32 mp_player_get_index(struct chrdata *chr);
 struct chrdata *mp_get_chr_from_player_index(s32 index);
-s32 func0f18d074(s32 index);
-s32 func0f18d0e8(s32 arg0);
+s32 mp_chrindex_to_chrslot(s32 index);
+s32 mp_chrslot_to_chrindex(s32 arg0);
 void mpplayerfile_load_gun_funcs(struct savebuffer *buffer, s32 playernum);
 void mpplayerfile_save_gun_funcs(struct savebuffer *buffer, s32 playernum);
 void mpplayerfile_load_wad(s32 playernum, struct savebuffer *buffer, s32 arg2);
@@ -122,7 +122,7 @@ void mpsetupfile_load_wad(struct savebuffer *buffer, u8 version);
 void mpsetupfile_save_wad(struct savebuffer *buffer);
 void mpsetupfile_get_overview(char *arg0, char *filename, u16 *numsims, u16 *stagenum, u16 *scenarionum);
 s32 mpsetupfile_save(s32 device, s32 filenum, u16 deviceserial);
-void func0f18e558(void);
-struct modeldef *func0f18e57c(s32 index, s32 *headnum);
+void mp_reset_phead_modeldefs(void);
+struct modeldef *mp_get_phead_modeldef(s32 index, s32 *headnum);
 
 #endif
