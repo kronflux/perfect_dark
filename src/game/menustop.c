@@ -30,7 +30,7 @@
 #include "input.h"
 #endif
 
-void menuStop(void)
+void menu_stop(void)
 {
 #ifndef PLATFORM_N64
 	inputAutoLockMouse(true);
@@ -39,7 +39,7 @@ void menuStop(void)
 	if (var80062944) {
 		var80062944 = 0;
 		var80062948 = 0;
-		joySetDefaultPfsPollInterval();
+		joy_set_default_pfs_poll_interval();
 		func0f110bf8();
 	}
 }

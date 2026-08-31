@@ -2512,7 +2512,7 @@ static void gfx_run_dl(Gfx* cmd) {
             case (uint8_t)G_RDPHALF_1:
             case (uint8_t)G_RDPHALF_2:
             case (uint8_t)G_RDPHALF_CONT:
-                // on N64 skyRender uses these to render some types of skies and skybox water
+                // on N64 sky_render uses these to render some types of skies and skybox water
                 // by issuing low-level ucode commands G_TRI_FILL and G_TRI_SHADE_TXTR
                 // the port renders the sky in a different manner
                 break;

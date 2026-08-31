@@ -30,7 +30,7 @@ extern "C" {
 #define RMON_STACKSIZE 0x1000
 
 extern void rmonMain( void * );
-extern void rmonPrintf( const char *, ... );
+extern void rmon_printf( const char *, ... );
 
 #ifdef _LANGUAGE_C_PLUS_PLUS
 }

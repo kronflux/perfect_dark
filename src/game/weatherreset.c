@@ -40,7 +40,7 @@ static void weatherResetRooms(void)
 
 #endif
 
-void weatherReset(void)
+void weather_reset(void)
 {
 	g_WeatherActive = false;
 	g_WeatherData = NULL;
@@ -64,8 +64,8 @@ void weatherReset(void)
 			&& PLAYERCOUNT() < 2)
 #endif
 	{
-		g_WeatherData = mempAlloc(sizeof(struct weatherdata), MEMPOOL_STAGE);
-		g_WeatherData->particledata[0] = weatherAllocateParticles();
+		g_WeatherData = memp_alloc(sizeof(struct weatherdata), MEMPOOL_STAGE);
+		g_WeatherData->particledata[0] = weather_allocate_particles();
 		g_WeatherData->type = -1;
 		g_WeatherData->windanglerad = 0;
 		g_WeatherData->unk0c = 0;

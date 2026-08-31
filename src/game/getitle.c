@@ -65,11 +65,11 @@ Gfx *getitle0f0155f0(Gfx *gdl, s32 arg1, u8 arg2)
 	gSPDisplayList(gdl++, &var80061360);
 
 	if (var80062494) {
-		gdl = titleClear(gdl);
+		gdl = title_clear(gdl);
 		var80062494 = 0;
 	} else {
 		gDPSetCycleType(gdl++, G_CYC_FILL);
-		gDPSetColorImage(gdl++, G_IM_FMT_RGBA, G_IM_SIZ_16b, viGetWidth(), osVirtualToPhysical(viGetBackBuffer()));
+		gDPSetColorImage(gdl++, G_IM_FMT_RGBA, G_IM_SIZ_16b, vi_get_width(), osVirtualToPhysical(vi_get_back_buffer()));
 		gDPSetFillColor(gdl++, 0x00010001);
 		gDPFillRectangle(gdl++, 200, 100, 439, 379);
 	}
@@ -144,7 +144,7 @@ extern u8 EXT_SEG _getitleSegmentRomStart;
 extern u8 EXT_SEG _getitleSegmentStart;
 extern u8 EXT_SEG _getitleSegmentEnd;
 
-void getitleLoad(void *addr, u32 arg1)
+void getitle_load(void *addr, u32 arg1)
 {
 	u32 len = (romptr_t) REF_SEG _getitleSegmentEnd - (romptr_t) REF_SEG _getitleSegmentStart;
 
@@ -154,10 +154,10 @@ void getitleLoad(void *addr, u32 arg1)
 	var80062498 = 0;
 	var8009cc90 = addr;
 
-	dmaExec(var8009cc90, (romptr_t) REF_SEG _getitleSegmentRomStart, ALIGN64(len));
+	dma_exec(var8009cc90, (romptr_t) REF_SEG _getitleSegmentRomStart, ALIGN64(len));
 }
 
-Gfx *getitleRender(Gfx *gdl)
+Gfx *getitle_render(Gfx *gdl)
 {
 	var80062410 = 1 - var80062410;
 

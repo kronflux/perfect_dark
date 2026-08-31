@@ -89,7 +89,7 @@ static MenuItemHandlerResult menuhandlerSelectPlayer(s32 operation, struct menui
 	if (operation == MENUOP_SET) {
 		g_ExtMenuPlayer = item - g_ExtendedSelectPlayerMenuItems;
 		((char *)g_ExtNextDialog->title)[7] = g_ExtMenuPlayer + '1';
-		menuPushDialog(g_ExtNextDialog);
+		menu_push_dialog(g_ExtNextDialog);
 	}
 
 	return 0;
@@ -596,10 +596,10 @@ static MenuItemHandlerResult menuhandlerController(s32 operation, struct menuite
 		if (data->dropdown.value == 0) {
 			// unassign controller
 			inputAssignController(g_ExtMenuPlayer, -1);
-			joyReset();
+			joy_reset();
 		} else if (data->dropdown.value <= numCtrls) {
 			inputAssignController(g_ExtMenuPlayer, ctrls[data->dropdown.value - 1]);
-			joyReset();
+			joy_reset();
 		}
 		break;
 	case MENUOP_GETSELECTEDINDEX:
@@ -1830,19 +1830,19 @@ struct menuitem g_ExtendedBindsMenuItems[] = {
 
 static MenuItemHandlerResult menuhandlerDoBind(s32 operation, struct menuitem *item, union handlerdata *data)
 {
-	if (!menuIsDialogOpen(&g_ExtendedBindKeyMenuDialog)) {
+	if (!menu_is_dialog_open(&g_ExtendedBindKeyMenuDialog)) {
 		return 0;
 	}
 
 	if (inputKeyPressed(VK_ESCAPE)) {
-		menuPopDialog();
+		menu_pop_dialog();
 		return 0;
 	}
 
 	const s32 key = inputGetLastKey();
 	if (key && key != VK_ESCAPE) {
 		inputKeyBind(g_ExtMenuPlayer, g_BindContKey, g_BindIndex, (key == VK_DELETE ? 0 : key));
-		menuPopDialog();
+		menu_pop_dialog();
 	}
 
 	return 0;
@@ -1881,7 +1881,7 @@ static MenuItemHandlerResult menuhandlerBind(s32 operation, struct menuitem *ite
 		g_BindIndex = data->dropdown.value;
 		g_BindContKey = menuBinds[idx].ck;
 		inputClearLastKey();
-		menuPushDialog(&g_ExtendedBindKeyMenuDialog);
+		menu_push_dialog(&g_ExtendedBindKeyMenuDialog);
 		break;
 	case MENUOP_GETSELECTEDINDEX:
 		data->dropdown.value = 0;
@@ -1922,7 +1922,7 @@ static MenuItemHandlerResult menuhandlerOpenControllerMenu(s32 operation, struct
 {
 	if (operation == MENUOP_SET) {
 		g_ExtNextDialog = &g_ExtendedControllerMenuDialog;
-		menuPushDialog(&g_ExtendedSelectPlayerMenuDialog);
+		menu_push_dialog(&g_ExtendedSelectPlayerMenuDialog);
 	}
 	return 0;
 }
@@ -1931,7 +1931,7 @@ static MenuItemHandlerResult menuhandlerOpenGameMenu(s32 operation, struct menui
 {
 	if (operation == MENUOP_SET) {
 		g_ExtNextDialog = &g_ExtendedGameMenuDialog;
-		menuPushDialog(&g_ExtendedSelectPlayerMenuDialog);
+		menu_push_dialog(&g_ExtendedSelectPlayerMenuDialog);
 	}
 	return 0;
 }
@@ -1940,7 +1940,7 @@ static MenuItemHandlerResult menuhandlerOpenBindsMenu(s32 operation, struct menu
 {
 	if (operation == MENUOP_SET) {
 		g_ExtNextDialog = &g_ExtendedBindsMenuDialog;
-		menuPushDialog(&g_ExtendedSelectPlayerMenuDialog);
+		menu_push_dialog(&g_ExtendedSelectPlayerMenuDialog);
 	}
 	return 0;
 }
@@ -2026,7 +2026,7 @@ void updateMaxAnisotropyLevel()
 {
 	for (int i = 0; i < ARRAYCOUNT(g_ExtendedVideoMenuItems); ++i) {
 		struct menuitem *item = &g_ExtendedVideoMenuItems[i];
-		const char *text = menuResolveParam2Text(item);
+		const char *text = menu_resolve_param2_text(item);
 		
 		if (text && strstr(text, "Anisotropic Filtering") != NULL) {
 			item->param3 = videoGetMaxAnisotropyLevel();

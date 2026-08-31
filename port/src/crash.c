@@ -340,22 +340,22 @@ void crashShutdown(void)
 	g_CrashEnabled = 0;
 }
 
-void crashCreateThread(void)
+void crash_create_thread(void)
 {
 
 }
 
-void crashSetMessage(char *string)
+void crash_set_message(char *string)
 {
 
 }
 
-void crashReset(void)
+void crash_reset(void)
 {
 
 }
 
-void crashAppendChar(char c)
+void crash_append_char(char c)
 {
 
 }

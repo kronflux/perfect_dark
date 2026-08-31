@@ -30,7 +30,7 @@
 #include "game/objectives.h"
 #include "game/endscreen.h"
 #include "game/playermgr.h"
-#include "game/game_1531a0.h"
+#include "game/text.h"
 #include "game/gfxmemory.h"
 #include "game/lang.h"
 #include "game/lv.h"
@@ -77,7 +77,7 @@
 extern u8 *g_MempHeap;
 extern u32 g_MempHeapSize;
 
-void rngSetSeed(u32 seed);
+void rng_set_seed(u32 seed);
 
 bool var8005d9b0 = false;
 s32 g_StageNum = STAGE_TITLE;
@@ -209,78 +209,78 @@ Gfx var8005dcc8[] = {
 
 s32 g_MainIsBooting = 1;
 
-void mainInit(void)
+void main_init(void)
 {
 	s32 x;
 	s32 i;
 	s32 j;
 	u32 addr;
 
-	faultInit();
-	dmaInit();
-	amgrInit();
-	varsInit();
-	mempInit();
-	memaInit();
-	joyInit();
-	joyReset();
+	fault_init();
+	dma_init();
+	amgr_init();
+	vars_init();
+	memp_init();
+	mema_init();
+	joy_init();
+	joy_reset();
 
-	var8005d9b0 = rmonIsDisabled();
+	var8005d9b0 = rmon_is_disabled();
 
 	g_Is4Mb = (osGetMemSize() <= 0x400000);
 	g_VmShowStats = 0;
 
 	// no copyright screen
-	viSetMode(VIMODE_HI);
-	viConfigureForLegal();
-	viBlack(true);
-	viUpdateMode();
+	vi_set_mode(VIMODE_HI);
+	vi_configure_for_legal();
+	vi_black(true);
+	vi_update_mode();
 
-	filesInit();
+	files_init();
 
 	if (var8005d9b0) {
-		argSetString("          -ml0 -me0 -mgfx100 -mvtx50 -mt700 -ma400");
+		arg_set_string("          -ml0 -me0 -mgfx100 -mvtx50 -mt700 -ma400");
 	}
 
-	mempSetHeap(g_MempHeap, g_MempHeapSize);
+	memp_set_heap(g_MempHeap, g_MempHeapSize);
 
-	mempResetPool(MEMPOOL_8);
-	mempResetPool(MEMPOOL_PERMANENT);
-	crashReset();
-	challengesInit();
-	utilsInit();
-	texInit();
-	langInit();
-	lvInit();
-	cheatsInit();
-	textInit();
-	dhudInit();
-	playermgrInit();
-	frametimeInit();
-	profileInit();
-	smokesInit();
-	mpInit(true);
-	pheadInit();
-	paksInit();
-	pheadInit2();
-	animsInit();
-	racesInit();
-	bodiesInit();
-	titleInit();
+	memp_reset_pool(MEMPOOL_8);
+	memp_reset_pool(MEMPOOL_PERMANENT);
+	crash_reset();
+	challenges_init();
+	utils_init();
+	tex_init();
+	lang_init();
+	lv_init();
+	cheats_init();
+	text_init();
+	dhud_init();
+	playermgr_init();
+	frametime_init();
+	profile_init();
+	smokes_init();
+	mp_init(true);
+	phead_init();
+	paks_init();
+	phead_init2();
+	anims_init();
+	races_init();
+	bodies_init();
+	title_init();
 
-	modelSetDistanceChecksDisabled(true); // don't use LODs
+	model_set_distance_checks_disabled(true); // don't use LODs
 
 	g_MainIsBooting = 0;
 }
 
-void mainProc(void)
+void main_proc(void)
 {
-	mainInit();
-	rdpInit();
-	sndInit();
+	main_init();
+	rdp_init();
+	snd_init();
 
 	while (true) {
-		mainLoop();
+		main_loop();
 	}
 }
 
@@ -293,7 +293,7 @@ void mainProc(void)
  * then this function would have looked up the given variable name in the table
  * and written the new value to the variable's address.
  */
-void mainOverrideVariable(char *name, void *value)
+void main_override_variable(char *name, void *value)
 {
 	// empty
 }
@@ -301,14 +301,14 @@ void mainOverrideVariable(char *name, void *value)
 /**
  * This function enters an infinite loop which iterates once per stage load.
  * Within this loop is an inner loop which runs very frequently and decides
- * whether to run mainTick on each iteration.
+ * whether to run main_tick on each iteration.
  *
  * NTSC beta checks two shorts at an offset 64MB into the development board
  * and refuses to continue if they are not any of the allowed values.
  * Decomp patches these reads in its build system so it can be played
  * without the development board.
  */
-void mainLoop(void)
+void main_loop(void)
 {
 	s32 ending = false;
 	s32 index;
@@ -318,7 +318,7 @@ void mainLoop(void)
 	func0f175f98();
 
 	var8005d9c4 = 0;
-	argGetLevel(&g_StageNum);
+	arg_get_level(&g_StageNum);
 
 	if (g_DoBootPakMenu) {
 		g_Vars.pakstocheck = 0xfd;
@@ -326,13 +326,13 @@ void mainLoop(void)
 	}
 
 	if (g_StageNum != STAGE_TITLE) {
-		titleSetNextStage(g_StageNum);
+		title_set_next_stage(g_StageNum);
 
 		if (g_StageNum < STAGE_TITLE) {
 			func0f01b148(0);
 
-			if (argFindByPrefix(1, "-hard")) {
-				lvSetDifficulty(argFindByPrefix(1, "-hard")[0] - '0');
+			if (arg_find_by_prefix(1, "-hard")) {
+				lv_set_difficulty(arg_find_by_prefix(1, "-hard")[0] - '0');
 			}
 		}
 	}
@@ -341,7 +341,7 @@ void mainLoop(void)
 		g_StageNum = STAGE_4MBMENU;
 	}
 
-	rngSetSeed(osGetCount());
+	rng_set_seed(osGetCount());
 
 	// Outer loop - this is infinite because ending is never changed
 	while (!ending) {
@@ -353,7 +353,7 @@ void mainLoop(void)
 			index = -1;
 
 			if (IS4MB()) {
-				if (g_StageNum < STAGE_TITLE && getNumPlayers() >= 2) {
+				if (g_StageNum < STAGE_TITLE && get_num_players() >= 2) {
 					index = 0; \
 					while (g_StageAllocations4Mb[index].stagenum) { \
 						if (g_StageAllocations4Mb[index].stagenum == g_StageNum + 400) { \
@@ -380,10 +380,10 @@ void mainLoop(void)
 					}
 				}
 
-				argSetString(g_StageAllocations4Mb[index].string);
+				arg_set_string(g_StageAllocations4Mb[index].string);
 			} else {
 				// 8MB
-				if (g_StageNum < STAGE_TITLE && getNumPlayers() >= 2) {
+				if (g_StageNum < STAGE_TITLE && get_num_players() >= 2) {
 					index = 0; \
 					while (g_StageAllocations8Mb[index].stagenum) { \
 						if (g_StageNum + 400 == g_StageAllocations8Mb[index].stagenum) { \
@@ -409,35 +409,35 @@ void mainLoop(void)
 					}
 				}
 
-				argSetString(g_StageAllocations8Mb[index].string);
+				arg_set_string(g_StageAllocations8Mb[index].string);
 			}
 		}
 
 		var8005d9c4 = 0;
 
-		mempResetPool(MEMPOOL_7);
-		mempResetPool(MEMPOOL_STAGE);
-		filesStop(4);
+		memp_reset_pool(MEMPOOL_7);
+		memp_reset_pool(MEMPOOL_STAGE);
+		files_stop(4);
 
-		if (argFindByPrefix(1, "-ma")) {
-			g_MainMemaHeapSize = strtol(argFindByPrefix(1, "-ma"), NULL, 0) * 1024;
+		if (arg_find_by_prefix(1, "-ma")) {
+			g_MainMemaHeapSize = strtol(arg_find_by_prefix(1, "-ma"), NULL, 0) * 1024;
 		}
 
-		memaReset(mempAlloc(g_MainMemaHeapSize, MEMPOOL_STAGE), g_MainMemaHeapSize);
-		langReset(g_StageNum);
-		playermgrReset();
+		mema_reset(memp_alloc(g_MainMemaHeapSize, MEMPOOL_STAGE), g_MainMemaHeapSize);
+		lang_reset(g_StageNum);
+		playermgr_reset();
 
 		if (g_StageNum >= STAGE_TITLE) {
 			numplayers = 0;
 		} else {
-			if (argFindByPrefix(1, "-play")) {
-				numplayers = strtol(argFindByPrefix(1, "-play"), NULL, 0);
+			if (arg_find_by_prefix(1, "-play")) {
+				numplayers = strtol(arg_find_by_prefix(1, "-play"), NULL, 0);
 			} else {
 				numplayers = 1;
 			}
 
-			if (getNumPlayers() >= 2) {
-				numplayers = getNumPlayers();
+			if (get_num_players() >= 2) {
+				numplayers = get_num_players();
 			}
 		}
 
@@ -445,19 +445,19 @@ void mainLoop(void)
 			g_Vars.bondplayernum = 0;
 			g_Vars.coopplayernum = -1;
 			g_Vars.antiplayernum = -1;
-		} else if (argFindByPrefix(1, "-coop")) {
+		} else if (arg_find_by_prefix(1, "-coop")) {
 			g_Vars.bondplayernum = 0;
 			g_Vars.coopplayernum = 1;
 			g_Vars.antiplayernum = -1;
-		} else if (argFindByPrefix(1, "-anti")) {
+		} else if (arg_find_by_prefix(1, "-anti")) {
 			g_Vars.bondplayernum = 0;
 			g_Vars.coopplayernum = -1;
 			g_Vars.antiplayernum = 1;
 		}
 
-		playermgrAllocatePlayers(numplayers);
+		playermgr_allocate_players(numplayers);
 
-		if (argFindByPrefix(1, "-mpbots")) {
+		if (arg_find_by_prefix(1, "-mpbots")) {
 			g_Vars.lvmpbotlevel = 1;
 		}
 
@@ -466,11 +466,11 @@ void mainLoop(void)
 				g_MpSetup.storedbotbits = g_MpSetup.chrslots & 0xfff0;
 			}
 			g_MpSetup.chrslots = 0x03;
-			mpReset();
+			mp_reset();
 		} else if (g_Vars.perfectbuddynum) {
-			mpReset();
+			mp_reset();
 		} else if (g_Vars.mplayerisrunning == false
-				&& (numplayers >= 2 || g_Vars.lvmpbotlevel || argFindByPrefix(1, "-play"))) {
+				&& (numplayers >= 2 || g_Vars.lvmpbotlevel || arg_find_by_prefix(1, "-play"))) {
 			g_MpSetup.chrslots = 1;
 
 			if (numplayers >= 2) {
@@ -486,23 +486,23 @@ void mainLoop(void)
 			}
 
 			g_MpSetup.stagenum = g_StageNum;
-			mpReset();
+			mp_reset();
 		}
 
 		gfxReset();
-		joyReset();
-		dhudReset();
-		zbufReset(g_StageNum);
-		lvReset(g_StageNum);
-		viReset(g_StageNum);
-		frametimeCalculate();
-		profileReset();
+		joy_reset();
+		dhud_reset();
+		zbuf_reset(g_StageNum);
+		lv_reset(g_StageNum);
+		vi_reset(g_StageNum);
+		frametime_calculate();
+		profile_reset();
 
 		while (g_MainChangeToStageNum < 0) {
 			const s32 cycles = osGetCount() - g_Vars.thisframestartt;
 			if (!g_Vars.mininc60 || (cycles >= g_Vars.mininc60 * CYCLES_PER_FRAME - CYCLES_PER_FRAME / 2)) {
 				schedStartFrame(&g_Sched);
-				mainTick();
+				main_tick();
 				schedEndFrame(&g_Sched);
 			}
 			if (g_TickExtraSleep) {
@@ -510,11 +510,11 @@ void mainLoop(void)
 			}
 		}
 
-		lvStop();
-		mempDisablePool(MEMPOOL_STAGE);
-		mempDisablePool(MEMPOOL_7);
-		filesStop(4);
-		viBlack(true);
+		lv_stop();
+		memp_disable_pool(MEMPOOL_STAGE);
+		memp_disable_pool(MEMPOOL_7);
+		files_stop(4);
+		vi_black(true);
 		pak0f116994();
 
 		g_StageNum = g_MainChangeToStageNum;
@@ -522,7 +522,7 @@ void mainLoop(void)
 	}
 }
 
-void mainTick(void)
+void main_tick(void)
 {
 	Gfx *gdl = NULL;
 	Gfx *gdlstart = NULL;
@@ -530,11 +530,11 @@ void mainTick(void)
 	s32 i;
 
 	if (g_MainChangeToStageNum < 0) {
-		frametimeCalculate();
-		profileReset();
-		profileSetMarker(PROFILE_MAINTICK_START);
-		joyDebugJoy();
-		schedSetCrashEnable2(false);
+		frametime_calculate();
+		profile_reset();
+		profile_set_marker(PROFILE_MAINTICK_START);
+		joy_debug_joy();
+		sched_set_crash_enable2(false);
 
 		if (g_MainGameLogicEnabled) {
 			gdl = gdlstart = gfxGetMasterDisplayList();
@@ -542,28 +542,28 @@ void mainTick(void)
 			gDPSetTile(gdl++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 0, 0x0000, G_TX_LOADTILE, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD);
 			gDPSetTile(gdl++, G_IM_FMT_RGBA, G_IM_SIZ_4b, 0, 0x0100, 6, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD);
 
-			lvTick();
-			playermgrShuffle();
+			lv_tick();
+			playermgr_shuffle();
 
 			if (g_StageNum < STAGE_TITLE) {
 				for (i = 0; i < PLAYERCOUNT(); i++) {
-					setCurrentPlayerNum(playermgrGetPlayerAtOrder(i));
+					set_current_player_num(playermgr_get_player_at_order(i));
 
-					if (g_StageNum != STAGE_TEST_OLD || !titleIsKeepingMode()) {
-						viSetViewPosition(g_Vars.currentplayer->viewleft, g_Vars.currentplayer->viewtop);
-						viSetFovAspectAndSize(
+					if (g_StageNum != STAGE_TEST_OLD || !title_is_keeping_mode()) {
+						vi_set_view_position(g_Vars.currentplayer->viewleft, g_Vars.currentplayer->viewtop);
+						vi_set_fov_aspect_and_size(
 								g_Vars.currentplayer->fovy, g_Vars.currentplayer->aspect,
 								g_Vars.currentplayer->viewwidth, g_Vars.currentplayer->viewheight);
 					}
 
-					lvTickPlayer();
+					lv_tick_player();
 				}
 			}
 
-			gdl = lvRender(gdl);
+			gdl = lv_render(gdl);
 
-			if (debugGetProfileMode() >= 2) {
-				gdl = profileRender(gdl);
+			if (debug_get_profile_mode() >= 2) {
+				gdl = profile_render(gdl);
 			}
 
 			gDPFullSync(gdl++);
@@ -572,50 +572,50 @@ void mainTick(void)
 
 		if (g_MainGameLogicEnabled) {
 			gfxSwapBuffers();
-			viUpdateMode();
+			vi_update_mode();
 		}
 
-		rdpCreateTask(gdlstart, gdl, 0, (uintptr_t) &msg);
-		memaPrint();
-		profileSetMarker(PROFILE_MAINTICK_END);
+		rdp_create_task(gdlstart, gdl, 0, (uintptr_t) &msg);
+		mema_print();
+		profile_set_marker(PROFILE_MAINTICK_END);
 	}
 }
 
-void mainEndStage(void)
+void main_end_stage(void)
 {
-	sndStopNosedive();
+	snd_stop_nosedive();
 
 	if (!g_MainIsEndscreen) {
 		pak0f11c6d0();
-		joyDisableTemporarily();
+		joy_disable_temporarily();
 
 		if (g_Vars.coopplayernum >= 0) {
 			s32 prevplayernum = g_Vars.currentplayernum;
 			s32 i;
 
 			for (i = 0; i < PLAYERCOUNT(); i++) {
-				setCurrentPlayerNum(i);
-				endscreenPushCoop();
+				set_current_player_num(i);
+				endscreen_push_coop();
 			}
 
-			setCurrentPlayerNum(prevplayernum);
-			musicStartMenu();
+			set_current_player_num(prevplayernum);
+			music_start_menu();
 		} else if (g_Vars.antiplayernum >= 0) {
 			s32 prevplayernum = g_Vars.currentplayernum;
 			s32 i;
 
 			for (i = 0; i < PLAYERCOUNT(); i++) {
-				setCurrentPlayerNum(i);
-				endscreenPushAnti();
+				set_current_player_num(i);
+				endscreen_push_anti();
 			}
 
-			setCurrentPlayerNum(prevplayernum);
-			musicStartMenu();
+			set_current_player_num(prevplayernum);
+			music_start_menu();
 		} else if (g_Vars.normmplayerisrunning) {
-			mpEndMatch();
+			mp_end_match();
 		} else {
-			endscreenPrepare();
-			musicStartMenu();
+			endscreen_prepare();
+			music_start_menu();
 		}
 	}
 
@@ -625,21 +625,21 @@ void mainEndStage(void)
 /**
  * Change to the given stage at the end of the current frame.
  */
-void mainChangeToStage(s32 stagenum)
+void main_change_to_stage(s32 stagenum)
 {
 	pak0f11c6d0();
 
 	g_MainChangeToStageNum = stagenum;
 }
 
-s32 mainGetStageNum(void)
+s32 main_get_stage_num(void)
 {
 	return g_StageNum;
 }
 
 void func0000e990(void)
 {
-	objectivesCheckAll();
-	objectivesDisableChecking();
-	mainEndStage();
+	objectives_check_all();
+	objectives_disable_checking();
+	main_end_stage();
 }

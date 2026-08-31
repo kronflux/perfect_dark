@@ -40,7 +40,7 @@ s32 mp3util00046290(u32 *ptr, u8 s1, u8 t0)
 	return *ptr << (t0 & 7) >> (32 - s1);
 }
 
-s32 mp3utilGetBits(u8 *buffer, s32 *count, s32 numbits)
+s32 mp3util_get_bits(u8 *buffer, s32 *count, s32 numbits)
 {
 	const s32 result = PD_BE32(*(u32 *)(buffer + (*count >> 3))) << (*count & 7) >> (32 - numbits);
 	*count += numbits;

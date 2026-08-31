@@ -301,7 +301,7 @@ static char *modConfigParseStage(char *p, char *token)
 	// find the stage table pointers this corresponds to
 	struct stagetableentry *stab = NULL;
 	struct stageallocation *salloc = NULL;
-	const s32 sidx = stageGetIndex(stagenum);
+	const s32 sidx = stage_get_index(stagenum);
 	if (sidx >= 0) {
 		stab = &g_Stages[sidx];
 	} else {

@@ -106,45 +106,45 @@ s32 g_BlurFb = -1;
 s32 g_BlurFbCapTimer = -1;
 bool g_BlurFbDirty = true;
 
-void schedSetCrashEnable1(bool enable)
+void sched_set_crash_enable1(bool enable)
 {
 	g_SchedCrashEnable1 = enable;
 }
 
-void schedSetCrashedUnexpectedly(bool enable)
+void sched_set_crashed_unexpectedly(bool enable)
 {
 	g_SchedCrashedUnexpectedly = enable;
 }
 
-void schedSetCrashEnable2(bool enable)
+void sched_set_crash_enable2(bool enable)
 {
 	g_SchedCrashEnable2 = enable;
 }
 
-void schedSetCrashRenderInterval(u32 cycles)
+void sched_set_crash_render_interval(u32 cycles)
 {
 	g_SchedCrashRenderInterval = cycles;
 }
 
-void schedRenderCrashOnBuffer(void *framebuffer)
+void sched_render_crash_on_buffer(void *framebuffer)
 {
 	if ((g_SchedCrashEnable2 && g_SchedCrashEnable1) || g_SchedCrashedUnexpectedly) {
-		// crashRenderFrame(framebuffer);
+		// crash_render_frame(framebuffer);
 		g_SchedCrashLastRendered = osGetCount();
 	}
 }
 
-void schedRenderCrashPeriodically(u32 framecount)
+void sched_render_crash_periodically(u32 framecount)
 {
 	if ((framecount & 0xf) == 0 && ((g_SchedCrashEnable2 && g_SchedCrashEnable1) || g_SchedCrashedUnexpectedly)) {
 		if (osGetCount() - g_SchedCrashLastRendered > g_SchedCrashRenderInterval) {
-			// crashRenderFrame(g_FrameBuffers[0]);
-			// crashRenderFrame(g_FrameBuffers[1]);
+			// crash_render_frame(g_FrameBuffers[0]);
+			// crash_render_frame(g_FrameBuffers[1]);
 		}
 	}
 }
 
-void schedInitCrashLastRendered(void)
+void sched_init_crash_last_rendered(void)
 {
 	g_SchedCrashLastRendered = osGetCount();
 }
@@ -179,7 +179,7 @@ void osCreateScheduler(OSSched *sc, OSThread *thread, u8 mode, u32 numFields)
 	var8008dd68[1] = osViModeTable[mode];
 
 	osViSetEvent(&sc->interruptQ, (OSMesg)VIDEO_MSG, numFields);
-	schedInitCrashLastRendered();
+	sched_init_crash_last_rendered();
 
 	g_PrevFrameFb = videoCreateFramebuffer(0, 0, false, true);
 	g_BlurFb = videoCreateFramebuffer(0, 0, false, true);
@@ -228,7 +228,7 @@ void __scUpdateViMode(void)
  * scheduler, adds the task to the linked list directly and attempts to execute
  * it. This is faster than the queue method because it avoids switching threads.
  */
-void schedSubmitTask(OSSched *sc, OSScTask *t)
+void sched_submit_task(OSSched *sc, OSScTask *t)
 {
 	if (sc->doAudio && t->list.t.type == M_AUDTASK) {
 		// send this into the mixer
@@ -275,39 +275,39 @@ void schedEndFrame(OSSched *sc)
 #if PAL
 	if (!g_Resetting && (sc->frameCount & 1)) {
 		// osStopTimer(&g_SchedRspTimer);
-		// osSetTimer(&g_SchedRspTimer, 280000, 0, amgrGetFrameMesgQueue(), &g_SchedRspMsg);
+		// osSetTimer(&g_SchedRspTimer, 280000, 0, amgr_get_frame_mesg_queue(), &g_SchedRspMsg);
 	}
 #else
 	if (!g_Resetting && ((sc->frameCount & 1) || IS4MB())) {
 		// osStopTimer(&g_SchedRspTimer);
-		// osSetTimer(&g_SchedRspTimer, 280000, 0, amgrGetFrameMesgQueue(), &g_SchedRspMsg);
+		// osSetTimer(&g_SchedRspTimer, 280000, 0, amgr_get_frame_mesg_queue(), &g_SchedRspMsg);
 	}
 #endif
 
 	if (!g_Resetting) {
-		viHandleRetrace();
+		vi_handle_retrace();
 	}
 
 	inputUpdate();
 
-	joyStartReadData(&g_PiMesgQueue);
-	joyReadData();
+	joy_start_read_data(&g_PiMesgQueue);
+	joy_read_data();
 	joy00014238();
 
-	sndHandleRetrace();
+	snd_handle_retrace();
 	schedAudioFrame(sc);
-	schedRenderCrashPeriodically(sc->frameCount);
+	sched_render_crash_periodically(sc->frameCount);
 	videoEndFrame();
 
 	if (g_MainIsBooting == 0) {
-		schedConsiderScreenshot();
+		sched_consider_screenshot();
 	}
 
 	// check for vid mode changes
 	__scUpdateViMode();
 }
 
-void schedInitArtifacts(void)
+void sched_init_artifacts(void)
 {
 	s32 i;
 	s32 j;
@@ -325,7 +325,7 @@ void schedInitArtifacts(void)
  * The write list is an artifact list that is not currently being displayed on
  * the screen. Update logic can write here to put artifacts on the next frame.
  */
-struct artifact *schedGetWriteArtifacts(void)
+struct artifact *sched_get_write_artifacts(void)
 {
 	return g_ArtifactLists[g_SchedWriteArtifactsIndex];
 }
@@ -335,7 +335,7 @@ struct artifact *schedGetWriteArtifacts(void)
  * screen. Rendering logic reads this list. The list may be re-used for multiple
  * frames in a row during lag.
  */
-struct artifact *schedGetFrontArtifacts(void)
+struct artifact *sched_get_front_artifacts(void)
 {
 	return g_ArtifactLists[g_SchedFrontArtifactsIndex];
 }
@@ -345,44 +345,44 @@ struct artifact *schedGetFrontArtifacts(void)
  *
  * @TODO: Investigate.
  */
-struct artifact *schedGetPendingArtifacts(void)
+struct artifact *sched_get_pending_artifacts(void)
 {
 	return g_ArtifactLists[g_SchedPendingArtifactsIndex];
 }
 
-void schedIncrementWriteArtifacts(void)
+void sched_increment_write_artifacts(void)
 {
 	g_SchedWriteArtifactsIndex = (g_SchedWriteArtifactsIndex + 1) % 3;
 }
 
-void schedIncrementFrontArtifacts(void)
+void sched_increment_front_artifacts(void)
 {
 	g_SchedFrontArtifactsIndex = (g_SchedFrontArtifactsIndex + 1) % 3;
 }
 
-void schedIncrementPendingArtifacts(void)
+void sched_increment_pending_artifacts(void)
 {
 	g_SchedPendingArtifactsIndex = (g_SchedPendingArtifactsIndex + 1) % 3;
 }
 
-void schedResetArtifacts(void)
+void sched_reset_artifacts(void)
 {
 	g_SchedWriteArtifactsIndex = 0;
 	g_SchedFrontArtifactsIndex = 1;
 	g_SchedPendingArtifactsIndex = 0;
 }
 
-void schedUpdatePendingArtifacts(void)
+void sched_update_pending_artifacts(void)
 {
 	g_SchedSpecialArtifactIndexes[g_SchedPendingArtifactsIndex] = 0;
-	schedIncrementPendingArtifacts();
+	sched_increment_pending_artifacts();
 }
 
-void schedConsiderScreenshot(void)
+void sched_consider_screenshot(void)
 {
 	if (g_MenuData.screenshottimer == 1) {
 		if (IS8MB()) {
-			menugfxCreateBlur();
+			menugfx_create_blur();
 		}
 
 		g_MenuData.screenshottimer = 0;

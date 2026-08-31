@@ -3,7 +3,7 @@
 #include "game/activemenu.h"
 #include "game/pdmode.h"
 #include "game/bondgun.h"
-#include "game/game_0b0fd0.h"
+#include "game/gset.h"
 #include "game/inv.h"
 #include "game/playermgr.h"
 #include "game/options.h"
@@ -17,17 +17,17 @@
 #include "input.h"
 #endif
 
-void amTick(void)
+void am_tick(void)
 {
 	s32 prevplayernum = g_Vars.currentplayernum;
 	s32 i;
 
 	for (i = 0; i < PLAYERCOUNT(); i++) {
-		setCurrentPlayerNum(i);
+		set_current_player_num(i);
 		g_AmIndex = g_Vars.currentplayernum;
 
 		if (g_AmMenus[g_AmIndex].togglefunc) {
-			if (bgunConsiderToggleGunFunction(60, false, true, 0) > 0) {
+			if (bgun_consider_toggle_gun_function(60, false, true, 0) > 0) {
 				g_AmMenus[g_AmIndex].togglefunc = false;
 			}
 		} else {
@@ -35,14 +35,14 @@ void amTick(void)
 		}
 
 		if (g_Vars.normmplayerisrunning == false
-				&& invGetCount() != g_AmMenus[g_AmIndex].numitems) {
-			amAssignWeaponSlots();
+				&& inv_get_count() != g_AmMenus[g_AmIndex].numitems) {
+			am_assign_weapon_slots();
 		}
 
 		if (g_Vars.currentplayer->activemenumode != AMMODE_CLOSED) {
-			s32 controlmode = optionsGetControlMode(g_Vars.currentplayerstats->mpindex);
-			s8 contpadnum = optionsGetContpadNum1(g_Vars.currentplayerstats->mpindex);
-			s32 numsamples = joyGetNumSamples();
+			s32 controlmode = options_get_control_mode(g_Vars.currentplayerstats->mpindex);
+			s8 contpadnum = options_get_contpad_num1(g_Vars.currentplayerstats->mpindex);
+			s32 numsamples = joy_get_num_samples();
 			s32 j;
 			u32 amask, lrtmask, umask, dmask, lmask, rmask;
 
@@ -64,8 +64,8 @@ void amTick(void)
 
 			for (j = 0; j < numsamples; j++) {
 				s8 gotonextscreen = false;
-				s8 cstickx = joyGetStickXOnSample(j, contpadnum);
-				s8 csticky = joyGetStickYOnSample(j, contpadnum);
+				s8 cstickx = joy_get_stick_x_on_sample(j, contpadnum);
+				s8 csticky = joy_get_stick_y_on_sample(j, contpadnum);
 #ifdef AVOID_UB
 				// if cstickx is -128, it will get negated and stored into absstickx, negating it again if it's 8 bit
 				s32 absstickx;
@@ -74,8 +74,8 @@ void amTick(void)
 				s8 absstickx;
 				s8 abssticky;
 #endif
-				u32 buttonsstate = joyGetButtonsOnSample(j, contpadnum, 0xffffffff);
-				u32 buttonspressed = joyGetButtonsPressedOnSample(j, contpadnum, 0xffffffff);
+				u32 buttonsstate = joy_get_buttons_on_sample(j, contpadnum, 0xffffffff);
+				u32 buttonspressed = joy_get_buttons_pressed_on_sample(j, contpadnum, 0xffffffff);
 				bool stickpushed = false;
 				s32 slotnum;
 				bool stayopen;
@@ -117,7 +117,7 @@ void amTick(void)
 					buttonspressed = 0;
 				}
 
-				// JPN fixes the bug that's documented in amChangeScreen
+				// JPN fixes the bug that's documented in am_change_screen
 				if (controlmode == CONTROLMODE_13 || controlmode == CONTROLMODE_14) {
 					if (buttonsstate & (L_TRIG | R_TRIG)) {
 						stayopen = true;
@@ -154,7 +154,7 @@ void amTick(void)
 						&& g_AmMenus[g_AmIndex].origscreennum == 0) {
 					g_AmMenus[g_AmIndex].origscreennum = g_AmMenus[g_AmIndex].screenindex;
 					g_AmMenus[g_AmIndex].screenindex = 2;
-					amChangeScreen(0);
+					am_change_screen(0);
 				}
 
 				// If exiting allbots mode, return to original screen
@@ -162,7 +162,7 @@ void amTick(void)
 						&& g_AmMenus[g_AmIndex].origscreennum) {
 					g_AmMenus[g_AmIndex].screenindex = g_AmMenus[g_AmIndex].origscreennum;
 					g_AmMenus[g_AmIndex].origscreennum = 0;
-					amChangeScreen(0);
+					am_change_screen(0);
 				}
 
 				if (buttonsstate & umask) {
@@ -185,11 +185,11 @@ void amTick(void)
 						|| controlmode == CONTROLMODE_24
 						|| controlmode == CONTROLMODE_22
 						|| controlmode == CONTROLMODE_21) {
-					s8 contpadnum2 = optionsGetContpadNum2(g_Vars.currentplayerstats->mpindex);
-					s8 cstickx2 = joyGetStickXOnSample(j, contpadnum2);
-					s8 csticky2 = joyGetStickYOnSample(j, contpadnum2);
-					u32 buttonsstate2 = joyGetButtonsOnSample(j, contpadnum2, 0xffffffff);
-					u32 buttonspressed2 = joyGetButtonsPressedOnSample(j, contpadnum2, 0xffffffff);
+					s8 contpadnum2 = options_get_contpad_num2(g_Vars.currentplayerstats->mpindex);
+					s8 cstickx2 = joy_get_stick_x_on_sample(j, contpadnum2);
+					s8 csticky2 = joy_get_stick_y_on_sample(j, contpadnum2);
+					u32 buttonsstate2 = joy_get_buttons_on_sample(j, contpadnum2, 0xffffffff);
+					u32 buttonspressed2 = joy_get_buttons_pressed_on_sample(j, contpadnum2, 0xffffffff);
 
 					if (g_Vars.currentplayer->activemenumode == AMMODE_EDIT) {
 						buttonsstate2 = buttonsstate2 & A_BUTTON;
@@ -271,7 +271,7 @@ void amTick(void)
 
 				if (!stayopen &&
 						(g_Vars.currentplayer->activemenumode != AMMODE_EDIT || g_Menus[g_MpPlayerNum].curdialog == NULL)) {
-					amClose();
+					am_close();
 					break;
 				}
 
@@ -286,24 +286,24 @@ void amTick(void)
 							if (g_AmMenus[g_AmIndex].slotnum == 4) {
 								gotonextscreen = true;
 							} else {
-								amApply(g_AmMenus[g_AmIndex].slotnum);
+								am_apply(g_AmMenus[g_AmIndex].slotnum);
 							}
 						} else {
 							// Bot command screen, in multiplayer
 							if (g_AmBotCommands[g_AmMenus[g_AmIndex].slotnum] == AIBOTCMD_ATTACK) {
-								amOpenPickTarget();
+								am_open_pick_target();
 							} else if (g_AmMenus[g_AmIndex].allbots == false) {
 								gotonextscreen = true;
 #if VERSION < VERSION_NTSC_1_0
 								if (g_AmMenus[g_AmIndex].slotnum != 4) {
-									amApply(g_AmMenus[g_AmIndex].slotnum);
+									am_apply(g_AmMenus[g_AmIndex].slotnum);
 								}
 #endif
 							}
 
 #if VERSION >= VERSION_NTSC_1_0
 							if (g_AmMenus[g_AmIndex].slotnum != 4) {
-								amApply(g_AmMenus[g_AmIndex].slotnum);
+								am_apply(g_AmMenus[g_AmIndex].slotnum);
 							}
 #endif
 						}
@@ -312,21 +312,21 @@ void amTick(void)
 						if (g_AmMenus[g_AmIndex].slotnum == 4) {
 							gotonextscreen = true;
 						} else {
-							amApply(g_AmMenus[g_AmIndex].slotnum);
+							am_apply(g_AmMenus[g_AmIndex].slotnum);
 						}
 					}
 				}
 
 				if (gotonextscreen) {
-					amChangeScreen(gotonextscreen);
+					am_change_screen(gotonextscreen);
 
 					// If weapon has no functions, skip past function screen
 					if (g_AmMenus[g_AmIndex].screenindex == 1) {
-						struct weaponfunc *pri = weaponGetFunction(&g_Vars.currentplayer->hands[0].gset, FUNC_PRIMARY);
-						struct weaponfunc *sec = weaponGetFunction(&g_Vars.currentplayer->hands[0].gset, FUNC_SECONDARY);
+						struct weaponfunc *pri = weapon_get_function(&g_Vars.currentplayer->hands[0].gset, FUNC_PRIMARY);
+						struct weaponfunc *sec = weapon_get_function(&g_Vars.currentplayer->hands[0].gset, FUNC_SECONDARY);
 
 						if (!pri && !sec) {
-							amChangeScreen(gotonextscreen);
+							am_change_screen(gotonextscreen);
 						}
 					}
 				}
@@ -346,7 +346,7 @@ void amTick(void)
 						char text[28];
 						u32 flags;
 
-						amGetSlotDetails(slotnum, &flags, text);
+						am_get_slot_details(slotnum, &flags, text);
 
 						if (strcmp(text, "") == 0) {
 							gotoslot = false;
@@ -444,5 +444,5 @@ void amTick(void)
 		}
 	}
 
-	setCurrentPlayerNum(prevplayernum);
+	set_current_player_num(prevplayernum);
 }

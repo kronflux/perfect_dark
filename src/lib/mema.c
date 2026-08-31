@@ -63,7 +63,7 @@ struct memaheap g_MemaHeap;
 u32 g_MemaLeastEverFree = 1000000;
 #endif
 
-void memaSwap(struct memaspace *a, struct memaspace *b)
+void mema_swap(struct memaspace *a, struct memaspace *b)
 {
 	uintptr_t tempaddr = a->addr;
 	u64 tempsize = a->size;
@@ -73,14 +73,14 @@ void memaSwap(struct memaspace *a, struct memaspace *b)
 	b->size = tempsize;
 }
 
-void memaMerge(struct memaspace *a, struct memaspace *b)
+void mema_merge(struct memaspace *a, struct memaspace *b)
 {
 	a->size += b->size;
 	b->addr = 0;
 	b->size = 0;
 }
 
-bool memaDefragPass(struct memaheap *heap)
+bool mema_defrag_pass(struct memaheap *heap)
 {
 	bool merged = false;
 	struct memaspace *prev = &heap->start;
@@ -91,11 +91,11 @@ bool memaDefragPass(struct memaheap *heap)
 	while (curr <= last) {
 		if (curr->size != 0) {
 			if (curr->addr < addr) {
-				memaSwap(curr, prev);
+				mema_swap(curr, prev);
 			}
 
 			if (prev->size + addr == curr->addr) {
-				memaMerge(prev, curr);
+				mema_merge(prev, curr);
 				curr = prev;
 				merged = true;
 			}
@@ -110,9 +110,9 @@ bool memaDefragPass(struct memaheap *heap)
 	return merged;
 }
 
-void memaDefrag(void)
+void mema_defrag(void)
 {
-	while (memaDefragPass(&g_MemaHeap));
+	while (mema_defrag_pass(&g_MemaHeap));
 }
 
 /**
@@ -121,7 +121,7 @@ void memaDefrag(void)
  * If none can be found, return the smallest run of free space so it can be
  * overwritten by the caller.
  */
-struct memaspace *memaMakeSlot(struct memaheap *heap)
+struct memaspace *mema_make_slot(struct memaheap *heap)
 {
 	struct memaspace *curr = &heap->spaces[0];
 	struct memaspace *best;
@@ -139,7 +139,7 @@ struct memaspace *memaMakeSlot(struct memaheap *heap)
 			}
 
 			if ((uintptr_t) curr[1].addr < (uintptr_t) curr[0].addr) {
-				memaSwap(&curr[0], &curr[1]);
+				mema_swap(&curr[0], &curr[1]);
 			}
 
 			if (curr[1].addr == curr[0].size + curr[0].addr) {
@@ -201,7 +201,7 @@ void _memaFree(uintptr_t addr, u64 size)
 		}
 
 		if (curr->addr == 0) {
-			curr = memaMakeSlot(&g_MemaHeap);
+			curr = mema_make_slot(&g_MemaHeap);
 		}
 	}
 
@@ -210,12 +210,12 @@ void _memaFree(uintptr_t addr, u64 size)
 	curr->size = size;
 }
 
-void memaInit(void)
+void mema_init(void)
 {
 	// empty
 }
 
-void memaReset(void *heapaddr, u64 heapsize)
+void mema_reset(void *heapaddr, u64 heapsize)
 {
 	struct memaspace *space;
 
@@ -281,7 +281,7 @@ void memaReset(void *heapaddr, u64 heapsize)
  * the permanent allocations are done during startup. This pool fits entirely
  * in onboard memory, so the expansion size is 0.
  */
-void memaPrint(void)
+void mema_print(void)
 {
 	s32 onboard;
 	s32 expansion;
@@ -289,68 +289,68 @@ void memaPrint(void)
 	s32 over;
 	char buffer[124];
 
-	memaDefragPass(&g_MemaHeap);
+	mema_defrag_pass(&g_MemaHeap);
 
 #ifdef DEBUG
 #if VERSION == VERSION_PAL_BETA
-	if (debugIsMemInfoEnabled()) {
-		dhudSetFgColour(0xff, 0xff, 0xff, 0xff);
-		dhudSetBgColour(0, 0, 0, 0xff);
+	if (debug_is_mem_info_enabled()) {
+		dhud_set_fg_colour(0xff, 0xff, 0xff, 0xff);
+		dhud_set_bg_colour(0, 0, 0, 0xff);
 
-		sprintf(buffer, "Lev0: %d", mempGetPoolFree(MEMPOOL_STAGE, MEMBANK_ONBOARD));
+		sprintf(buffer, "Lev0: %d", memp_get_pool_free(MEMPOOL_STAGE, MEMBANK_ONBOARD));
 
-		dhudSetPos(31, line);
-		dhudPrintString(buffer);
+		dhud_set_pos(31, line);
+		dhud_print_string(buffer);
 		line++;
 
-		sprintf(buffer, "Lev1: %d", mempGetPoolFree(MEMPOOL_STAGE, MEMBANK_EXPANSION));
+		sprintf(buffer, "Lev1: %d", memp_get_pool_free(MEMPOOL_STAGE, MEMBANK_EXPANSION));
 
-		dhudSetPos(31, line);
-		dhudPrintString(buffer);
+		dhud_set_pos(31, line);
+		dhud_print_string(buffer);
 		line++;
 
-		if (memaGetLongestFree() < g_MemaLeastEverFree) {
-			g_MemaLeastEverFree = memaGetLongestFree();
+		if (mema_get_longest_free() < g_MemaLeastEverFree) {
+			g_MemaLeastEverFree = mema_get_longest_free();
 		}
 
-		sprintf(buffer, "mema: %d (%d)", memaGetLongestFree(), g_MemaLeastEverFree);
+		sprintf(buffer, "mema: %d (%d)", mema_get_longest_free(), g_MemaLeastEverFree);
 
-		dhudSetPos(31, line);
-		dhudPrintString(buffer);
+		dhud_set_pos(31, line);
+		dhud_print_string(buffer);
 		line++;
 	}
 #endif
 
 #if VERSION == VERSION_NTSC_BETA
-	if (debugIsMemInfoEnabled()) {
-		dhudSetFgColour(0xff, 0xff, 0xff, 0xff);
-		dhudSetBgColour(0, 0, 0, 0xff);
+	if (debug_is_mem_info_enabled()) {
+		dhud_set_fg_colour(0xff, 0xff, 0xff, 0xff);
+		dhud_set_bg_colour(0, 0, 0, 0xff);
 
-		dhudSetPos(30, line);
-		dhudPrintString("Mem Info");
+		dhud_set_pos(30, line);
+		dhud_print_string("Mem Info");
 		line++;
 
-		dhudSetPos(30, line);
-		dhudPrintString("memp: MP_LF_LEV");
+		dhud_set_pos(30, line);
+		dhud_print_string("memp: MP_LF_LEV");
 		line++;
 
-		onboard = mempGetPoolFree(MEMPOOL_STAGE, MEMBANK_ONBOARD);
-		expansion = mempGetPoolFree(MEMPOOL_STAGE, MEMBANK_EXPANSION);
+		onboard = memp_get_pool_free(MEMPOOL_STAGE, MEMBANK_ONBOARD);
+		expansion = memp_get_pool_free(MEMPOOL_STAGE, MEMBANK_EXPANSION);
 		sprintf(buffer, "F: %d %d", onboard, expansion);
-		dhudSetPos(31, line);
-		dhudPrintString(buffer);
+		dhud_set_pos(31, line);
+		dhud_print_string(buffer);
 		line++;
 
-		onboard = mempGetPoolSize(MEMPOOL_STAGE, MEMBANK_ONBOARD);
-		expansion = mempGetPoolSize(MEMPOOL_STAGE, MEMBANK_EXPANSION);
+		onboard = memp_get_pool_size(MEMPOOL_STAGE, MEMBANK_ONBOARD);
+		expansion = memp_get_pool_size(MEMPOOL_STAGE, MEMBANK_EXPANSION);
 		sprintf(buffer, "S: %d %d", onboard, expansion);
-		dhudSetPos(31, line);
-		dhudPrintString(buffer);
+		dhud_set_pos(31, line);
+		dhud_print_string(buffer);
 		line++;
 
-		over = mempGetPoolSize(MEMPOOL_STAGE, MEMBANK_EXPANSION)
-			- mempGetPoolFree(MEMPOOL_STAGE, MEMBANK_EXPANSION)
-			- mempGetPoolFree(MEMPOOL_STAGE, MEMBANK_ONBOARD);
+		over = memp_get_pool_size(MEMPOOL_STAGE, MEMBANK_EXPANSION)
+			- memp_get_pool_free(MEMPOOL_STAGE, MEMBANK_EXPANSION)
+			- memp_get_pool_free(MEMPOOL_STAGE, MEMBANK_ONBOARD);
 
 		if (over >= 0) {
 			sprintf(buffer, "Over: %d", over);
@@ -358,47 +358,47 @@ void memaPrint(void)
 			sprintf(buffer, "Free: %d", -over);
 		}
 
-		dhudSetPos(31, line);
-		dhudPrintString(buffer);
+		dhud_set_pos(31, line);
+		dhud_print_string(buffer);
 		line++;
 
-		dhudSetPos(30, line);
-		dhudPrintString("memp: MP_LF_ETER");
+		dhud_set_pos(30, line);
+		dhud_print_string("memp: MP_LF_ETER");
 		line++;
 
-		onboard = mempGetPoolFree(MEMPOOL_PERMANENT, MEMBANK_ONBOARD);
-		expansion = mempGetPoolFree(MEMPOOL_PERMANENT, MEMBANK_EXPANSION);
+		onboard = memp_get_pool_free(MEMPOOL_PERMANENT, MEMBANK_ONBOARD);
+		expansion = memp_get_pool_free(MEMPOOL_PERMANENT, MEMBANK_EXPANSION);
 		sprintf(buffer, "F: %d %d", onboard, expansion);
-		dhudSetPos(31, line);
-		dhudPrintString(buffer);
+		dhud_set_pos(31, line);
+		dhud_print_string(buffer);
 		line++;
 
-		onboard = mempGetPoolSize(MEMPOOL_PERMANENT, MEMBANK_ONBOARD);
-		expansion = mempGetPoolSize(MEMPOOL_PERMANENT, MEMBANK_EXPANSION);
+		onboard = memp_get_pool_size(MEMPOOL_PERMANENT, MEMBANK_ONBOARD);
+		expansion = memp_get_pool_size(MEMPOOL_PERMANENT, MEMBANK_EXPANSION);
 		sprintf(buffer, "S: %d %d", onboard, expansion);
-		dhudSetPos(31, line);
-		dhudPrintString(buffer);
+		dhud_set_pos(31, line);
+		dhud_print_string(buffer);
 		line++;
 
-		dhudSetPos(30, line);
-		dhudPrintString("mema:");
+		dhud_set_pos(30, line);
+		dhud_print_string("mema:");
 		line++;
 
-		sprintf(buffer, "LF: %d", memaGetLongestFree());
-		dhudSetPos(31, line);
-		dhudPrintString(buffer);
+		sprintf(buffer, "LF: %d", mema_get_longest_free());
+		dhud_set_pos(31, line);
+		dhud_print_string(buffer);
 		line++;
 
 		sprintf(buffer, "Audio Free: %d", g_SndHeap.base + (g_SndHeap.len - (uintptr_t) g_SndHeap.cur));
-		dhudSetPos(30, line);
-		dhudPrintString(buffer);
+		dhud_set_pos(30, line);
+		dhud_print_string(buffer);
 		line++;
 	}
 #endif
 #endif
 }
 
-void *memaAlloc(u64 size)
+void *mema_alloc(u64 size)
 {
 	uintptr_t addr;
 	uintptr_t diff;
@@ -456,7 +456,7 @@ void *memaAlloc(u64 size)
 			// There was no space, so attempt to free up some space
 			// by doing several defrag passes
 			for (i = 0; i < 8; i++) {
-				memaDefragPass(&g_MemaHeap);
+				mema_defrag_pass(&g_MemaHeap);
 			}
 
 			curr = &g_MemaHeap.spaces[0];
@@ -487,7 +487,7 @@ void *memaAlloc(u64 size)
 /**
  * Grow the allocation which currently *ends at* the given address.
  */
-uintptr_t memaGrow(uintptr_t addr, u64 amount)
+uintptr_t mema_grow(uintptr_t addr, u64 amount)
 {
 	struct memaspace *curr = &g_MemaHeap.spaces[0];
 
@@ -512,7 +512,7 @@ found:
 	return addr;
 }
 
-void memaFree(void *addr, u64 size)
+void mema_free(void *addr, u64 size)
 {
 	_memaFree((uintptr_t) addr, size);
 }
@@ -526,12 +526,12 @@ void mema00012cd4(void)
  * Find and return the largest amount of contiguous free space in the pool.
  * ie. the biggest allocation that mema can currently make.
  */
-u64 memaGetLongestFree(void)
+u64 mema_get_longest_free(void)
 {
 	struct memaspace *curr;
 	s32 biggest = 0;
 
-	memaDefrag();
+	mema_defrag();
 
 	curr = &g_MemaHeap.spaces[0];
 
@@ -550,20 +550,20 @@ u64 memaGetLongestFree(void)
 	return 0;
 }
 
-bool memaRealloc(uintptr_t addr, u64 oldsize, u64 newsize)
+bool mema_realloc(uintptr_t addr, u64 oldsize, u64 newsize)
 {
 	if (newsize > oldsize) {
-		if (!memaGrow(addr + oldsize, newsize - oldsize)) {
+		if (!mema_grow(addr + oldsize, newsize - oldsize)) {
 			return false;
 		}
 	} else if (oldsize > newsize) {
-		memaFree((void *)(addr + newsize), oldsize - newsize);
+		mema_free((void *)(addr + newsize), oldsize - newsize);
 	}
 
 	return true;
 }
 
-u32 memaGetSize(void)
+u32 mema_get_size(void)
 {
 	return g_MemaHeapSize;
 }

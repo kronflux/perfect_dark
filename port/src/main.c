@@ -44,12 +44,12 @@ s32 g_FileAutoSelect = -1;
 
 extern s32 g_StageNum;
 
-s32 bootGetMemSize(void)
+s32 boot_get_mem_size(void)
 {
 	return (s32)g_OsMemSize;
 }
 
-void *bootAllocateStack(s32 threadid, s32 size)
+void *boot_allocate_stack(s32 threadid, s32 size)
 {
 	static u8 bruh[0x1000];
 	return bruh;
@@ -153,7 +153,7 @@ int main(int argc, const char **argv)
 		sysLogPrintf(LOG_NOTE, "player profile set to %d", g_FileAutoSelect);
 	}
 
-	mainProc();
+	main_proc();
 
 	return 0;
 }

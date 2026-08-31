@@ -163,7 +163,7 @@ static struct romfile romSegs[] = {
 };
 
 /* the game sets g_LoadType to the type of file it expects,              */
-/* so we can hijack that in fileLoad and automatically byteswap the file */
+/* so we can hijack that in file_load and automatically byteswap the file */
 static preprocessfunc filePreprocFuncs[] = {
 	/* LOADTYPE_NONE  */ NULL,
 	/* LOADTYPE_BG    */ NULL, // loaded in parts
@@ -214,7 +214,7 @@ static inline void romdataLoadRom(void)
 	// inflate the compressed data segment since that's where some useful stuff is
 
 	u8 *zipped = g_RomFile + ROMDATA_DATA_OFS;
-	if (!rzipIs1173(zipped)) {
+	if (!rzip_is_1173(zipped)) {
 		romdataWrongRomError("Data segment is not 1173-compressed.");
 	}
 
@@ -229,7 +229,7 @@ static inline void romdataLoadRom(void)
 	}
 
 	u8 scratch[5 * 1024];
-	if (rzipInflate(zipped, dataSeg, scratch) < 0) {
+	if (rzip_inflate(zipped, dataSeg, scratch) < 0) {
 		free(dataSeg);
 		sysFatalError("Could not inflate data segment.");
 	}

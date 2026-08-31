@@ -47,12 +47,12 @@ extern f32 *var8009c6dc;
 extern struct mp3decfourbytes *var8009c640;
 extern f32 *var8009c644;
 
-void mp3Init(ALHeap *heap)
+void mp3_init(ALHeap *heap)
 {
 	bzero(&g_Mp3Vars, sizeof(struct mp3vars));
 
 #if VERSION < VERSION_NTSC_1_0
-	rmonPrintf("MPEG : RWI -> Allocating %d bytes for ASISTREAM from audio heap\n", sizeof(struct asistream));
+	rmon_printf("MPEG : RWI -> Allocating %d bytes for ASISTREAM from audio heap\n", sizeof(struct asistream));
 #endif
 
 	g_AsiStream = alHeapAlloc(heap, sizeof(struct asistream), 1);
@@ -68,7 +68,7 @@ void mp3Init(ALHeap *heap)
 #endif
 	var8009c644 = alHeapAlloc(heap, 8192 * sizeof(var8009c644[0]), 1);
 
-	mp3mainInit();
+	mp3main_init();
 
 	g_Mp3Vars.var8009c398 = alHeapAlloc(heap, 1, ALIGN16(sizeof(ALEnvMixer)));
 	g_Mp3Vars.var8009c3d4[0] = alHeapAlloc(heap, 1, 0x440);
@@ -93,7 +93,7 @@ void mp3Init(ALHeap *heap)
 	func00038b90(func00038ba8);
 }
 
-void mp3PlayFile(uintptr_t romaddr, s32 filesize)
+void mp3_play_file(uintptr_t romaddr, s32 filesize)
 {
 	if (g_Mp3Vars.var8009c3dc == NULL) {
 		return;
@@ -109,7 +109,7 @@ void mp3PlayFile(uintptr_t romaddr, s32 filesize)
 	g_Mp3Vars.reset = 1;
 #endif
 
-	mp3Dma();
+	mp3_dma();
 
 	g_Mp3Vars.var8009c3e0 = 4;
 }
@@ -205,7 +205,7 @@ s32 func00037fc0(s32 arg0, Acmd **cmd)
 	}
 
 	if (g_Mp3Vars.var8009c3e0 == 4) {
-		mp3Dma();
+		mp3_dma();
 
 		if (g_Mp3Vars.var8009c3f0 == 0) {
 			g_Mp3Vars.var8009c394 = mp3main00044460(0, g_Mp3Vars.var8009c3dc, g_Mp3Vars.filesize);
@@ -229,7 +229,7 @@ s32 func00037fc0(s32 arg0, Acmd **cmd)
 	}
 
 	if (g_Mp3Vars.var8009c3e0 == 5) {
-		mp3Dma();
+		mp3_dma();
 
 		if (g_Mp3Vars.var8009c3f0 == 0) {
 			g_Mp3Vars.var8009c3e0 = 1;
@@ -274,7 +274,7 @@ s32 func00037fc0(s32 arg0, Acmd **cmd)
 			}
 		}
 
-		mp3Dma();
+		mp3_dma();
 
 		if (g_Mp3Vars.var8009c3f1 == 0) {
 			sp4c = 0;
@@ -415,7 +415,7 @@ s32 func00038ba8(s32 arg0, u8 *arg1, s32 arg2, s32 arg3)
 	return arg2;
 }
 
-void mp3Dma(void)
+void mp3_dma(void)
 {
 	uintptr_t state;
 	ALDMAproc proc;

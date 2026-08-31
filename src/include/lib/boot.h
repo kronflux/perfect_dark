@@ -7,9 +7,9 @@
  * u32 implementation in port/src/libultra.c, so the split is omitted. */
 
 void boot(void);
-s32 bootGetMemSize(void);
-void *bootAllocateStack(s32 threadid, s32 size);
-void bootCreateThreads(void *arg);
-void bootCheckStackOverflow(void);
+s32 boot_get_mem_size(void);
+void *boot_allocate_stack(s32 threadid, s32 size);
+void boot_create_threads(void *arg);
+void boot_check_stack_overflow(void);
 
 #endif

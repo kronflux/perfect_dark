@@ -19,7 +19,7 @@
 #include "game/bondgun.h"
 #include "game/env.h"
 #include "game/gunfx.h"
-#include "game/game_0b0fd0.h"
+#include "game/gset.h"
 #include "game/game_0b2150.h"
 #include "game/tex.h"
 #include "game/camera.h"
@@ -35,7 +35,7 @@
 #include "game/playermgr.h"
 #include "game/explosions.h"
 #include "game/bondview.h"
-#include "game/game_1531a0.h"
+#include "game/text.h"
 #include "game/bg.h"
 #include "game/stagetable.h"
 #include "game/room.h"
@@ -58,7 +58,7 @@
 #include "lib/ailist.h"
 #include "lib/collision.h"
 #include "lib/joy.h"
-#include "lib/lib_17ce0.h"
+#include "lib/portal.h"
 #include "lib/vi.h"
 #include "lib/main.h"
 #include "lib/snd.h"
@@ -216,7 +216,7 @@ s32 g_NumDeathAnimations = 0;
  * @dangerous: If there are too many pads (24+) in the setup then array
  * overflows may occur.
  */
-f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstrooms, struct prop *prop, s16 *pads, s32 numpads)
+f32 player_choose_spawn_location(f32 chrradius, struct coord *dstpos, RoomNum *dstrooms, struct prop *prop, s16 *pads, s32 numpads)
 {
 	u8 verybadpads[24];
 	u8 badpads[24];
@@ -245,7 +245,7 @@ f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstr
 	RoomNum tmppadrooms[2];
 	f32 bestsqdist;
 #ifdef AVOID_UB
-	RoomNum neighbours[21]; // prevent bgRoomGetNeighbours from writing out of bounds
+	RoomNum neighbours[21]; // prevent bg_room_get_neighbours from writing out of bounds
 #else
 	RoomNum neighbours[20];
 #endif
@@ -253,7 +253,7 @@ f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstr
 	// Iterate all spawn pads and populate the category arrays
 	for (p = 0; p < numpads; p++) {
 		bestsqdist = U32_MAX;
-		padUnpack(pads[p], PADFIELD_POS | PADFIELD_ROOM, &pad);
+		pad_unpack(pads[p], PADFIELD_POS | PADFIELD_ROOM, &pad);
 		verybadpads[p] = false;
 		badpads[p] = false;
 
@@ -263,7 +263,7 @@ f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstr
 		for (i = 0; i < playercount; i++) {
 			if (g_Vars.players[i]->prop
 					&& g_Vars.players[i]->prop != prop
-					&& (!prop || chrCompareTeams(prop->chr, g_Vars.players[i]->prop->chr, COMPARE_ENEMIES))) {
+					&& (!prop || chr_compare_teams(prop->chr, g_Vars.players[i]->prop->chr, COMPARE_ENEMIES))) {
 				xdiff = g_Vars.players[i]->prop->pos.x - pad.pos.x;
 				ydiff = g_Vars.players[i]->prop->pos.y - pad.pos.y;
 				zdiff = g_Vars.players[i]->prop->pos.z - pad.pos.z;
@@ -274,11 +274,11 @@ f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstr
 					bestsqdist = sqdist;
 				}
 
-				if (bgRoomIsOnPlayerScreen(pad.room, i)) {
+				if (bg_room_is_on_player_screen(pad.room, i)) {
 					verybadpads[p] = true;
 				}
 
-				if (verybadpads[p] || bgRoomIsOnPlayerStandby(pad.room, i)) {
+				if (verybadpads[p] || bg_room_is_on_player_standby(pad.room, i)) {
 					badpads[p] = true;
 				}
 			}
@@ -288,12 +288,12 @@ f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstr
 		tmppadrooms[0] = pad.room;
 		tmppadrooms[1] = -1;
 
-		bgRoomGetNeighbours(pad.room, neighbours, 20);
+		bg_room_get_neighbours(pad.room, neighbours, 20);
 
 		for (i = 0; i < g_BotCount; i++) {
 			if (g_MpBotChrPtrs[i]->prop
 					&& g_MpBotChrPtrs[i]->prop != prop
-					&& (!prop || chrCompareTeams(prop->chr, g_MpBotChrPtrs[i], COMPARE_ENEMIES))) {
+					&& (!prop || chr_compare_teams(prop->chr, g_MpBotChrPtrs[i], COMPARE_ENEMIES))) {
 				xdiff = g_MpBotChrPtrs[i]->prop->pos.x - pad.pos.x;
 				ydiff = g_MpBotChrPtrs[i]->prop->pos.y - pad.pos.y;
 				zdiff = g_MpBotChrPtrs[i]->prop->pos.z - pad.pos.z;
@@ -304,11 +304,11 @@ f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstr
 					bestsqdist = sqdist;
 				}
 
-				if (arrayIntersects(tmppadrooms, g_MpBotChrPtrs[i]->prop->rooms)) {
+				if (array_intersects(tmppadrooms, g_MpBotChrPtrs[i]->prop->rooms)) {
 					verybadpads[p] = true;
 				}
 
-				if (verybadpads[p] || arrayIntersects(neighbours, g_MpBotChrPtrs[i]->prop->rooms)) {
+				if (verybadpads[p] || array_intersects(neighbours, g_MpBotChrPtrs[i]->prop->rooms)) {
 					badpads[p] = true;
 				}
 			}
@@ -327,7 +327,7 @@ f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstr
 	p = i; \
 	while (sllen < 4) {
 		if (padsqdists[p] > 1000 * 1000 && !badpads[p]) {
-			padUnpack(pads[p], PADFIELD_POS | PADFIELD_ROOM | PADFIELD_LOOK, &pad);
+			pad_unpack(pads[p], PADFIELD_POS | PADFIELD_ROOM | PADFIELD_LOOK, &pad);
 
 			slrooms[sllen][0] = pad.room;
 			slrooms[sllen][1] = -1;
@@ -339,12 +339,12 @@ f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstr
 			slangles[sllen] = atan2f(pad.look.x, pad.look.z);
 
 #if VERSION >= VERSION_NTSC_1_0
-			if (chrAdjustPosForSpawn(chrradius, &slpositions[sllen], slrooms[sllen], slangles[sllen], true, false, false)) {
+			if (chr_adjust_pos_for_spawn(chrradius, &slpositions[sllen], slrooms[sllen], slangles[sllen], true, false, false)) {
 				slpadindexes[sllen] = p;
 				sllen++;
 			}
 #else
-			if (chrAdjustPosForSpawn(chrradius, &slpositions[sllen], slrooms[sllen], slangles[sllen], true, false)) {
+			if (chr_adjust_pos_for_spawn(chrradius, &slpositions[sllen], slrooms[sllen], slangles[sllen], true, false)) {
 				slpadindexes[sllen] = p;
 				sllen++;
 			}
@@ -366,7 +366,7 @@ f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstr
 
 	while (sllen < 4) {
 		if (padsqdists[p] > 1000 * 1000 && !verybadpads[p]) {
-			padUnpack(pads[p], PADFIELD_POS | PADFIELD_ROOM | PADFIELD_LOOK, &pad);
+			pad_unpack(pads[p], PADFIELD_POS | PADFIELD_ROOM | PADFIELD_LOOK, &pad);
 
 			slrooms[sllen][0] = pad.room;
 			slrooms[sllen][1] = -1;
@@ -378,12 +378,12 @@ f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstr
 			slangles[sllen] = atan2f(pad.look.x, pad.look.z);
 
 #if VERSION >= VERSION_NTSC_1_0
-			if (chrAdjustPosForSpawn(chrradius, &slpositions[sllen], slrooms[sllen], slangles[sllen], true, false, false)) {
+			if (chr_adjust_pos_for_spawn(chrradius, &slpositions[sllen], slrooms[sllen], slangles[sllen], true, false, false)) {
 				slpadindexes[sllen] = p;
 				sllen++;
 			}
 #else
-			if (chrAdjustPosForSpawn(chrradius, &slpositions[sllen], slrooms[sllen], slangles[sllen], true, false)) {
+			if (chr_adjust_pos_for_spawn(chrradius, &slpositions[sllen], slrooms[sllen], slangles[sllen], true, false)) {
 				slpadindexes[sllen] = p;
 				sllen++;
 			}
@@ -427,7 +427,7 @@ f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstr
 		}
 
 		// Add this pad to the shortlist
-		padUnpack(pads[i], PADFIELD_POS | PADFIELD_ROOM | PADFIELD_LOOK, &pad);
+		pad_unpack(pads[i], PADFIELD_POS | PADFIELD_ROOM | PADFIELD_LOOK, &pad);
 
 		slrooms[sllen][0] = pad.room;
 		slrooms[sllen][1] = -1;
@@ -439,12 +439,12 @@ f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstr
 		slangles[sllen] = atan2f(pad.look.x, pad.look.z);
 
 #if VERSION >= VERSION_NTSC_1_0
-		if (chrAdjustPosForSpawn(chrradius, &slpositions[sllen], slrooms[sllen], slangles[sllen], true, false, false)) {
+		if (chr_adjust_pos_for_spawn(chrradius, &slpositions[sllen], slrooms[sllen], slangles[sllen], true, false, false)) {
 			slpadindexes[sllen] = i;
 			sllen++;
 		}
 #else
-		if (chrAdjustPosForSpawn(chrradius, &slpositions[sllen], slrooms[sllen], slangles[sllen], true, false)) {
+		if (chr_adjust_pos_for_spawn(chrradius, &slpositions[sllen], slrooms[sllen], slangles[sllen], true, false)) {
 			slpadindexes[sllen] = i;
 			sllen++;
 		}
@@ -461,12 +461,12 @@ f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstr
 		dstpos->y = slpositions[p].y;
 		dstpos->z = slpositions[p].z;
 
-		roomsCopy(slrooms[p], dstrooms);
+		rooms_copy(slrooms[p], dstrooms);
 
 		dstangle = slangles[p];
 	} else {
 		// No shortlisted pads, so pick a random one from the full selection
-		padUnpack(pads[rngRandom() % numpads], PADFIELD_POS | PADFIELD_LOOK | PADFIELD_ROOM, &pad);
+		pad_unpack(pads[rngRandom() % numpads], PADFIELD_POS | PADFIELD_LOOK | PADFIELD_ROOM, &pad);
 
 		dstrooms[0] = pad.room;
 		dstrooms[1] = -1;
@@ -481,12 +481,12 @@ f32 playerChooseSpawnLocation(f32 chrradius, struct coord *dstpos, RoomNum *dstr
 	return dstangle;
 }
 
-f32 playerChooseGeneralSpawnLocation(f32 chrradius, struct coord *pos, RoomNum *rooms, struct prop *prop)
+f32 player_choose_general_spawn_location(f32 chrradius, struct coord *pos, RoomNum *rooms, struct prop *prop)
 {
-	return playerChooseSpawnLocation(chrradius, pos, rooms, prop, g_SpawnPoints, g_NumSpawnPoints);
+	return player_choose_spawn_location(chrradius, pos, rooms, prop, g_SpawnPoints, g_NumSpawnPoints);
 }
 
-void playerStartNewLife(void)
+void player_start_new_life(void)
 {
 	struct coord pos = {0, 0, 0};
 	RoomNum rooms[8];
@@ -495,7 +495,7 @@ void playerStartNewLife(void)
 	f32 groundy;
 	s32 i;
 
-	pakEnableRumbleForPlayer(g_Vars.currentplayernum);
+	pak_enable_rumble_for_player(g_Vars.currentplayernum);
 
 	g_Vars.currentplayer->dostartnewlife = false;
 
@@ -513,8 +513,8 @@ void playerStartNewLife(void)
 		}
 	}
 
-	splatResetChr(g_Vars.currentplayer->prop->chr);
-	playerLoadDefaults();
+	splat_reset_chr(g_Vars.currentplayer->prop->chr);
+	player_load_defaults();
 	g_Vars.currentplayer->isdead = false;
 	g_Vars.currentplayer->healthdamagetype = DAMAGETYPE_7;
 	g_Vars.currentplayer->damagetype = DAMAGETYPE_7;
@@ -525,11 +525,11 @@ void playerStartNewLife(void)
 	g_Vars.currentplayer->prop->chr->poisoncounter = 0;
 #endif
 
-	hudmsgsSetOn(0xffffffff);
+	hudmsgs_set_on(0xffffffff);
 
-	angle = M_BADTAU - scenarioChooseSpawnLocation(30, &pos, rooms, g_Vars.currentplayer->prop); // var7f1ad534
+	angle = M_BADTAU - scenario_choose_spawn_location(30, &pos, rooms, g_Vars.currentplayer->prop); // var7f1ad534
 
-	groundy = cdFindGroundInfoAtCyl(&pos, 30, rooms,
+	groundy = cd_find_ground_info_at_cyl(&pos, 30, rooms,
 			&g_Vars.currentplayer->floorcol,
 			&g_Vars.currentplayer->floortype,
 			&g_Vars.currentplayer->floorflags,
@@ -542,7 +542,7 @@ void playerStartNewLife(void)
 	g_Vars.currentplayer->vv_theta = angle * 360.0f / M_BADTAU;
 	g_Vars.currentplayer->vv_ground = groundy;
 
-	playerResetBond(&g_Vars.currentplayer->bond2, &pos);
+	player_reset_bond(&g_Vars.currentplayer->bond2, &pos);
 
 	g_Vars.currentplayer->bond2.unk00.x = -sinf(angle);
 	g_Vars.currentplayer->bond2.unk00.y = 0;
@@ -552,7 +552,7 @@ void playerStartNewLife(void)
 	g_Vars.currentplayer->prop->pos.f[1] = g_Vars.currentplayer->bondprevpos.f[1] = pos.f[1];
 	g_Vars.currentplayer->prop->pos.f[2] = g_Vars.currentplayer->bondprevpos.f[2] = pos.f[2];
 
-	propDeregisterRooms(g_Vars.currentplayer->prop);
+	prop_deregister_rooms(g_Vars.currentplayer->prop);
 
 	g_Vars.currentplayer->prop->rooms[0] = rooms[0];
 	g_Vars.currentplayer->prop->rooms[1] = -1;
@@ -570,8 +570,8 @@ void playerStartNewLife(void)
 		}
 
 		for (i = 1; i != ARRAYCOUNT(g_Weapons); i++) {
-			if (invHasSingleWeaponOrProp(i)) {
-				s32 ammotype = bgunGetAmmoTypeForWeapon(i, FUNC_PRIMARY);
+			if (inv_has_single_weapon_or_prop(i)) {
+				s32 ammotype = bgun_get_ammo_type_for_weapon(i, FUNC_PRIMARY);
 
 				if (ammotype >= 0 && ammotype <= AMMOTYPE_ECM_MINE) {
 					ammotypesheld[ammotype] = true;
@@ -585,14 +585,14 @@ void playerStartNewLife(void)
 			}
 		}
 	} else {
-		invClear();
+		inv_clear();
 
 		for (i = 0; i < ARRAYCOUNT(g_Vars.currentplayer->ammoheldarr); i++) {
 			g_Vars.currentplayer->ammoheldarr[i] = 0;
 		}
 	}
 
-	invGiveSingleWeapon(WEAPON_UNARMED);
+	inv_give_single_weapon(WEAPON_UNARMED);
 
 	if (cmd) {
 		if (cmd);
@@ -618,16 +618,16 @@ void playerStartNewLife(void)
 				case INTROCMD_WEAPON:
 					if (cmd[3] == 0) {
 						if (cmd[2] >= 0) {
-							invGiveDoubleWeapon(cmd[1], cmd[2]);
+							inv_give_double_weapon(cmd[1], cmd[2]);
 						} else {
-							invGiveSingleWeapon(cmd[1]);
+							inv_give_single_weapon(cmd[1]);
 						}
 					}
 					cmd += 4;
 					break;
 				case INTROCMD_AMMO:
 					if (cmd[3] == 0) {
-						bgunSetAmmoQuantity(cmd[1], cmd[2]);
+						bgun_set_ammo_quantity(cmd[1], cmd[2]);
 					}
 					cmd += 4;
 					break;
@@ -659,13 +659,13 @@ void playerStartNewLife(void)
 		g_Vars.currentplayer->apparentarmour = 0;
 	}
 
-	bmoveUpdateRooms(g_Vars.currentplayer);
-	playerSpawn();
+	bmove_update_rooms(g_Vars.currentplayer);
+	player_spawn();
 
 	if (g_Vars.normmplayerisrunning) {
-		playerStartChrFade(120, 1);
+		player_start_chr_fade(120, 1);
 	} else {
-		playerStartChrFade(0, 1);
+		player_start_chr_fade(0, 1);
 	}
 
 	if (g_Vars.currentplayer->prop->chr) {
@@ -673,7 +673,7 @@ void playerStartNewLife(void)
 	}
 }
 
-void playerLoadDefaults(void)
+void player_load_defaults(void)
 {
 	if (!g_Vars.mplayerisrunning || g_Vars.currentplayer->model00d4 == NULL) {
 		g_Vars.currentplayer->vv_eyeheight = 159;
@@ -699,7 +699,7 @@ void playerLoadDefaults(void)
 	g_Vars.currentplayer->bondmovemode = -1;
 	g_Vars.currentplayer->walkinitmove = 0;
 
-	bmoveSetMode(MOVEMODE_WALK);
+	bmove_set_mode(MOVEMODE_WALK);
 
 	g_Vars.currentplayer->bondperimenabled = true;
 	g_Vars.currentplayer->periminfo.header.type = GEOTYPE_CYL;
@@ -712,9 +712,9 @@ void playerLoadDefaults(void)
 	g_Vars.currentplayer->bondactivateorreload = false;
 	g_Vars.currentplayer->isdead = false;
 
-	if (stageGetIndex(g_Vars.stagenum) == STAGEINDEX_DUEL) {
+	if (stage_get_index(g_Vars.stagenum) == STAGEINDEX_DUEL) {
 		g_Vars.currentplayer->bondhealth = 0.01f;
-	} else if (stageGetIndex(g_Vars.stagenum) == STAGEINDEX_MAIANSOS) {
+	} else if (stage_get_index(g_Vars.stagenum) == STAGEINDEX_MAIANSOS) {
 		g_Vars.currentplayer->bondhealth = 0.5f;
 	} else {
 		g_Vars.currentplayer->bondhealth = 1;
@@ -819,7 +819,7 @@ void playerLoadDefaults(void)
 	g_Vars.currentplayer->altdowntime = 0;
 }
 
-bool playerSpawnAnti(struct chrdata *hostchr, bool force)
+bool player_spawn_anti(struct chrdata *hostchr, bool force)
 {
 	struct prop *hostprop;
 	union modelrwdata *chrrootrwdata;
@@ -832,67 +832,67 @@ bool playerSpawnAnti(struct chrdata *hostchr, bool force)
 	playerchr->hidden |= CHRHFLAG_WARPONSCREEN;
 	playerchr->radius = hostchr->radius;
 
-	if (chrMoveToPos(playerchr, &hostchr->prop->pos, hostchr->prop->rooms, chrGetInverseTheta(hostchr), false) || force) {
+	if (chr_move_to_pos(playerchr, &hostchr->prop->pos, hostchr->prop->rooms, chr_get_inverse_theta(hostchr), false) || force) {
 		if (hostchr->weapons_held[0] && hostchr->weapons_held[1]) {
 			// Dual wielding
 			struct weaponobj *weapon1 = hostchr->weapons_held[0]->weapon;
 			struct weaponobj *weapon2 = hostchr->weapons_held[1]->weapon;
 
 #if VERSION >= VERSION_NTSC_1_0
-			invGiveSingleWeapon(weapon1->weaponnum);
-			invGiveDoubleWeapon(weapon1->weaponnum, weapon1->weaponnum);
-			bgunEquipWeapon2(HAND_RIGHT, weapon1->weaponnum);
-			bgunEquipWeapon2(HAND_LEFT, weapon1->weaponnum);
+			inv_give_single_weapon(weapon1->weaponnum);
+			inv_give_double_weapon(weapon1->weaponnum, weapon1->weaponnum);
+			bgun_equip_weapon2(HAND_RIGHT, weapon1->weaponnum);
+			bgun_equip_weapon2(HAND_LEFT, weapon1->weaponnum);
 #else
-			invGiveDoubleWeapon(weapon1->weaponnum, weapon2->weaponnum);
-			bgunEquipWeapon2(HAND_RIGHT, weapon1->weaponnum);
-			bgunEquipWeapon2(HAND_LEFT, weapon2->weaponnum);
+			inv_give_double_weapon(weapon1->weaponnum, weapon2->weaponnum);
+			bgun_equip_weapon2(HAND_RIGHT, weapon1->weaponnum);
+			bgun_equip_weapon2(HAND_LEFT, weapon2->weaponnum);
 #endif
 		} else if (hostchr->weapons_held[0]) {
 			// Right hand only
 			struct weaponobj *weapon = hostchr->weapons_held[0]->weapon;
 
 			if (weapon->weaponnum == WEAPON_SUPERDRAGON) {
-				invGiveSingleWeapon(WEAPON_DRAGON);
-				bgunEquipWeapon2(HAND_RIGHT, WEAPON_DRAGON);
+				inv_give_single_weapon(WEAPON_DRAGON);
+				bgun_equip_weapon2(HAND_RIGHT, WEAPON_DRAGON);
 			} else {
-				invGiveSingleWeapon(weapon->weaponnum);
-				bgunEquipWeapon2(HAND_RIGHT, weapon->weaponnum);
+				inv_give_single_weapon(weapon->weaponnum);
+				bgun_equip_weapon2(HAND_RIGHT, weapon->weaponnum);
 			}
 		} else if (hostchr->weapons_held[1]) {
 			// Left hand only
 			struct weaponobj *weapon = hostchr->weapons_held[1]->weapon;
 
 			if (weapon->weaponnum == WEAPON_SUPERDRAGON) {
-				invGiveSingleWeapon(WEAPON_DRAGON);
-				bgunEquipWeapon2(HAND_RIGHT, WEAPON_DRAGON);
+				inv_give_single_weapon(WEAPON_DRAGON);
+				bgun_equip_weapon2(HAND_RIGHT, WEAPON_DRAGON);
 			} else {
-				invGiveSingleWeapon(weapon->weaponnum);
-				bgunEquipWeapon2(HAND_RIGHT, weapon->weaponnum);
+				inv_give_single_weapon(weapon->weaponnum);
+				bgun_equip_weapon2(HAND_RIGHT, weapon->weaponnum);
 			}
 		} else {
 			// Unarmed
-			invGiveSingleWeapon(WEAPON_UNARMED);
-			bgunEquipWeapon2(HAND_RIGHT, WEAPON_UNARMED);
+			inv_give_single_weapon(WEAPON_UNARMED);
+			bgun_equip_weapon2(HAND_RIGHT, WEAPON_UNARMED);
 		}
 
 		g_Vars.currentplayer->invdowntime = TICKS(-40);
 		g_Vars.currentplayer->usedowntime = TICKS(-40);
 
-		bgunGiveMaxAmmo(true);
+		bgun_give_max_ammo(true);
 
-		g_Vars.currentplayer->bondhealth = (chrGetMaxDamage(hostchr) - hostchr->damage) * 0.125f;
+		g_Vars.currentplayer->bondhealth = (chr_get_max_damage(hostchr) - hostchr->damage) * 0.125f;
 
 		if (g_Vars.currentplayer->bondhealth > 1) {
 			g_Vars.currentplayer->bondhealth = 1;
 		}
 
-		chrSetShield(playerchr, chrGetShield(hostchr));
+		chr_set_shield(playerchr, chr_get_shield(hostchr));
 
 		g_Vars.currentplayer->haschrbody = false;
 		g_Vars.currentplayer->model00d4 = NULL;
 
-		chrRemove(g_Vars.currentplayer->prop, false);
+		chr_remove(g_Vars.currentplayer->prop, false);
 
 		if (hostchr->bodynum == BODY_SKEDAR) {
 			g_Vars.antiheadnum = HEAD_MRBLONDE;
@@ -902,12 +902,12 @@ bool playerSpawnAnti(struct chrdata *hostchr, bool force)
 			g_Vars.antibodynum = hostchr->bodynum;
 		}
 
-		playerTickChrBody();
-		modelCopyAnimData(hostchr->model, playerchr->model);
+		player_tick_chr_body();
+		model_copy_anim_data(hostchr->model, playerchr->model);
 		func0f02e9a0(playerchr, 12);
 
-		chrrootrwdata = modelGetNodeRwData(hostchr->model, hostchr->model->definition->rootnode);
-		playerrootrwdata = modelGetNodeRwData(playerchr->model, playerchr->model->definition->rootnode);
+		chrrootrwdata = model_get_node_rw_data(hostchr->model, hostchr->model->definition->rootnode);
+		playerrootrwdata = model_get_node_rw_data(playerchr->model, playerchr->model->definition->rootnode);
 
 		playerrootrwdata->chrinfo = chrrootrwdata->chrinfo;
 
@@ -922,11 +922,11 @@ bool playerSpawnAnti(struct chrdata *hostchr, bool force)
 		playerchr->radius = hostchr->radius;
 		g_Vars.currentplayer->bond2.radius = hostchr->radius;
 
-		chrRemove(hostprop, true);
-		propDeregisterRooms(hostprop);
-		propDelist(hostprop);
-		propDisable(hostprop);
-		propFree(hostprop);
+		chr_remove(hostprop, true);
+		prop_deregister_rooms(hostprop);
+		prop_delist(hostprop);
+		prop_disable(hostprop);
+		prop_free(hostprop);
 
 		return true;
 	}
@@ -936,7 +936,7 @@ bool playerSpawnAnti(struct chrdata *hostchr, bool force)
 	return false;
 }
 
-void playerSpawn(void)
+void player_spawn(void)
 {
 	f32 xdiff;
 	f32 ydiff;
@@ -960,18 +960,18 @@ void playerSpawn(void)
 	g_Vars.currentplayer->startnewbonddie = true;
 	g_Vars.currentplayer->killsthislife = 0;
 
-	g_Vars.currentplayer->lifestarttime60 = playerGetMissionTime();
+	g_Vars.currentplayer->lifestarttime60 = player_get_mission_time();
 	g_Vars.currentplayer->healthdisplaytime60 = 0;
 
-	invGiveSingleWeapon(WEAPON_UNARMED);
-	playerSetShieldFrac(0);
+	inv_give_single_weapon(WEAPON_UNARMED);
+	player_set_shield_frac(0);
 
-	if (cheatIsActive(CHEAT_JOSHIELD)) {
-		playerSetShieldFrac(1);
+	if (cheat_is_active(CHEAT_JOSHIELD)) {
+		player_set_shield_frac(1);
 	}
 
-	if (cheatIsActive(CHEAT_SUPERSHIELD)) {
-		playerSetShieldFrac(1);
+	if (cheat_is_active(CHEAT_SUPERSHIELD)) {
+		player_set_shield_frac(1);
 		g_Vars.currentplayer->armourscale = 2;
 	}
 
@@ -980,30 +980,30 @@ void playerSpawn(void)
 			numsqdists = 0;
 			force = false;
 
-			invGiveSingleWeapon(WEAPON_SUICIDEPILL);
-			bgunEquipWeapon2(HAND_LEFT, WEAPON_NONE);
-			bgunEquipWeapon2(HAND_RIGHT, WEAPON_UNARMED);
+			inv_give_single_weapon(WEAPON_SUICIDEPILL);
+			bgun_equip_weapon2(HAND_LEFT, WEAPON_NONE);
+			bgun_equip_weapon2(HAND_RIGHT, WEAPON_UNARMED);
 
 			if (g_Vars.lvframenum > 0) {
 				s32 prevplayernum = g_Vars.currentplayernum;
-				setCurrentPlayerNum(g_Vars.bondplayernum);
+				set_current_player_num(g_Vars.bondplayernum);
 				bgun0f0a0c08(&sp84, &sp9c);
-				mtx4RotateVec(camGetProjectionMtxF(), &sp9c, &sp90);
-				mtx4TransformVec(camGetProjectionMtxF(), &sp84, &sp78);
-				setCurrentPlayerNum(prevplayernum);
+				mtx4_rotate_vec(cam_get_projection_mtxf(), &sp9c, &sp90);
+				mtx4_transform_vec(cam_get_projection_mtxf(), &sp84, &sp78);
+				set_current_player_num(prevplayernum);
 			}
 
 			if (g_Vars.currentplayer->model00d4 == NULL) {
-				playerTickChrBody();
+				player_tick_chr_body();
 			}
 
-			for (i = 0; i < chrsGetNumSlots(); i++) {
+			for (i = 0; i < chrs_get_num_slots(); i++) {
 				if (g_ChrSlots[i].model
 						&& g_ChrSlots[i].prop
 						&& (g_ChrSlots[i].hidden & CHRHFLAG_BASICGUARD)
 						&& (g_ChrSlots[i].chrflags & CHRCFLAG_HIDDEN) == 0
 						&& g_ChrSlots[i].prop->type == PROPTYPE_CHR
-						&& !chrIsDead(&g_ChrSlots[i])
+						&& !chr_is_dead(&g_ChrSlots[i])
 						&& (g_ChrSlots[i].prop->flags & PROPFLAG_ENABLED)) {
 					if (g_Vars.bond->prop) {
 						xdiff = g_ChrSlots[i].prop->pos.x - g_Vars.bond->prop->pos.x;
@@ -1019,7 +1019,7 @@ void playerSpawn(void)
 
 					if (g_Vars.lvframenum > 0
 							&& (g_ChrSlots[i].hidden & CHRHFLAG_ONBONDSSCREEN)
-							&& func0f06b39c(&sp78, &sp90, &g_ChrSlots[i].prop->pos, modelGetEffectiveScale(g_ChrSlots[i].model))
+							&& func0f06b39c(&sp78, &sp90, &g_ChrSlots[i].prop->pos, model_get_effective_scale(g_ChrSlots[i].model))
 							&& (rngRandom() % 8)) {
 						sqdist += 1000 * 1000;
 					}
@@ -1080,7 +1080,7 @@ void playerSpawn(void)
 			// If no chrs can be spawned into, iterate the list again but this
 			// time allowing the spawn to happen on-screen (force = true).
 			for (i = 0; i < numsqdists; i++) {
-				if (playerSpawnAnti(sortedchrs[i], force)) {
+				if (player_spawn_anti(sortedchrs[i], force)) {
 					break;
 				}
 
@@ -1101,17 +1101,17 @@ void playerSpawn(void)
 			}
 		} else {
 #ifndef PLATFORM_N64
-			if (cheatIsActive(CHEAT_CLOAKINGDEVICE)) {
-				invGiveSingleWeapon(WEAPON_CLOAKINGDEVICE);
+			if (cheat_is_active(CHEAT_CLOAKINGDEVICE)) {
+				inv_give_single_weapon(WEAPON_CLOAKINGDEVICE);
 #if VERSION >= VERSION_PAL_FINAL
-				bgunSetAmmoQuantity(AMMOTYPE_CLOAK, TICKS(7200));
+				bgun_set_ammo_quantity(AMMOTYPE_CLOAK, TICKS(7200));
 #else
-				bgunSetAmmoQuantity(AMMOTYPE_CLOAK, 7200);
+				bgun_set_ammo_quantity(AMMOTYPE_CLOAK, 7200);
 #endif
 			}
 
-			if (cheatIsActive(CHEAT_PERFECTDARKNESS)) {
-				invGiveSingleWeapon(WEAPON_NIGHTVISION);
+			if (cheat_is_active(CHEAT_PERFECTDARKNESS)) {
+				inv_give_single_weapon(WEAPON_NIGHTVISION);
 			}
 
 			if (g_Vars.normmplayerisrunning
@@ -1120,41 +1120,41 @@ void playerSpawn(void)
 					&& g_MpSetup.weapons[0] != MPWEAPON_DISABLED
 					&& g_MpSetup.weapons[0] != MPWEAPON_SHIELD) {
 				struct mpweapon *mpweapon = &g_MpWeapons[g_MpSetup.weapons[0]];
-				invGiveSingleWeapon(mpweapon->weaponnum);
+				inv_give_single_weapon(mpweapon->weaponnum);
 				const s32 ammotype = (g_MpSetup.weapons[0] == MPWEAPON_COMBATBOOST) ? AMMOTYPE_BOOST : mpweapon->priammotype;
 				if (ammotype) {
 					s32 startammo = mpweapon->priammoqty / 2;
 					if (startammo == 0) {
 						startammo = 1;
 					}
-					bgunSetAmmoQuantity(ammotype, startammo);
+					bgun_set_ammo_quantity(ammotype, startammo);
 				}
-				bgunEquipWeapon2(HAND_LEFT, WEAPON_NONE);
-				bgunEquipWeapon2(HAND_RIGHT, mpweapon->weaponnum);
+				bgun_equip_weapon2(HAND_LEFT, WEAPON_NONE);
+				bgun_equip_weapon2(HAND_RIGHT, mpweapon->weaponnum);
 			} else
 #endif
 			{
-				bgunEquipWeapon2(HAND_LEFT, g_DefaultWeapons[HAND_LEFT]);
-				bgunEquipWeapon2(HAND_RIGHT, g_DefaultWeapons[HAND_RIGHT]);
+				bgun_equip_weapon2(HAND_LEFT, g_DefaultWeapons[HAND_LEFT]);
+				bgun_equip_weapon2(HAND_RIGHT, g_DefaultWeapons[HAND_RIGHT]);
 			}
 
 #if VERSION >= VERSION_NTSC_1_0
 			if (g_Vars.currentplayer->model00d4 == NULL
 					&& (IS8MB() || g_Vars.fourmeg2player || g_MpAllChrPtrs[g_Vars.currentplayernum] == NULL)) {
-				playerTickChrBody();
+				player_tick_chr_body();
 			}
 #else
 			if (g_Vars.currentplayer->model00d4 == NULL) {
-				playerTickChrBody();
+				player_tick_chr_body();
 			}
 #endif
 		}
 	}
 
-	playerUpdatePerimInfo();
+	player_update_perim_info();
 }
 
-void playerResetBond(struct playerbond *pb, struct coord *pos)
+void player_reset_bond(struct playerbond *pb, struct coord *pos)
 {
 	pb->unk10.x = pos->x;
 	pb->unk10.y = pos->y;
@@ -1175,20 +1175,20 @@ void playerResetBond(struct playerbond *pb, struct coord *pos)
 	pb->radius = 30;
 }
 
-void playersTickAllChrBodies(void)
+void players_tick_all_chr_bodies(void)
 {
 	s32 prevplayernum = g_Vars.currentplayernum;
 	s32 i;
 
 	for (i = 0; i < PLAYERCOUNT(); i++) {
-		setCurrentPlayerNum(i);
-		playerTickChrBody();
+		set_current_player_num(i);
+		player_tick_chr_body();
 	}
 
-	setCurrentPlayerNum(prevplayernum);
+	set_current_player_num(prevplayernum);
 }
 
-void playerChooseBodyAndHead(s32 *bodynum, s32 *headnum, s32 *arg2)
+void player_choose_body_and_head(s32 *bodynum, s32 *headnum, s32 *arg2)
 {
 	s32 outfit;
 	bool solo;
@@ -1203,30 +1203,30 @@ void playerChooseBodyAndHead(s32 *bodynum, s32 *headnum, s32 *arg2)
 	}
 
 	if (g_Vars.normmplayerisrunning) {
-		if (g_PlayerConfigsArray[g_Vars.currentplayerstats->mpindex].base.mpheadnum < mpGetNumHeads2()) {
-			*headnum = mpGetHeadId(g_PlayerConfigsArray[g_Vars.currentplayerstats->mpindex].base.mpheadnum);
+		if (g_PlayerConfigsArray[g_Vars.currentplayerstats->mpindex].base.mpheadnum < mp_get_num_heads2()) {
+			*headnum = mp_get_head_id(g_PlayerConfigsArray[g_Vars.currentplayerstats->mpindex].base.mpheadnum);
 		} else {
-			*headnum = g_PlayerConfigsArray[g_Vars.currentplayerstats->mpindex].base.mpheadnum - mpGetNumHeads2();
+			*headnum = g_PlayerConfigsArray[g_Vars.currentplayerstats->mpindex].base.mpheadnum - mp_get_num_heads2();
 
 			if (arg2) {
 				*arg2 = true;
 			}
 		}
 
-		*bodynum = mpGetBodyId(g_PlayerConfigsArray[g_Vars.currentplayerstats->mpindex].base.mpbodynum);
+		*bodynum = mp_get_body_id(g_PlayerConfigsArray[g_Vars.currentplayerstats->mpindex].base.mpbodynum);
 		return;
 	}
 
 	outfit = g_Vars.currentplayer->bondtype;
 	solo = !(g_Vars.coopplayernum >= 0) || (g_Vars.currentplayer != g_Vars.coop);
 
-	if (cheatIsActive(CHEAT_PLAYASELVIS)) {
+	if (cheat_is_active(CHEAT_PLAYASELVIS)) {
 		*bodynum = BODY_THEKING;
 		*headnum = HEAD_ELVIS;
 		return;
 	}
 
-	if (g_Vars.stagenum == STAGE_VILLA && lvGetDifficulty() >= DIFF_PA) {
+	if (g_Vars.stagenum == STAGE_VILLA && lv_get_difficulty() >= DIFF_PA) {
 		outfit = OUTFIT_NEGOTIATOR;
 	}
 
@@ -1317,7 +1317,7 @@ void playerChooseBodyAndHead(s32 *bodynum, s32 *headnum, s32 *arg2)
  * these structures are already allocated elsewhere in memory due to the two
  * players being able to see each other at any time.
  */
-void playerTickChrBody(void)
+void player_tick_chr_body(void)
 {
 	f32 turnangle = (360.0f - g_Vars.currentplayer->vv_theta) * M_BADTAU / 360.0f;
 
@@ -1369,7 +1369,7 @@ void playerTickChrBody(void)
 		};
 
 		s32 weaponmodelnum;
-		s32 weaponnum = bgunGetWeaponNum2(HAND_RIGHT);
+		s32 weaponnum = bgun_get_weapon_num2(HAND_RIGHT);
 		s32 bodynum = BODY_DARK_COMBAT;
 		s32 headnum = HEAD_DARK_COMBAT;
 		bool sp60 = false;
@@ -1378,13 +1378,13 @@ void playerTickChrBody(void)
 		u32 stack3[2];
 
 		g_Vars.currentplayer->haschrbody = true;
-		playerChooseBodyAndHead(&bodynum, &headnum, &sp60);
+		player_choose_body_and_head(&bodynum, &headnum, &sp60);
 
 		if (g_Vars.tickmode == TICKMODE_CUTSCENE) {
 			weaponnum = g_DefaultWeapons[0];
 		}
 
-		weaponmodelnum = playermgrGetModelOfWeapon(weaponnum);
+		weaponmodelnum = playermgr_get_model_of_weapon(weaponnum);
 
 		if (IS4MB()) {
 			bodynum = BODY_DARK_COMBAT;
@@ -1394,8 +1394,8 @@ void playerTickChrBody(void)
 		if (!g_Vars.mplayerisrunning || (IS4MB() && PLAYERCOUNT() == 1)) {
 			// 1 player
 			if (g_Vars.currentplayer->gunmem2 == NULL) {
-				if (!var8009dfc0 && bgunChangeGunMem(GUNMEMOWNER_CHRBODY)) {
-					g_Vars.currentplayer->gunmem2 = bgunGetGunMem();
+				if (!var8009dfc0 && bgun_change_gun_mem(GUNMEMOWNER_CHRBODY)) {
+					g_Vars.currentplayer->gunmem2 = bgun_get_gun_mem();
 				} else {
 					if (var8009dfc0);
 
@@ -1410,7 +1410,7 @@ void playerTickChrBody(void)
 
 			offset1 = 0;
 			var8007fc0c = 8;
-			osSyncPrintf("Gunmem: 0x%08x\n", bgunGetGunMem());
+			osSyncPrintf("Gunmem: 0x%08x\n", bgun_get_gun_mem());
 
 			allocation = g_Vars.currentplayer->gunmem2;
 			model = (struct model *)(allocation + offset1);
@@ -1435,39 +1435,39 @@ void playerTickChrBody(void)
 			offset1 += sizeof(struct weaponobj);
 			offset1 = ALIGN64(offset1);
 
-			offset2 = offset1 + ALIGN64(fileGetInflatedSize(g_HeadsAndBodies[bodynum].filenum, LOADTYPE_MODEL));
+			offset2 = offset1 + ALIGN64(file_get_inflated_size(g_HeadsAndBodies[bodynum].filenum, LOADTYPE_MODEL));
 
 			if (headnum >= 0) {
-				offset2 += ALIGN64(fileGetInflatedSize(g_HeadsAndBodies[headnum].filenum, LOADTYPE_MODEL));
+				offset2 += ALIGN64(file_get_inflated_size(g_HeadsAndBodies[headnum].filenum, LOADTYPE_MODEL));
 			}
 
 			if (weaponmodelnum >= 0) {
-				offset2 += ALIGN64(fileGetInflatedSize(g_ModelStates[weaponmodelnum].fileid, LOADTYPE_MODEL));
+				offset2 += ALIGN64(file_get_inflated_size(g_ModelStates[weaponmodelnum].fileid, LOADTYPE_MODEL));
 			}
 
 			offset2 += 0x4000;
 #ifdef PLATFORM_64BIT
 			offset2 += 0x2000;
 #endif
-			bgunCalculateGunMemCapacity();
+			bgun_calculate_gun_mem_capacity();
 			spe8 = g_Vars.currentplayer->gunmem2 + offset2;
-			texInitPool(&texpool, spe8, bgunCalculateGunMemCapacity() - offset2);
-			bodymodeldef = modeldefLoad(g_HeadsAndBodies[bodynum].filenum, allocation + offset1, offset2 - offset1, &texpool);
-			offset1 = ALIGN64(fileGetLoadedSize(g_HeadsAndBodies[bodynum].filenum) + offset1);
+			tex_init_pool(&texpool, spe8, bgun_calculate_gun_mem_capacity() - offset2);
+			bodymodeldef = modeldef_load(g_HeadsAndBodies[bodynum].filenum, allocation + offset1, offset2 - offset1, &texpool);
+			offset1 = ALIGN64(file_get_loaded_size(g_HeadsAndBodies[bodynum].filenum) + offset1);
 
 			if (headnum >= 0) {
-				headmodeldef = modeldefLoad(g_HeadsAndBodies[headnum].filenum, allocation + offset1, offset2 - offset1, &texpool);
-				offset1 = ALIGN64(fileGetLoadedSize(g_HeadsAndBodies[headnum].filenum) + offset1);
+				headmodeldef = modeldef_load(g_HeadsAndBodies[headnum].filenum, allocation + offset1, offset2 - offset1, &texpool);
+				offset1 = ALIGN64(file_get_loaded_size(g_HeadsAndBodies[headnum].filenum) + offset1);
 			}
 
-			modelAllocateRwData(bodymodeldef);
+			model_allocate_rw_data(bodymodeldef);
 
 			if (headmodeldef != NULL) {
-				modelAllocateRwData(headmodeldef);
+				model_allocate_rw_data(headmodeldef);
 			}
 
-			modelInit(model, bodymodeldef, rwdatas, false);
-			animInit(model->anim);
+			model_init(model, bodymodeldef, rwdatas, false);
+			anim_init(model->anim);
 
 			model->rwdatalen = 256;
 
@@ -1475,19 +1475,19 @@ void playerTickChrBody(void)
 			model->rwdatalen += 128;
 #endif
 
-			texGetPoolLeftPos(&texpool);
+			tex_get_pool_left_pos(&texpool);
 
 			// @TODO: Figure out these arguments
 			osSyncPrintf("Jo using %d bytes gunmem (gunmemsize %d)\n");
-			osSyncPrintf("Gunmem: bondmeml 0x%08x size 0x%08x\n", bgunGetGunMem(), bgunCalculateGunMemCapacity());
+			osSyncPrintf("Gunmem: bondmeml 0x%08x size 0x%08x\n", bgun_get_gun_mem(), bgun_calculate_gun_mem_capacity());
 			osSyncPrintf("Gunmem: tex block free 0x%08x\n");
 			osSyncPrintf("Gunmem: Free at end %d\n");
 
-			texGetPoolLeftPos(&texpool);
+			tex_get_pool_left_pos(&texpool);
 		} else {
 			// 2-4 players
 			if (g_HeadsAndBodies[bodynum].modeldef == NULL) {
-				g_HeadsAndBodies[bodynum].modeldef = modeldefLoadToNew(g_HeadsAndBodies[bodynum].filenum);
+				g_HeadsAndBodies[bodynum].modeldef = modeldef_load_to_new(g_HeadsAndBodies[bodynum].filenum);
 			}
 
 			bodymodeldef = g_HeadsAndBodies[bodynum].modeldef;
@@ -1497,13 +1497,13 @@ void playerTickChrBody(void)
 			} else if (sp60) {
 				headmodeldef = func0f18e57c(headnum, &headnum);
 			} else if (g_Vars.normmplayerisrunning && IS8MB()) {
-				g_HeadsAndBodies[headnum].modeldef = modeldefLoadToNew(g_HeadsAndBodies[headnum].filenum);
+				g_HeadsAndBodies[headnum].modeldef = modeldef_load_to_new(g_HeadsAndBodies[headnum].filenum);
 				headmodeldef = g_HeadsAndBodies[headnum].modeldef;
 				g_FileInfo[g_HeadsAndBodies[headnum].filenum].loadedsize = 0;
-				bodyCalculateHeadOffset(headmodeldef, headnum, bodynum);
+				body_calculate_head_offset(headmodeldef, headnum, bodynum);
 			} else {
 				if (g_HeadsAndBodies[headnum].modeldef == NULL) {
-					g_HeadsAndBodies[headnum].modeldef = modeldefLoadToNew(g_HeadsAndBodies[headnum].filenum);
+					g_HeadsAndBodies[headnum].modeldef = modeldef_load_to_new(g_HeadsAndBodies[headnum].filenum);
 				}
 
 				headmodeldef = g_HeadsAndBodies[headnum].modeldef;
@@ -1524,12 +1524,12 @@ void playerTickChrBody(void)
 
 		chr->chrflags |= CHRCFLAG_FORCETOGROUND;
 
-		modelSetRootPosition(g_Vars.currentplayer->model00d4, &g_Vars.currentplayer->prop->pos);
-		chrSetLookAngle(g_Vars.currentplayer->prop->chr, turnangle);
+		model_set_root_position(g_Vars.currentplayer->model00d4, &g_Vars.currentplayer->prop->pos);
+		chr_set_look_angle(g_Vars.currentplayer->prop->chr, turnangle);
 
 		chr->headnum = headnum;
 		chr->bodynum = bodynum;
-		chr->race = bodyGetRace(chr->bodynum);
+		chr->race = body_get_race(chr->bodynum);
 		chr->radius = g_Vars.currentplayer->bond2.radius;
 
 		g_Vars.currentplayer->vv_eyeheight = (s32)g_HeadsAndBodies[bodynum].height;
@@ -1558,74 +1558,74 @@ void playerTickChrBody(void)
 
 		if (weaponmodelnum >= 0) {
 			if (g_Vars.mplayerisrunning == false) {
-				weaponmodeldef = modeldefLoad(g_ModelStates[weaponmodelnum].fileid, allocation + offset1, offset2 - offset1, &texpool);
-				fileGetLoadedSize(g_ModelStates[weaponmodelnum].fileid);
-				modelAllocateRwData(weaponmodeldef);
+				weaponmodeldef = modeldef_load(g_ModelStates[weaponmodelnum].fileid, allocation + offset1, offset2 - offset1, &texpool);
+				file_get_loaded_size(g_ModelStates[weaponmodelnum].fileid);
+				model_allocate_rw_data(weaponmodeldef);
 			} else {
 				weaponobj = NULL;
 				weaponmodeldef = NULL;
 			}
 
-			weaponCreateForChr(chr, weaponmodelnum, weaponnum, 0, weaponobj, weaponmodeldef);
+			weapon_create_for_chr(chr, weaponmodelnum, weaponnum, 0, weaponobj, weaponmodeldef);
 		}
 
-		chr->fireslots[0] = bgunAllocateFireslot();
+		chr->fireslots[0] = bgun_allocate_fireslot();
 		func0f02e9a0(chr, 0);
-		bmoveUpdateRooms(g_Vars.currentplayer);
+		bmove_update_rooms(g_Vars.currentplayer);
 	} else {
 		struct chrdata *chr = g_Vars.currentplayer->prop->chr;
 
 		if (chr->model->anim == NULL) {
 			chr->chrflags |= CHRCFLAG_FORCETOGROUND;
 			func0f02e9a0(chr, 0);
-			modelSetRootPosition(g_Vars.currentplayer->model00d4, &g_Vars.currentplayer->prop->pos);
-			chrSetLookAngle(g_Vars.currentplayer->prop->chr, turnangle);
-			bmoveUpdateRooms(g_Vars.currentplayer);
+			model_set_root_position(g_Vars.currentplayer->model00d4, &g_Vars.currentplayer->prop->pos);
+			chr_set_look_angle(g_Vars.currentplayer->prop->chr, turnangle);
+			bmove_update_rooms(g_Vars.currentplayer);
 		}
 	}
 }
 
-void playerRemoveChrBody(void)
+void player_remove_chr_body(void)
 {
 	if (g_Vars.currentplayer->haschrbody) {
 		if (!g_Vars.mplayerisrunning || (IS4MB() && PLAYERCOUNT() == 1)) {
 			g_Vars.currentplayer->haschrbody = false;
-			chrRemove(g_Vars.currentplayer->prop, false);
+			chr_remove(g_Vars.currentplayer->prop, false);
 			g_Vars.currentplayer->model00d4 = NULL;
-			bmoveUpdateRooms(g_Vars.currentplayer);
-			bgunFreeGunMem();
+			bmove_update_rooms(g_Vars.currentplayer);
+			bgun_free_gun_mem();
 			g_Vars.currentplayer->gunmem2 = NULL;
 		}
 	}
 }
 
-void playerSetTickMode(s32 tickmode)
+void player_set_tick_mode(s32 tickmode)
 {
 	g_Vars.tickmode = tickmode;
 	g_Vars.in_cutscene = false;
 }
 
-void playerBeginGeFadeIn(void)
+void player_begin_ge_fade_in(void)
 {
-	playerSetTickMode(TICKMODE_GE_FADEIN);
+	player_set_tick_mode(TICKMODE_GE_FADEIN);
 	g_PlayerTriggerGeFadeIn = false;
 }
 
-void playersBeginMpSwirl(void)
+void players_begin_mp_swirl(void)
 {
-	playerSetTickMode(TICKMODE_MPSWIRL);
+	player_set_tick_mode(TICKMODE_MPSWIRL);
 	g_PlayerTriggerGeFadeIn = false;
-	bmoveSetMode(MOVEMODE_WALK);
+	bmove_set_mode(MOVEMODE_WALK);
 
 	g_MpSwirlRotateSpeed = 0;
 	g_MpSwirlAngleDegrees = -90;
 	g_MpSwirlForwardSpeed = 0;
 	g_MpSwirlDistance = 80;
 
-	envChooseAndApply(mainGetStageNum(), false);
+	env_choose_and_apply(main_get_stage_num(), false);
 }
 
-void playerTickMpSwirl(void)
+void player_tick_mp_swirl(void)
 {
 	f32 angle;
 	struct coord pos = {0, 0, 0};
@@ -1633,7 +1633,7 @@ void playerTickMpSwirl(void)
 	struct coord up = {0, 1, 0};
 	s32 i;
 
-	playerSetCameraMode(CAMERAMODE_THIRDPERSON);
+	player_set_camera_mode(CAMERAMODE_THIRDPERSON);
 
 	// This function is called once for each player per frame,
 	// but the swirl position should only be updated once per frame,
@@ -1687,59 +1687,59 @@ void playerTickMpSwirl(void)
 	player0f0c1840(&pos, &up, &look, &g_Vars.currentplayer->prop->pos, g_Vars.currentplayer->prop->rooms);
 
 	if (g_MpSwirlDistance < 5.0f) {
-		playerEndCutscene();
+		player_end_cutscene();
 	}
 }
 
 void player0f0b9a20(void)
 {
-	playerSetTickMode(TICKMODE_NORMAL);
+	player_set_tick_mode(TICKMODE_NORMAL);
 	g_PlayerTriggerGeFadeIn = false;
-	bmoveSetMode(MOVEMODE_WALK);
+	bmove_set_mode(MOVEMODE_WALK);
 
-	if (mainGetStageNum() == STAGE_TEST_LEN) {
-		playerSetFadeColour(0, 0, 0, 1);
-		playerSetFadeFrac(0, 1);
+	if (main_get_stage_num() == STAGE_TEST_LEN) {
+		player_set_fade_colour(0, 0, 0, 1);
+		player_set_fade_frac(0, 1);
 	} else if (var80070748 != 0) {
-		playerSetFadeColour(0, 0, 0, 1);
-		playerSetFadeFrac(60, 0);
+		player_set_fade_colour(0, 0, 0, 1);
+		player_set_fade_frac(60, 0);
 	}
 
-	envChooseAndApply(mainGetStageNum(), false);
-	bgunEquipWeapon2(HAND_LEFT, g_DefaultWeapons[HAND_LEFT]);
-	bgunEquipWeapon2(HAND_RIGHT, g_DefaultWeapons[HAND_RIGHT]);
+	env_choose_and_apply(main_get_stage_num(), false);
+	bgun_equip_weapon2(HAND_LEFT, g_DefaultWeapons[HAND_LEFT]);
+	bgun_equip_weapon2(HAND_RIGHT, g_DefaultWeapons[HAND_RIGHT]);
 	var8007074c = 0;
 }
 
-void playerEndCutscene(void)
+void player_end_cutscene(void)
 {
 	if (g_IsTitleDemo) {
-		mainChangeToStage(STAGE_TITLE);
+		main_change_to_stage(STAGE_TITLE);
 	} else if (g_Vars.autocutplaying) {
 		g_Vars.autocutfinished = true;
 	} else {
-		playerSetTickMode(TICKMODE_NORMAL);
+		player_set_tick_mode(TICKMODE_NORMAL);
 		g_PlayerTriggerGeFadeIn = false;
-		bmoveSetModeForAllPlayers(MOVEMODE_WALK);
+		bmove_set_mode_for_all_players(MOVEMODE_WALK);
 	}
 }
 
 void playerPrepareWarpType1(s16 pad)
 {
-	playerSetTickMode(TICKMODE_WARP);
+	player_set_tick_mode(TICKMODE_WARP);
 	g_PlayerTriggerGeFadeIn = false;
-	bmoveSetModeForAllPlayers(MOVEMODE_CUTSCENE);
-	playersClearMemCamRoom();
+	bmove_set_mode_for_all_players(MOVEMODE_CUTSCENE);
+	players_clear_mem_cam_room();
 
 	g_WarpType1Pad = pad;
 }
 
 void playerPrepareWarpType2(struct warpparams *cmd, bool hasdir, s32 arg2)
 {
-	playerSetTickMode(TICKMODE_WARP);
+	player_set_tick_mode(TICKMODE_WARP);
 	g_PlayerTriggerGeFadeIn = false;
-	bmoveSetModeForAllPlayers(MOVEMODE_CUTSCENE);
-	playersClearMemCamRoom();
+	bmove_set_mode_for_all_players(MOVEMODE_CUTSCENE);
+	players_clear_mem_cam_room();
 
 	g_WarpType1Pad = -1;
 
@@ -1750,10 +1750,10 @@ void playerPrepareWarpType2(struct warpparams *cmd, bool hasdir, s32 arg2)
 
 void playerPrepareWarpType3(f32 posangle, f32 rotangle, f32 range, f32 height1, f32 height2, s32 padnum)
 {
-	playerSetTickMode(TICKMODE_WARP);
+	player_set_tick_mode(TICKMODE_WARP);
 	g_PlayerTriggerGeFadeIn = false;
-	bmoveSetModeForAllPlayers(MOVEMODE_CUTSCENE);
-	playersClearMemCamRoom();
+	bmove_set_mode_for_all_players(MOVEMODE_CUTSCENE);
+	players_clear_mem_cam_room();
 
 	g_WarpType1Pad = -1;
 
@@ -1776,13 +1776,13 @@ void playerExecutePreparedWarp(void)
 	s32 room;
 	struct coord memcampos;
 
-	playerSetCameraMode(CAMERAMODE_THIRDPERSON);
+	player_set_camera_mode(CAMERAMODE_THIRDPERSON);
 
 	if (g_WarpType1Pad >= 0) {
 		// Warp to an exact position with a static direction of 0, 0, 1.
 		// Used by device and holo training to warp player back to room,
 		// and Deep Sea teleports
-		padUnpack(g_WarpType1Pad, PADFIELD_POS | PADFIELD_ROOM, &pad);
+		pad_unpack(g_WarpType1Pad, PADFIELD_POS | PADFIELD_ROOM, &pad);
 
 		memcampos.x = pad.pos.x;
 		memcampos.y = pad.pos.y;
@@ -1800,7 +1800,7 @@ void playerExecutePreparedWarp(void)
 		pos.y = g_WarpType2Params->pos.y;
 		pos.z = g_WarpType2Params->pos.z;
 
-		padUnpack(g_WarpType2Params->pad, PADFIELD_POS | PADFIELD_ROOM, &pad);
+		pad_unpack(g_WarpType2Params->pad, PADFIELD_POS | PADFIELD_ROOM, &pad);
 
 		room = pad.room;
 
@@ -1819,7 +1819,7 @@ void playerExecutePreparedWarp(void)
 		// Warp to a location within a specified range and angle of the pad,
 		// with options for the direction and height offset from the pad.
 		// Used by AI command 00f4, but that command is not used.
-		padUnpack(g_WarpType3Pad, PADFIELD_POS | PADFIELD_ROOM, &pad);
+		pad_unpack(g_WarpType3Pad, PADFIELD_POS | PADFIELD_ROOM, &pad);
 
 		room = pad.room;
 
@@ -1849,12 +1849,12 @@ void playerExecutePreparedWarp(void)
 	player0f0c1ba4(&pos, &up, &look, &memcampos, room);
 }
 
-void playerStartCutscene2(void)
+void player_start_cutscene2(void)
 {
-	playerSetTickMode(TICKMODE_CUTSCENE);
+	player_set_tick_mode(TICKMODE_CUTSCENE);
 	g_PlayerTriggerGeFadeIn = false;
-	bmoveSetModeForAllPlayers(MOVEMODE_CUTSCENE);
-	playersClearMemCamRoom();
+	bmove_set_mode_for_all_players(MOVEMODE_CUTSCENE);
+	players_clear_mem_cam_room();
 
 #if PAL
 	g_CutsceneCurAnimFrame240 = var8009e388pf;
@@ -1868,17 +1868,17 @@ void playerStartCutscene2(void)
 	g_CutsceneTweenDuration60 = -1;
 	g_InCutscene = 1;
 
-	paksStop(true);
-	g_Vars.in_cutscene = g_Vars.tickmode == TICKMODE_CUTSCENE && g_CutsceneCurAnimFrame60 < animGetNumFrames(g_CutsceneAnimNum) - 1;
+	paks_stop(true);
+	g_Vars.in_cutscene = g_Vars.tickmode == TICKMODE_CUTSCENE && g_CutsceneCurAnimFrame60 < anim_get_num_frames(g_CutsceneAnimNum) - 1;
 	g_Vars.cutsceneskip60ths = 0;
 }
 
-void playerStartCutscene(s16 animnum)
+void player_start_cutscene(s16 animnum)
 {
 	if ((!g_IsTitleDemo && !g_Vars.autocutplaying)
 			|| !g_Vars.in_cutscene
 			|| !g_CutsceneSkipRequested) {
-		joyDisableTemporarily();
+		joy_disable_temporarily();
 
 		if (g_Vars.tickmode != TICKMODE_CUTSCENE) {
 			g_CutsceneSkipRequested = false;
@@ -1886,18 +1886,18 @@ void playerStartCutscene(s16 animnum)
 		}
 
 		if (g_Vars.tickmode != TICKMODE_CUTSCENE) {
-			playersTickAllChrBodies();
+			players_tick_all_chr_bodies();
 		}
 
 		g_CutsceneAnimNum = animnum;
 
 		if (g_Vars.currentplayer->haschrbody) {
-			playerStartCutscene2();
+			player_start_cutscene2();
 		}
 	}
 }
 
-void playerReorientForCutsceneStop(s32 tweenduration60)
+void player_reorient_for_cutscene_stop(s32 tweenduration60)
 {
 	struct coord rot;
 	struct coord translate;
@@ -1909,21 +1909,21 @@ void playerReorientForCutsceneStop(s32 tweenduration60)
 	u32 stack;
 
 	g_CutsceneTweenDuration60 = tweenduration60;
-	lastframe = animGetNumFrames(g_CutsceneAnimNum) - 1;
-	animLoadHeader(g_CutsceneAnimNum);
-	frameslot = animLoadFrame(g_CutsceneAnimNum, lastframe);
-	animForgetFrameBirths();
-	animGetRotTranslateScale(0, 0, &g_Skel20, g_CutsceneAnimNum, frameslot, &rot, &translate, &scale);
-	mtx4LoadRotation(&rot, &rotmtx);
+	lastframe = anim_get_num_frames(g_CutsceneAnimNum) - 1;
+	anim_load_header(g_CutsceneAnimNum);
+	frameslot = anim_load_frame(g_CutsceneAnimNum, lastframe);
+	anim_forget_frame_births();
+	anim_get_rot_translate_scale(0, 0, &g_Skel20, g_CutsceneAnimNum, frameslot, &rot, &translate, &scale);
+	mtx4_load_rotation(&rot, &rotmtx);
 
 	theta = atan2f(-rotmtx.m[2][0], -rotmtx.m[2][2]);
 	theta = (M_BADTAU - theta) * 57.304901123047f;
 	g_Vars.bond->vv_theta = theta;
 
-	chrSetLookAngle(g_Vars.bond->prop->chr, (360 - theta) * 0.017450513318181f);
+	chr_set_look_angle(g_Vars.bond->prop->chr, (360 - theta) * 0.017450513318181f);
 }
 
-void playerTickCutscene(bool arg0)
+void player_tick_cutscene(bool arg0)
 {
 	struct coord pos;
 	struct coord up;
@@ -1933,10 +1933,10 @@ void playerTickCutscene(bool arg0)
 	struct coord scale;
 	u8 frameslot;
 	Mtxf rotmtx;
-	f32 translatescale = bgGetStageTranslationThing();
+	f32 translatescale = bg_get_stage_translation_thing();
 	f32 fovy;
 	s32 endframe;
-	s8 contpadnum = optionsGetContpadNum1(g_Vars.currentplayerstats->mpindex);
+	s8 contpadnum = options_get_contpad_num1(g_Vars.currentplayerstats->mpindex);
 	u32 buttons;
 #if PAL
 	u8 stack3[0x2c];
@@ -1950,14 +1950,14 @@ void playerTickCutscene(bool arg0)
 	f32 sp54[4];
 
 	if (arg0) {
-		buttons = joyGetButtons(contpadnum, 0xffffffff);
+		buttons = joy_get_buttons(contpadnum, 0xffffffff);
 	} else {
 		buttons = 0;
 	}
 
-	animLoadHeader(g_CutsceneAnimNum);
+	anim_load_header(g_CutsceneAnimNum);
 
-	endframe = animGetNumFrames(g_CutsceneAnimNum) - 1;
+	endframe = anim_get_num_frames(g_CutsceneAnimNum) - 1;
 
 	if (g_Vars.currentplayerindex == 0) {
 		g_Vars.cutsceneskip60ths = 0;
@@ -1973,7 +1973,7 @@ void playerTickCutscene(bool arg0)
 
 			if (g_Anims[g_CutsceneAnimNum].flags & ANIMFLAG_HASCUTSKIPFRAMES) {
 				while (g_CutsceneCurAnimFrame60 < endframe
-						&& animIsFrameCutSkipped(g_CutsceneAnimNum, g_CutsceneCurAnimFrame60)) {
+						&& anim_is_frame_cut_skipped(g_CutsceneAnimNum, g_CutsceneCurAnimFrame60)) {
 #if PAL
 					g_CutsceneCurAnimFrame240 += 1.2f;
 					g_CutsceneCurAnimFrame60 = floorf(g_CutsceneCurAnimFrame240 + 0.01f);
@@ -2001,15 +2001,15 @@ void playerTickCutscene(bool arg0)
 	}
 
 	g_Vars.in_cutscene = (g_Vars.tickmode == TICKMODE_CUTSCENE && g_CutsceneCurAnimFrame60 < endframe);
-	frameslot = animLoadFrame(g_CutsceneAnimNum, g_CutsceneCurAnimFrame60);
-	animForgetFrameBirths();
-	animGetRotTranslateScale(0, 0, &g_Skel20, g_CutsceneAnimNum, frameslot, &rot, &translate, &scale);
+	frameslot = anim_load_frame(g_CutsceneAnimNum, g_CutsceneCurAnimFrame60);
+	anim_forget_frame_births();
+	anim_get_rot_translate_scale(0, 0, &g_Skel20, g_CutsceneAnimNum, frameslot, &rot, &translate, &scale);
 
 	pos.x = translate.x * translatescale;
 	pos.y = translate.y * translatescale;
 	pos.z = translate.z * translatescale;
 
-	mtx4LoadRotation(&rot, &rotmtx);
+	mtx4_load_rotation(&rot, &rotmtx);
 
 	up.x = rotmtx.m[1][0];
 	up.y = rotmtx.m[1][1];
@@ -2019,8 +2019,8 @@ void playerTickCutscene(bool arg0)
 	look.y = -rotmtx.m[2][1];
 	look.z = -rotmtx.m[2][2];
 
-	fovy = animGetCameraValue(1, g_CutsceneAnimNum, frameslot);
-	g_CutsceneBlurFrac = animGetCameraValue(2, g_CutsceneAnimNum, frameslot);
+	fovy = anim_get_camera_value(1, g_CutsceneAnimNum, frameslot);
+	g_CutsceneBlurFrac = anim_get_camera_value(2, g_CutsceneAnimNum, frameslot);
 	g_CutsceneTweenFrac = 0;
 
 	if (g_CutsceneTweenDuration60 > 0 && endframe - g_CutsceneCurAnimFrame60 <= g_CutsceneTweenDuration60) {
@@ -2031,7 +2031,7 @@ void playerTickCutscene(bool arg0)
 		g_CutsceneTweenFrac = tweenfrac;
 		sp104 = 1 - cosf(1.5705462694168f * tweenfrac);
 
-		bmoveSetMode(MOVEMODE_WALK);
+		bmove_set_mode(MOVEMODE_WALK);
 
 		pos.x += sp104 * (g_Vars.bond->bond2.unk10.x - pos.x);
 		pos.y += sp104 * (g_Vars.bond->bond2.unk10.y - pos.y);
@@ -2044,8 +2044,8 @@ void playerTickCutscene(bool arg0)
 		quaternion0f097044(&spc4, sp74);
 		quaternion0f097044(&sp84, sp64);
 		quaternion0f0976c0(sp64, sp74);
-		quaternionSlerp(sp74, sp64, sp104, sp54);
-		quaternionToMtx(sp54, &rotmtx);
+		quaternion_slerp(sp74, sp64, sp104, sp54);
+		quaternion_to_mtx(sp54, &rotmtx);
 
 		up.x = rotmtx.m[1][0];
 		up.y = rotmtx.m[1][1];
@@ -2059,10 +2059,10 @@ void playerTickCutscene(bool arg0)
 		fovy += tweenfrac * (60 - fovy);
 	}
 
-	playerSetCameraMode(CAMERAMODE_THIRDPERSON);
+	player_set_camera_mode(CAMERAMODE_THIRDPERSON);
 	player0f0c1bd8(&pos, &up, &look);
-	playermgrSetFovY(fovy);
-	viSetFovY(fovy);
+	playermgr_set_fov_y(fovy);
+	vi_set_fov_y(fovy);
 
 	if (g_Vars.currentplayerindex == 0) {
 		g_CutsceneCurTotalFrame60f += g_Vars.lvupdate60freal;
@@ -2099,7 +2099,7 @@ void playerTickCutscene(bool arg0)
 #endif
 }
 
-f32 playerGetCutsceneBlurFrac(void)
+f32 player_get_cutscene_blur_frac(void)
 {
 	return g_CutsceneBlurFrac;
 }
@@ -2120,7 +2120,7 @@ void playerClampGunZoomFovY(s32 playernum)
 	}
 }
 
-void playerSetZoomFovY(f32 fovy, f32 timemax)
+void player_set_zoom_fov_y(f32 fovy, f32 timemax)
 {
 	g_Vars.currentplayer->zoomintime = 0;
 	g_Vars.currentplayer->zoomintimemax = timemax;
@@ -2128,7 +2128,7 @@ void playerSetZoomFovY(f32 fovy, f32 timemax)
 	g_Vars.currentplayer->zoominfovynew = fovy;
 }
 
-f32 playerGetZoomFovY(void)
+f32 player_get_zoom_fov_y(void)
 {
 	if (g_Vars.currentplayer->zoomintimemax > g_Vars.currentplayer->zoomintime) {
 		return g_Vars.currentplayer->zoominfovynew;
@@ -2137,7 +2137,7 @@ f32 playerGetZoomFovY(void)
 	return g_Vars.currentplayer->zoominfovy;
 }
 
-void playerTweenFovY(f32 targetfovy)
+void player_tween_fov_y(f32 targetfovy)
 {
 	f32 speed = 15.0f / 30.0f;
 
@@ -2147,16 +2147,16 @@ void playerTweenFovY(f32 targetfovy)
 	}
 #endif
 
-	if (playerGetZoomFovY() != targetfovy) {
+	if (player_get_zoom_fov_y() != targetfovy) {
 		if (g_Vars.currentplayer->zoominfovy > targetfovy) {
-			playerSetZoomFovY(targetfovy, (g_Vars.currentplayer->zoominfovy - targetfovy) * speed);
+			player_set_zoom_fov_y(targetfovy, (g_Vars.currentplayer->zoominfovy - targetfovy) * speed);
 		} else {
-			playerSetZoomFovY(targetfovy, (targetfovy - g_Vars.currentplayer->zoominfovy) * speed);
+			player_set_zoom_fov_y(targetfovy, (targetfovy - g_Vars.currentplayer->zoominfovy) * speed);
 		}
 	}
 }
 
-f32 playerGetTeleportFovY(void)
+f32 player_get_teleport_fov_y(void)
 {
 	f32 time;
 	u32 fovyoffset;
@@ -2178,7 +2178,7 @@ f32 playerGetTeleportFovY(void)
 	return fovyoffset + 60.0f;
 }
 
-void playerUpdateZoom(void)
+void player_update_zoom(void)
 {
 	f32 scale;
 	f32 fovy;
@@ -2200,13 +2200,13 @@ void playerUpdateZoom(void)
 		g_Vars.currentplayer->zoominfovy = g_Vars.currentplayer->zoominfovynew;
 	}
 
-	playermgrSetFovY(g_Vars.currentplayer->zoominfovy);
-	viSetFovY(g_Vars.currentplayer->zoominfovy);
+	playermgr_set_fov_y(g_Vars.currentplayer->zoominfovy);
+	vi_set_fov_y(g_Vars.currentplayer->zoominfovy);
 
 	if (g_Vars.currentplayer->teleportstate != TELEPORTSTATE_INACTIVE) {
-		fovy = playerGetTeleportFovY();
-		playermgrSetFovY(fovy);
-		viSetFovY(fovy);
+		fovy = player_get_teleport_fov_y();
+		playermgr_set_fov_y(fovy);
+		vi_set_fov_y(fovy);
 	}
 
 	if (g_Vars.currentplayer->zoominfovy >= 15) {
@@ -2221,23 +2221,23 @@ void playerUpdateZoom(void)
 		scale = 0.1;
 	}
 
-	stage = stageGetCurrent();
-	bgSetScaleBg2Gfx((1 - (1 - stage->unk34) * (1 - scale) * (10.f / 9.0f)) * scale);
+	stage = stage_get_current();
+	bg_set_scale_bg2gfx((1 - (1 - stage->unk34) * (1 - scale) * (10.f / 9.0f)) * scale);
 }
 
-void playerStopAudioForPause(void)
+void player_stop_audio_for_pause(void)
 {
 	struct hand *hand;
 	s32 i;
 
-	alarmStopAudio();
-	gasStopAudio();
+	alarm_stop_audio();
+	gas_stop_audio();
 
 	for (i = 0; i < 2; i++) {
 		hand = &g_Vars.currentplayer->hands[i];
 
-		if (hand->audiohandle2 && sndGetState(hand->audiohandle2) != AL_STOPPED) {
-			audioStop(hand->audiohandle2);
+		if (hand->audiohandle2 && sndp_get_state(hand->audiohandle2) != AL_STOPPED) {
+			sndp_stop_sound(hand->audiohandle2);
 		}
 	}
 }
@@ -2245,7 +2245,7 @@ void playerStopAudioForPause(void)
 u32 var8007083c = 0;
 u32 g_GlobalMenuRoot = 0;
 
-void playerTickPauseMenu(void)
+void player_tick_pause_menu(void)
 {
 	bool opened = false;
 
@@ -2257,10 +2257,10 @@ void playerTickPauseMenu(void)
 		switch (g_GlobalMenuRoot) {
 		case MENUROOT_TRAINING:
 		case MENUROOT_MAINMENU:
-			opened = soloChoosePauseDialog();
+			opened = solo_choose_pause_dialog();
 			break;
 		case MENUROOT_FILEMGR:
-			opened = filemgrConsiderPushingFileSelectDialog();
+			opened = filemgr_consider_pushing_file_select_dialog();
 			break;
 		case MENUROOT_4MBMAINMENU:
 		case MENUROOT_MPSETUP:
@@ -2269,8 +2269,8 @@ void playerTickPauseMenu(void)
 		}
 
 		if (opened) {
-			struct trainingdata *data = dtGetData();
-			lvSetPaused(true);
+			struct trainingdata *data = dt_get_data();
+			lv_set_paused(true);
 			g_Vars.currentplayer->pausemode = PAUSEMODE_PAUSED;
 
 			if ((g_GlobalMenuRoot == MENUROOT_MAINMENU || g_GlobalMenuRoot == MENUROOT_TRAINING)
@@ -2285,7 +2285,7 @@ void playerTickPauseMenu(void)
 				}
 			}
 
-			musicStartMenu();
+			music_start_menu();
 		}
 		break;
 	case PAUSEMODE_PAUSED:
@@ -2296,15 +2296,15 @@ void playerTickPauseMenu(void)
 		g_Vars.currentplayer->pausetime60 += g_Vars.diffframe60;
 
 		if (g_Vars.currentplayer->pausetime60 >= 20) {
-			lvSetPaused(false);
+			lv_set_paused(false);
 			g_Vars.currentplayer->pausemode = PAUSEMODE_UNPAUSED;
-			musicEndMenu();
+			music_end_menu();
 		}
 		break;
 	}
 }
 
-void playerPause(s32 root)
+void player_pause(s32 root)
 {
 	g_GlobalMenuRoot = root;
 
@@ -2313,11 +2313,11 @@ void playerPause(s32 root)
 	}
 }
 
-void playerUnpause(void)
+void player_unpause(void)
 {
 	if (g_Vars.currentplayer->pausemode == PAUSEMODE_PAUSED) {
-		lvSetPaused(false);
-		musicEndMenu();
+		lv_set_paused(false);
+		music_end_menu();
 		g_Vars.currentplayer->pausemode = PAUSEMODE_UNPAUSED;
 	}
 }
@@ -2338,7 +2338,7 @@ Gfx *player0f0baf84(Gfx *gdl)
 	return gdl;
 }
 
-Gfx *playerDrawFade(Gfx *gdl, u32 r, u32 g, u32 b, f32 frac)
+Gfx *player_draw_fade(Gfx *gdl, u32 r, u32 g, u32 b, f32 frac)
 {
 	if (frac > 0) {
 		gDPPipeSync(gdl++);
@@ -2353,8 +2353,8 @@ Gfx *playerDrawFade(Gfx *gdl, u32 r, u32 g, u32 b, f32 frac)
 		gDPSetRenderMode(gdl++, G_RM_CLD_SURF, G_RM_CLD_SURF2);
 		gDPSetCombineMode(gdl++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
 		gDPSetPrimColor(gdl++, 0, 0, r, g, b, (s32)(frac * 255));
-		gDPFillRectangle(gdl++, viGetViewLeft(), viGetViewTop(),
-				viGetViewLeft() + viGetViewWidth(), viGetViewTop() + viGetViewHeight());
+		gDPFillRectangle(gdl++, vi_get_view_left(), vi_get_view_top(),
+				vi_get_view_left() + vi_get_view_width(), vi_get_view_top() + vi_get_view_height());
 		gDPPipeSync(gdl++);
 		gDPSetColorDither(gdl++, G_CD_BAYER);
 		gDPSetTexturePersp(gdl++, G_TP_PERSP);
@@ -2364,16 +2364,16 @@ Gfx *playerDrawFade(Gfx *gdl, u32 r, u32 g, u32 b, f32 frac)
 	return gdl;
 }
 
-Gfx *playerDrawStoredFade(Gfx *gdl)
+Gfx *player_draw_stored_fade(Gfx *gdl)
 {
-	return playerDrawFade(gdl,
+	return player_draw_fade(gdl,
 			g_Vars.currentplayer->colourscreenred,
 			g_Vars.currentplayer->colourscreengreen,
 			g_Vars.currentplayer->colourscreenblue,
 			g_Vars.currentplayer->colourscreenfrac);
 }
 
-void playerSetFadeColour(s32 r, s32 g, s32 b, f32 frac)
+void player_set_fade_colour(s32 r, s32 g, s32 b, f32 frac)
 {
 	g_Vars.currentplayer->colourscreenred = r;
 	g_Vars.currentplayer->colourscreengreen = g;
@@ -2381,7 +2381,7 @@ void playerSetFadeColour(s32 r, s32 g, s32 b, f32 frac)
 	g_Vars.currentplayer->colourscreenfrac = frac;
 }
 
-void playerAdjustFade(f32 maxfadetime, s32 r, s32 g, s32 b, f32 frac)
+void player_adjust_fade(f32 maxfadetime, s32 r, s32 g, s32 b, f32 frac)
 {
 	g_Vars.currentplayer->colourfadetime60 = 0;
 	g_Vars.currentplayer->colourfadetimemax60 = maxfadetime;
@@ -2395,21 +2395,21 @@ void playerAdjustFade(f32 maxfadetime, s32 r, s32 g, s32 b, f32 frac)
 	g_Vars.currentplayer->colourfadefracnew = frac;
 }
 
-void playerSetFadeFrac(f32 maxfadetime, f32 frac)
+void player_set_fade_frac(f32 maxfadetime, f32 frac)
 {
-	playerAdjustFade(maxfadetime,
+	player_adjust_fade(maxfadetime,
 			g_Vars.currentplayer->colourscreenred,
 			g_Vars.currentplayer->colourscreengreen,
 			g_Vars.currentplayer->colourscreenblue,
 			frac);
 }
 
-bool playerIsFadeComplete(void)
+bool player_is_fade_complete(void)
 {
 	return g_Vars.currentplayer->colourfadetimemax60 < 0;
 }
 
-void playerUpdateColourScreenProperties(void)
+void player_update_colour_screen_properties(void)
 {
 	if (g_Vars.currentplayer->colourfadetimemax60 >= 0) {
 		g_Vars.currentplayer->colourfadetime60 += g_Vars.lvupdate60freal;
@@ -2431,7 +2431,7 @@ void playerUpdateColourScreenProperties(void)
 	}
 }
 
-void playerStartChrFade(f32 duration60, f32 targetfrac)
+void player_start_chr_fade(f32 duration60, f32 targetfrac)
 {
 	struct chrdata *chr = g_Vars.currentplayer->prop->chr;
 
@@ -2443,7 +2443,7 @@ void playerStartChrFade(f32 duration60, f32 targetfrac)
 	}
 }
 
-void playerTickChrFade(void)
+void player_tick_chr_fade(void)
 {
 	if (g_Vars.currentplayer->bondfadetimemax60 >= 0) {
 		struct chrdata *chr = g_Vars.currentplayer->prop->chr;
@@ -2507,12 +2507,12 @@ struct healthdamagetype g_HealthDamageTypes[] = {
  * Make the health bar appear. If called while the health bar is already open,
  * the health displayed will be updated and the show timer will be reset.
  */
-void playerDisplayHealth(void)
+void player_display_health(void)
 {
 	switch (g_Vars.currentplayer->healthshowmode) {
 	case HEALTHSHOWMODE_HIDDEN:
 		g_Vars.currentplayer->oldhealth = g_Vars.currentplayer->bondhealth;
-		g_Vars.currentplayer->oldarmour = playerGetShieldFrac();
+		g_Vars.currentplayer->oldarmour = player_get_shield_frac();
 		break;
 	case HEALTHSHOWMODE_OPENING:
 	case HEALTHSHOWMODE_PREVIOUS:
@@ -2524,7 +2524,7 @@ void playerDisplayHealth(void)
 		break;
 	case HEALTHSHOWMODE_CLOSING:
 		g_Vars.currentplayer->oldhealth = g_Vars.currentplayer->bondhealth;
-		g_Vars.currentplayer->oldarmour = playerGetShieldFrac();
+		g_Vars.currentplayer->oldarmour = player_get_shield_frac();
 		break;
 	}
 
@@ -2542,7 +2542,7 @@ void playerDisplayHealth(void)
 		g_Vars.currentplayer->healthshowmode = HEALTHSHOWMODE_UPDATING;
 		break;
 	case HEALTHSHOWMODE_CLOSING:
-		g_Vars.currentplayer->healthshowtime = g_HealthDamageTypes[g_Vars.currentplayer->healthdamagetype].openendframe * playerGetHealthBarHeightFrac();
+		g_Vars.currentplayer->healthshowtime = g_HealthDamageTypes[g_Vars.currentplayer->healthdamagetype].openendframe * player_get_health_bar_height_frac();
 		g_Vars.currentplayer->healthshowmode = HEALTHSHOWMODE_OPENING;
 		break;
 	}
@@ -2551,7 +2551,7 @@ void playerDisplayHealth(void)
 /**
  * Update properties relating to the damage flash and health bar updating.
  */
-void playerTickDamageAndHealth(void)
+void player_tick_damage_and_health(void)
 {
 	/**
 	 * Handle flash of red when the player is damaged.
@@ -2567,8 +2567,8 @@ void playerTickDamageAndHealth(void)
 	if (g_Vars.currentplayer->damageshowtime >= 0.0f) {
 		if (g_Vars.currentplayer->damageshowtime == 0) {
 			// This is the first frame of damage
-			bgunSetSightVisible(GUNSIGHTREASON_DAMAGE, false);
-			g_Vars.currentplayer->damagetype = (s32)(playerGetHealthFrac() * 8.0f);
+			bgun_set_sight_visible(GUNSIGHTREASON_DAMAGE, false);
+			g_Vars.currentplayer->damagetype = (s32)(player_get_health_frac() * 8.0f);
 
 			if (g_Vars.currentplayer->damagetype > DAMAGETYPE_7) {
 				g_Vars.currentplayer->damagetype = DAMAGETYPE_7;
@@ -2608,17 +2608,17 @@ void playerTickDamageAndHealth(void)
 					alpha = g_DamageTypes[g_Vars.currentplayer->damagetype].maxalpha * (totalframes - flashdoneframes) / (totalframes - flashfullframe);
 				}
 
-				playerSetFadeColour(
+				player_set_fade_colour(
 						g_DamageTypes[g_Vars.currentplayer->damagetype].red,
 						g_DamageTypes[g_Vars.currentplayer->damagetype].green,
 						g_DamageTypes[g_Vars.currentplayer->damagetype].blue, alpha);
 			}
 		} else {
 			g_Vars.currentplayer->damageshowtime = -1;
-			playerSetFadeColour(0xff, 0xff, 0xff, 0);
+			player_set_fade_colour(0xff, 0xff, 0xff, 0);
 
 			if (!g_Vars.currentplayer->isdead) {
-				bgunSetSightVisible(GUNSIGHTREASON_DAMAGE, true);
+				bgun_set_sight_visible(GUNSIGHTREASON_DAMAGE, true);
 			}
 		}
 	}
@@ -2629,9 +2629,9 @@ void playerTickDamageAndHealth(void)
 	 * This works similarly to the damage code above, in that the health bar is
 	 * split into 8 parts and the current part is used to look up settings.
 	 */
-	if (playerIsHealthVisible()) {
+	if (player_is_health_visible()) {
 		if (g_Vars.currentplayer->healthshowmode == HEALTHSHOWMODE_OPENING) {
-			g_Vars.currentplayer->healthdamagetype = (s32)((playerGetHealthFrac() + playerGetShieldFrac()) * 8.0f);
+			g_Vars.currentplayer->healthdamagetype = (s32)((player_get_health_frac() + player_get_shield_frac()) * 8.0f);
 
 			if (g_Vars.currentplayer->healthdamagetype > DAMAGETYPE_7) {
 				g_Vars.currentplayer->healthdamagetype = DAMAGETYPE_7;
@@ -2664,7 +2664,7 @@ void playerTickDamageAndHealth(void)
 				g_Vars.currentplayer->apparentarmour = g_Vars.currentplayer->oldarmour;
 				g_Vars.currentplayer->healthshowtime += g_Vars.diffframe60freal;
 
-				if (currentPlayerIsMenuOpenInSoloOrMp()) {
+				if (current_player_is_menu_open_in_solo_or_mp()) {
 					g_Vars.currentplayer->healthshowmode = HEALTHSHOWMODE_CURRENT;
 				}
 
@@ -2687,12 +2687,12 @@ void playerTickDamageAndHealth(void)
 					frac = 1;
 				}
 
-				if (currentPlayerIsMenuOpenInSoloOrMp()) {
+				if (current_player_is_menu_open_in_solo_or_mp()) {
 					g_Vars.currentplayer->healthshowmode = HEALTHSHOWMODE_CURRENT;
 				}
 
 				healthdiff = g_Vars.currentplayer->oldhealth - g_Vars.currentplayer->bondhealth;
-				armourdiff = g_Vars.currentplayer->oldarmour - playerGetShieldFrac();
+				armourdiff = g_Vars.currentplayer->oldarmour - player_get_shield_frac();
 
 				g_Vars.currentplayer->apparenthealth = g_Vars.currentplayer->oldhealth - frac * healthdiff;
 				g_Vars.currentplayer->apparentarmour = g_Vars.currentplayer->oldarmour - frac * armourdiff;
@@ -2703,15 +2703,15 @@ void playerTickDamageAndHealth(void)
 				break;
 			case HEALTHSHOWMODE_CURRENT:
 				g_Vars.currentplayer->apparenthealth = g_Vars.currentplayer->bondhealth;
-				g_Vars.currentplayer->apparentarmour = playerGetShieldFrac();
+				g_Vars.currentplayer->apparentarmour = player_get_shield_frac();
 				g_Vars.currentplayer->healthshowtime += g_Vars.diffframe60freal;
 
-				if (currentPlayerIsMenuOpenInSoloOrMp()) {
+				if (current_player_is_menu_open_in_solo_or_mp()) {
 					g_Vars.currentplayer->healthshowtime = g_HealthDamageTypes[g_Vars.currentplayer->healthdamagetype].closestartframe;
 				}
 
 				if (g_Vars.currentplayer->healthshowtime >= g_HealthDamageTypes[g_Vars.currentplayer->healthdamagetype].closestartframe
-						&& !currentPlayerIsMenuOpenInSoloOrMp()) {
+						&& !current_player_is_menu_open_in_solo_or_mp()) {
 					g_Vars.currentplayer->healthshowmode = HEALTHSHOWMODE_CLOSING;
 					g_Vars.currentplayer->healthshowtime = g_HealthDamageTypes[g_Vars.currentplayer->healthdamagetype].closestartframe;
 				}
@@ -2732,7 +2732,7 @@ void playerTickDamageAndHealth(void)
 	}
 }
 
-bool playerIsDamageVisible(void)
+bool player_is_damage_visible(void)
 {
 	return g_Vars.currentplayer->damageshowtime >= 0;
 }
@@ -2743,7 +2743,7 @@ bool playerIsDamageVisible(void)
  * May be called while the red flash is already happening, which may result in
  * the fade being reset to the full alpha point.
  */
-void playerDisplayDamage(void)
+void player_display_damage(void)
 {
 	/**
 	 * @bug: This should be using damagetype (not healthdamagetype) as the array
@@ -2760,7 +2760,7 @@ void playerDisplayDamage(void)
 	}
 }
 
-Gfx *playerRenderHealthBar(Gfx *gdl)
+Gfx *player_render_health_bar(Gfx *gdl)
 {
 	Mtxf matrix;
 	Mtxf *addr = gfxAllocateMatrix();
@@ -2774,7 +2774,7 @@ Gfx *playerRenderHealthBar(Gfx *gdl)
 	}
 	mtx00016ae4(&matrix, 0, 370.f * fovsc, 0, 0, 0, 0, 0, 0, -1);
 #endif
-	mtxF2L(&matrix, addr);
+	mtx_f2l(&matrix, addr);
 
 	gSPMatrix(gdl++, osVirtualToPhysical((void *)addr), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 	gDPPipeSync(gdl++);
@@ -2789,21 +2789,21 @@ Gfx *playerRenderHealthBar(Gfx *gdl)
 	gSPClearGeometryMode(gdl++, G_ZBUFFER);
 #endif
 
-	gdl = healthbarDraw(gdl, NULL, 0, 0);
+	gdl = healthbar_draw(gdl, NULL, 0, 0);
 
-	gSPMatrix(gdl++, osVirtualToPhysical(camGetPerspectiveMtxL()), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
+	gSPMatrix(gdl++, osVirtualToPhysical(cam_get_perspective_mtxl()), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
 
 	return gdl;
 }
 
-void playerSurroundWithExplosions(s32 arg0)
+void player_surround_with_explosions(s32 arg0)
 {
 	g_Vars.currentplayer->bondexploding = true;
 	g_Vars.currentplayer->bondnextexplode = arg0 + g_Vars.lvframe60;
 	g_Vars.currentplayer->bondcurexplode = 0;
 }
 
-void playerTickExplode(void)
+void player_tick_explode(void)
 {
 	g_Vars.currentplayer->bondcurexplode++;
 
@@ -2824,13 +2824,13 @@ void playerTickExplode(void)
 
 		pos.y += 200.0f * RANDOMFRAC() - 100.0f;
 
-		explosionCreateSimple(NULL, &pos, g_Vars.currentplayer->prop->rooms, EXPLOSIONTYPE_BONDEXPLODE, g_Vars.currentplayernum);
+		explosion_create_simple(NULL, &pos, g_Vars.currentplayer->prop->rooms, EXPLOSIONTYPE_BONDEXPLODE, g_Vars.currentplayernum);
 
 		g_Vars.currentplayer->bondnextexplode = g_Vars.lvframe60 + TICKS(15) + (rngRandom() % TICKS(15));
 	}
 }
 
-void playerResetLoResIf4Mb(void)
+void player_reset_lo_res_if_4mb(void)
 {
 	if (IS4MB()) {
 #if VERSION >= VERSION_PAL_BETA
@@ -2854,7 +2854,7 @@ void playerResetLoResIf4Mb(void)
 	}
 }
 
-void playerSetHiResEnabled(bool enable)
+void player_set_hi_res_enabled(bool enable)
 {
 #ifdef PLATFORM_N64
 	g_HiResEnabled = enable;
@@ -2863,13 +2863,13 @@ void playerSetHiResEnabled(bool enable)
 #endif
 }
 
-s16 playerGetFbWidth(void)
+s16 player_get_fb_width(void)
 {
 	s16 width = g_ViModes[g_ViRes].fbwidth;
 	return width;
 }
 
-s16 playerGetFbHeight(void)
+s16 player_get_fb_height(void)
 {
 	s16 height = g_ViModes[g_ViRes].fbheight;
 
@@ -2881,26 +2881,26 @@ s16 playerGetFbHeight(void)
 }
 
 #if VERSION >= VERSION_NTSC_1_0
-bool playerHasSharedViewport(void)
+bool player_has_shared_viewport(void)
 {
 	if ((g_Vars.coopplayernum >= 0 || g_Vars.antiplayernum >= 0)
-			&& menuGetRoot() == MENUROOT_MPENDSCREEN
+			&& menu_get_root() == MENUROOT_MPENDSCREEN
 			&& var8009dfc0 == 0) {
 		return true;
 	}
 
-	return (g_InCutscene && !g_MainIsEndscreen) || menuGetRoot() == MENUROOT_COOPCONTINUE;
+	return (g_InCutscene && !g_MainIsEndscreen) || menu_get_root() == MENUROOT_COOPCONTINUE;
 }
 #endif
 
-s16 playerGetViewportWidth(void)
+s16 player_get_viewport_width(void)
 {
 	s16 width;
 
 #if VERSION >= VERSION_NTSC_1_0
-	if (!playerHasSharedViewport())
+	if (!player_has_shared_viewport())
 #else
-	if ((!g_InCutscene || g_MainIsEndscreen) && menuGetRoot() != MENUROOT_COOPCONTINUE)
+	if ((!g_InCutscene || g_MainIsEndscreen) && menu_get_root() != MENUROOT_COOPCONTINUE)
 #endif
 	{
 		if (PLAYERCOUNT() >= 3) {
@@ -2911,7 +2911,7 @@ s16 playerGetViewportWidth(void)
 				width--;
 			}
 		} else if (PLAYERCOUNT() == 2) {
-			if (optionsGetScreenSplit() == SCREENSPLIT_VERTICAL || g_Vars.fourmeg2player) {
+			if (options_get_screen_split() == SCREENSPLIT_VERTICAL || g_Vars.fourmeg2player) {
 				// 2 players vsplit
 				width = g_ViModes[g_ViRes].width / 2;
 
@@ -2934,12 +2934,12 @@ s16 playerGetViewportWidth(void)
 	return width;
 }
 
-s16 playerGetViewportLeft(void)
+s16 player_get_viewport_left(void)
 {
 #if VERSION >= VERSION_NTSC_1_0
-	s32 something = !playerHasSharedViewport();
+	s32 something = !player_has_shared_viewport();
 #else
-	s32 something = !((g_InCutscene && !g_MainIsEndscreen) || menuGetRoot() == MENUROOT_COOPCONTINUE);
+	s32 something = !((g_InCutscene && !g_MainIsEndscreen) || menu_get_root() == MENUROOT_COOPCONTINUE);
 #endif
 	s16 left;
 
@@ -2952,7 +2952,7 @@ s16 playerGetViewportLeft(void)
 			left = g_ViModes[g_ViRes].fbwidth - g_ViModes[g_ViRes].width;
 		}
 	} else if (PLAYERCOUNT() == 2 && something != 0) {
-		if (optionsGetScreenSplit() == SCREENSPLIT_VERTICAL || g_Vars.fourmeg2player) {
+		if (options_get_screen_split() == SCREENSPLIT_VERTICAL || g_Vars.fourmeg2player) {
 			if (g_Vars.currentplayernum == 1) {
 				// 2 players vsplit - right side
 				left = (g_ViModes[g_ViRes].width / 2) + g_ViModes[g_ViRes].fbwidth - g_ViModes[g_ViRes].width;
@@ -2972,15 +2972,15 @@ s16 playerGetViewportLeft(void)
 	return left;
 }
 
-s16 playerGetViewportHeight(void)
+s16 player_get_viewport_height(void)
 {
 	s16 height;
 
 	if (PLAYERCOUNT() >= 2
 #if VERSION >= VERSION_NTSC_1_0
-			&& !playerHasSharedViewport()
+			&& !player_has_shared_viewport()
 #else
-			&& !((g_InCutscene && !g_MainIsEndscreen) || menuGetRoot() == MENUROOT_COOPCONTINUE)
+			&& !((g_InCutscene && !g_MainIsEndscreen) || menu_get_root() == MENUROOT_COOPCONTINUE)
 #endif
 			) {
 		s16 tmp = g_ViModes[g_ViRes].fullheight;
@@ -2992,7 +2992,7 @@ s16 playerGetViewportHeight(void)
 		}
 
 		if (PLAYERCOUNT() == 2) {
-			if (optionsGetScreenSplit() == SCREENSPLIT_VERTICAL) {
+			if (options_get_screen_split() == SCREENSPLIT_VERTICAL) {
 				height = tmp;
 			} else if (g_Vars.currentplayernum == 0 && IS8MB()) {
 				height--;
@@ -3001,9 +3001,9 @@ s16 playerGetViewportHeight(void)
 			height--;
 		}
 	} else {
-		if (optionsGetEffectiveScreenSize() == SCREENSIZE_WIDE) {
+		if (options_get_effective_screen_size() == SCREENSIZE_WIDE) {
 			height = g_ViModes[g_ViRes].wideheight;
-		} else if (optionsGetEffectiveScreenSize() == SCREENSIZE_CINEMA) {
+		} else if (options_get_effective_screen_size() == SCREENSIZE_CINEMA) {
 			height = g_ViModes[g_ViRes].cinemaheight;
 		} else if (g_InCutscene && !var8009dfc0) {
 			if (g_CutsceneTweenDuration60 >= 1) {
@@ -3023,29 +3023,29 @@ s16 playerGetViewportHeight(void)
 	return height;
 }
 
-s16 playerGetViewportTop(void)
+s16 player_get_viewport_top(void)
 {
 	s16 top;
 
 	if (PLAYERCOUNT() >= 2
 #if VERSION >= VERSION_NTSC_1_0
-			&& !playerHasSharedViewport()
+			&& !player_has_shared_viewport()
 #else
 			&& (!g_InCutscene || g_MainIsEndscreen)
-			&& menuGetRoot() != MENUROOT_COOPCONTINUE
+			&& menu_get_root() != MENUROOT_COOPCONTINUE
 #endif
 			) {
 		top = g_ViModes[g_ViRes].fulltop;
 
 #if VERSION >= VERSION_NTSC_1_0
-		if (optionsGetScreenSplit() != SCREENSPLIT_VERTICAL || PLAYERCOUNT() != 2)
+		if (options_get_screen_split() != SCREENSPLIT_VERTICAL || PLAYERCOUNT() != 2)
 #else
-		if (optionsGetScreenSplit() != SCREENSPLIT_VERTICAL)
+		if (options_get_screen_split() != SCREENSPLIT_VERTICAL)
 #endif
 		{
 			if (PLAYERCOUNT() == 2
 					&& g_Vars.currentplayernum == 1
-					&& optionsGetScreenSplit() != SCREENSPLIT_VERTICAL
+					&& options_get_screen_split() != SCREENSPLIT_VERTICAL
 					&& !g_Vars.fourmeg2player) {
 				// 2 players hsplit - bottom side
 				top = g_ViModes[g_ViRes].fulltop + g_ViModes[g_ViRes].fullheight / 2;
@@ -3055,8 +3055,8 @@ s16 playerGetViewportTop(void)
 			}
 		}
 	} else {
-		if (optionsGetEffectiveScreenSize() == SCREENSIZE_WIDE) {
-			if (g_InCutscene && optionsGetCutsceneSubtitles() && g_Vars.stagenum != STAGE_CITRAINING) {
+		if (options_get_effective_screen_size() == SCREENSIZE_WIDE) {
+			if (g_InCutscene && options_get_cutscene_subtitles() && g_Vars.stagenum != STAGE_CITRAINING) {
 				if (g_CutsceneTweenDuration60 >= 1) {
 					f32 a = g_ViModes[g_ViRes].fulltop;
 					f32 b = g_ViModes[g_ViRes].widetop;
@@ -3069,11 +3069,11 @@ s16 playerGetViewportTop(void)
 			} else {
 				top = g_ViModes[g_ViRes].widetop;
 			}
-		} else if (optionsGetEffectiveScreenSize() == SCREENSIZE_CINEMA) {
+		} else if (options_get_effective_screen_size() == SCREENSIZE_CINEMA) {
 			top = g_ViModes[g_ViRes].cinematop;
 		} else {
 			if (g_InCutscene && !var8009dfc0
-					&& (!optionsGetCutsceneSubtitles() || g_Vars.stagenum == STAGE_CITRAINING)) {
+					&& (!options_get_cutscene_subtitles() || g_Vars.stagenum == STAGE_CITRAINING)) {
 				if (g_CutsceneTweenDuration60 >= 1) {
 					f32 a = g_ViModes[g_ViRes].widetop;
 					f32 b = g_ViModes[g_ViRes].fulltop;
@@ -3096,8 +3096,8 @@ f32 player0f0bd358(void)
 {
 	f32 result;
 	s16 stack;
-	s16 height = playerGetViewportHeight();
-	s16 width = playerGetViewportWidth();
+	s16 height = player_get_viewport_height();
+	s16 width = player_get_viewport_width();
 
 	result = (f32)width / (f32)height;
 	result = g_ViModes[g_ViRes].yscale * result;
@@ -3109,20 +3109,20 @@ f32 player0f0bd358(void)
 #endif
 }
 
-void playerUpdateShake(void)
+void player_update_shake(void)
 {
 	struct coord coord = {0, 0, 0};
 
 	if (g_Vars.currentplayer->isdead == false) {
-		explosionsUpdateShake(&g_Vars.currentplayer->bond2.unk10, &g_Vars.currentplayer->bond2.unk1c, &coord);
+		explosions_update_shake(&g_Vars.currentplayer->bond2.unk10, &g_Vars.currentplayer->bond2.unk1c, &coord);
 	} else {
-		viShake(0);
+		vi_shake(0);
 	}
 }
 
-void playerAutoWalk(s16 aimpad, u8 walkspeed, u8 turnspeed, u8 lookup, u8 dist)
+void player_auto_walk(s16 aimpad, u8 walkspeed, u8 turnspeed, u8 lookup, u8 dist)
 {
-	playerSetTickMode(TICKMODE_AUTOWALK);
+	player_set_tick_mode(TICKMODE_AUTOWALK);
 
 	// Prevents momentum from being preserved. Fixes potential softlock during The Duel.
 	g_Vars.currentplayer->resetheadpos = true;
@@ -3134,7 +3134,7 @@ void playerAutoWalk(s16 aimpad, u8 walkspeed, u8 turnspeed, u8 lookup, u8 dist)
 	g_Vars.currentplayer->autocontrol_dist = dist;
 }
 
-void playerLaunchSlayerRocket(struct weaponobj *rocket)
+void player_launch_slayer_rocket(struct weaponobj *rocket)
 {
 	g_Vars.currentplayer->slayerrocket = rocket;
 	g_Vars.currentplayer->visionmode = VISIONMODE_SLAYERROCKET;
@@ -3149,7 +3149,7 @@ void playerLaunchSlayerRocket(struct weaponobj *rocket)
 	g_Vars.currentplayer->badrockettime = 0;
 }
 
-void playerTickTeleport(f32 *aspectratio)
+void player_tick_teleport(f32 *aspectratio)
 {
 	if (g_Vars.currentplayer->teleportstate) {
 		// empty
@@ -3209,13 +3209,13 @@ void playerTickTeleport(f32 *aspectratio)
 	}
 
 	if (g_Vars.currentplayer->teleportstate != TELEPORTSTATE_INACTIVE) {
-		f32 fovy = playerGetTeleportFovY();
-		playermgrSetFovY(fovy);
-		viSetFovY(fovy);
+		f32 fovy = player_get_teleport_fov_y();
+		playermgr_set_fov_y(fovy);
+		vi_set_fov_y(fovy);
 	}
 }
 
-void playerConfigureVi(void)
+void player_configure_vi(void)
 {
 	f32 ratio = player0f0bd358();
 	g_ViRes = VIRES_LO;
@@ -3226,21 +3226,21 @@ void playerConfigureVi(void)
 	var800800f0jf = 0;
 #endif
 
-	playermgrSetFovY(PLAYER_DEFAULT_FOV);
-	playermgrSetAspectRatio(ratio);
-	playermgrSetViewSize(playerGetViewportWidth(), playerGetViewportHeight());
-	playermgrSetViewPosition(playerGetViewportLeft(), playerGetViewportTop());
+	playermgr_set_fov_y(PLAYER_DEFAULT_FOV);
+	playermgr_set_aspect_ratio(ratio);
+	playermgr_set_view_size(player_get_viewport_width(), player_get_viewport_height());
+	playermgr_set_view_position(player_get_viewport_left(), player_get_viewport_top());
 
-	viSetMode(g_ViModes[g_ViRes].xscale);
+	vi_set_mode(g_ViModes[g_ViRes].xscale);
 
-	viSetFovAspectAndSize(PLAYER_DEFAULT_FOV, ratio, playerGetViewportWidth(), playerGetViewportHeight());
+	vi_set_fov_aspect_and_size(PLAYER_DEFAULT_FOV, ratio, player_get_viewport_width(), player_get_viewport_height());
 
-	viSetViewPosition(playerGetViewportLeft(), playerGetViewportTop());
-	viSetSize(playerGetFbWidth(), playerGetFbHeight());
-	viSetBufSize(playerGetFbWidth(), playerGetFbHeight());
+	vi_set_view_position(player_get_viewport_left(), player_get_viewport_top());
+	vi_set_size(player_get_fb_width(), player_get_fb_height());
+	vi_set_buf_size(player_get_fb_width(), player_get_fb_height());
 }
 
-void playerTick(bool arg0)
+void player_tick(bool arg0)
 {
 	f32 aspectratio;
 	f32 f20;
@@ -3266,7 +3266,7 @@ void playerTick(bool arg0)
 #endif
 
 #ifdef PLATFORM_N64
-	if (optionsGetScreenRatio() == SCREENRATIO_16_9) {
+	if (options_get_screen_ratio() == SCREENRATIO_16_9) {
 		aspectratio = player0f0bd358() * 1.33333333f;
 	} else {
 		aspectratio = player0f0bd358();
@@ -3279,7 +3279,7 @@ void playerTick(bool arg0)
 	aspectratio *= 1.1904761791229f;
 #endif
 
-	mainOverrideVariable("tps", &var8007083c);
+	main_override_variable("tps", &var8007083c);
 
 	if (var8007083c != TELEPORTSTATE_INACTIVE) {
 		var8007083c = TELEPORTSTATE_INACTIVE;
@@ -3288,7 +3288,7 @@ void playerTick(bool arg0)
 	}
 
 	if (g_Vars.currentplayer->teleportstate != TELEPORTSTATE_INACTIVE) {
-		playerTickTeleport(&aspectratio);
+		player_tick_teleport(&aspectratio);
 	}
 
 	if (g_Vars.stagenum == STAGE_TEST_OLD && func0f01ad5c()) {
@@ -3296,36 +3296,36 @@ void playerTick(bool arg0)
 		return;
 	}
 
-	playermgrSetFovY(PLAYER_DEFAULT_FOV);
-	playermgrSetAspectRatio(aspectratio);
-	playermgrSetViewSize(playerGetViewportWidth(), playerGetViewportHeight());
-	playermgrSetViewPosition(playerGetViewportLeft(), playerGetViewportTop());
+	playermgr_set_fov_y(PLAYER_DEFAULT_FOV);
+	playermgr_set_aspect_ratio(aspectratio);
+	playermgr_set_view_size(player_get_viewport_width(), player_get_viewport_height());
+	playermgr_set_view_position(player_get_viewport_left(), player_get_viewport_top());
 
-	viSetMode(g_ViModes[g_ViRes].xscale);
-	viSetFovAspectAndSize(PLAYER_DEFAULT_FOV, aspectratio, playerGetViewportWidth(), playerGetViewportHeight());
-	viSetViewPosition(playerGetViewportLeft(), playerGetViewportTop());
-	viSetSize(playerGetFbWidth(), playerGetFbHeight());
-	viSetBufSize(playerGetFbWidth(), playerGetFbHeight());
+	vi_set_mode(g_ViModes[g_ViRes].xscale);
+	vi_set_fov_aspect_and_size(PLAYER_DEFAULT_FOV, aspectratio, player_get_viewport_width(), player_get_viewport_height());
+	vi_set_view_position(player_get_viewport_left(), player_get_viewport_top());
+	vi_set_size(player_get_fb_width(), player_get_fb_height());
+	vi_set_buf_size(player_get_fb_width(), player_get_fb_height());
 
-	playerUpdateColourScreenProperties();
-	playerTickChrFade();
+	player_update_colour_screen_properties();
+	player_tick_chr_fade();
 
-	bmoveSetAutoAimY(optionsGetAutoAim(g_Vars.currentplayerstats->mpindex));
-	bmoveSetAutoAimX(optionsGetAutoAim(g_Vars.currentplayerstats->mpindex));
-	bmoveSetAutoMoveCentreEnabled(optionsGetLookAhead(g_Vars.currentplayerstats->mpindex));
-	bgunSetGunAmmoVisible(GUNAMMOREASON_OPTION, optionsGetAmmoOnScreen(g_Vars.currentplayerstats->mpindex));
-	bgunSetSightVisible(GUNSIGHTREASON_1, true);
+	bmove_set_auto_aim_y(options_get_auto_aim(g_Vars.currentplayerstats->mpindex));
+	bmove_set_auto_aim_x(options_get_auto_aim(g_Vars.currentplayerstats->mpindex));
+	bmove_set_auto_move_centre_enabled(options_get_look_ahead(g_Vars.currentplayerstats->mpindex));
+	bgun_set_gun_ammo_visible(GUNAMMOREASON_OPTION, options_get_ammo_on_screen(g_Vars.currentplayerstats->mpindex));
+	bgun_set_sight_visible(GUNSIGHTREASON_1, true);
 
 	if ((g_Vars.tickmode == TICKMODE_GE_FADEIN || g_Vars.tickmode == TICKMODE_NORMAL) && !g_InCutscene && !g_MainIsEndscreen) {
 		g_Vars.currentplayer->bondviewlevtime60 += g_Vars.lvupdate60;
 	}
 
 	if (g_Vars.currentplayer->devicesactive & DEVICE_SUICIDEPILL) {
-		playerDieByShooter(g_Vars.currentplayernum, true);
+		player_die_by_shooter(g_Vars.currentplayernum, true);
 	}
 
-	playerTickDamageAndHealth();
-	playerTickExplode();
+	player_tick_damage_and_health();
+	player_tick_explode();
 
 	if (g_Vars.currentplayer->eyespy) {
 		// The stage uses an eyespy
@@ -3338,7 +3338,7 @@ void playerTick(bool arg0)
 			eyespy->deployed = false;
 			eyespy->held = true;
 			eyespy->active = false;
-			psStopSound(eyespy->prop, PSTYPE_GENERAL, 0xffff);
+			ps_stop_sound(eyespy->prop, PSTYPE_GENERAL, 0xffff);
 			chr->chrflags |= CHRCFLAG_HIDDEN;
 			chr->chrflags |= CHRCFLAG_INVINCIBLE;
 			g_Vars.currentplayer->devicesactive &= ~DEVICE_EYESPY;
@@ -3348,8 +3348,8 @@ void playerTick(bool arg0)
 #if VERSION >= VERSION_NTSC_1_0
 				if (g_Vars.currentplayer->eyespy->active) {
 					// And is being controlled
-					s8 contpad1 = optionsGetContpadNum1(g_Vars.currentplayerstats->mpindex);
-					u32 buttons = arg0 ? joyGetButtons(contpad1, 0xffffffff) : 0;
+					s8 contpad1 = options_get_contpad_num1(g_Vars.currentplayerstats->mpindex);
+					u32 buttons = arg0 ? joy_get_buttons(contpad1, 0xffffffff) : 0;
 
 #ifndef PLATFORM_N64
 					if (arg0 && inputKeyJustPressed(VK_ESCAPE)) {
@@ -3361,23 +3361,23 @@ void playerTick(bool arg0)
 							&& g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED
 							&& (buttons & START_BUTTON)) {
 						if (g_Vars.mplayerisrunning == false) {
-							playerPause(MENUROOT_MAINMENU);
+							player_pause(MENUROOT_MAINMENU);
 						} else {
-							mpPushPauseDialog();
+							mp_push_pause_dialog();
 						}
 					}
 				}
 #endif
 
 				if (g_Vars.lvupdate240) {
-					eyespyProcessInput(arg0);
+					eyespy_process_input(arg0);
 				}
 			} else {
 				// Eyespy is held
 				// If eyespy is activated, launch it
 				if ((g_Vars.currentplayer->devicesactive & ~g_Vars.currentplayer->devicesinhibit & DEVICE_EYESPY)
 						&& g_PlayersWithControl[playernum]
-						&& !eyespyTryLaunch()) {
+						&& !eyespy_try_launch()) {
 					// Launch failed
 					eyespy->held = true;
 					eyespy->active = false;
@@ -3396,7 +3396,7 @@ void playerTick(bool arg0)
 					eyespy->camerashuttertime = 0;
 					eyespy->startuptimer60 = 0;
 					eyespy->prop->chr->soundtimer = TICKS(10);
-					sndStart(var80095200, SFX_DETONATE, NULL, -1, -1, -1, -1, -1);
+					snd_start(var80095200, SFX_DETONATE, NULL, -1, -1, -1, -1, -1);
 				}
 
 				g_Vars.currentplayer->invdowntime = TICKS(-40);
@@ -3404,12 +3404,12 @@ void playerTick(bool arg0)
 		}
 	}
 
-	if (lvIsPaused()) {
-		playerStopAudioForPause();
+	if (lv_is_paused()) {
+		player_stop_audio_for_pause();
 	}
 
 	if (g_Vars.currentplayer->pausemode != PAUSEMODE_UNPAUSED) {
-		playerTickPauseMenu();
+		player_tick_pause_menu();
 	}
 
 	if (g_Vars.currentplayer->visionmode == VISIONMODE_SLAYERROCKET) {
@@ -3431,12 +3431,12 @@ void playerTick(bool arg0)
 		// In a cutscene
 		s32 i;
 
-		playerTickChrBody();
+		player_tick_chr_body();
 
 		if (g_Vars.currentplayer->haschrbody) {
 			g_Vars.currentplayer->invdowntime = TICKS(-40);
-			bmoveTick(0, 0, 0, 1);
-			playerTickCutscene(arg0);
+			bmove_tick(0, 0, 0, 1);
+			player_tick_cutscene(arg0);
 			g_Vars.currentplayer->invdowntime = TICKS(-40);
 		}
 
@@ -3448,14 +3448,14 @@ void playerTick(bool arg0)
 			&& g_Vars.currentplayer->eyespy->active) {
 		// Controlling an eyespy
 		struct coord sp308;
-		playermgrSetFovY(120);
-		viSetFovY(120);
+		playermgr_set_fov_y(120);
+		vi_set_fov_y(120);
 		sp308.x = g_Vars.currentplayer->eyespy->prop->pos.x;
 		sp308.y = g_Vars.currentplayer->eyespy->prop->pos.y;
 		sp308.z = g_Vars.currentplayer->eyespy->prop->pos.z;
-		playerTickChrBody();
-		bmoveTick(0, 0, 0, 1);
-		playerSetCameraMode(CAMERAMODE_EYESPY);
+		player_tick_chr_body();
+		bmove_tick(0, 0, 0, 1);
+		player_set_camera_mode(CAMERAMODE_EYESPY);
 #if VERSION >= VERSION_JPN_FINAL
 		player0f0c1840(&sp308, &g_Vars.currentplayer->eyespy->up, &g_Vars.currentplayer->eyespy->look,
 				&g_Vars.currentplayer->eyespy->prop->pos, g_Vars.currentplayer->eyespy->prop->rooms);
@@ -3464,9 +3464,9 @@ void playerTick(bool arg0)
 #endif
 	} else if (g_Vars.currentplayer->teleportstate == TELEPORTSTATE_WHITE) {
 		// Deep Sea teleport
-		playerTickChrBody();
+		player_tick_chr_body();
 		g_WarpType1Pad = g_Vars.currentplayer->teleportcamerapad;
-		bmoveTick(0, 0, 0, 1);
+		bmove_tick(0, 0, 0, 1);
 		playerExecutePreparedWarp();
 	} else if (g_Vars.currentplayer->visionmode == (u32)VISIONMODE_SLAYERROCKET) {
 		// Controlling a Slayer rocket
@@ -3477,10 +3477,10 @@ void playerTick(bool arg0)
 		bool rocketok = false;
 		struct weaponobj *rocket = g_Vars.currentplayer->slayerrocket;
 
-		playerSetCameraMode(CAMERAMODE_THIRDPERSON);
-		playerTickChrBody();
-		bmoveTick(0, 0, 0, 1);
-		playerUpdateShake();
+		player_set_camera_mode(CAMERAMODE_THIRDPERSON);
+		player_tick_chr_body();
+		bmove_tick(0, 0, 0, 1);
+		player_update_shake();
 
 		if (rocket && rocket->base.prop) {
 			f32 sp2b8[3][3];
@@ -3508,7 +3508,7 @@ void playerTick(bool arg0)
 			rocketpos.y = rocket->base.prop->pos.y;
 			rocketpos.z = rocket->base.prop->pos.z;
 
-			bgFindRoomsByPos(&rocketpos, inrooms, aboverooms, 20, &bestroom);
+			bg_find_rooms_by_pos(&rocketpos, inrooms, aboverooms, 20, &bestroom);
 
 			if (inrooms[0] == -1) {
 				outofbounds = true;
@@ -3540,10 +3540,10 @@ void playerTick(bool arg0)
 
 			if (rocket->base.hidden & OBJHFLAG_PROJECTILE) {
 				struct projectile *projectile = rocket->base.projectile;
-				u32 mode = optionsGetControlMode(g_Vars.currentplayerstats->mpindex);
+				u32 mode = options_get_control_mode(g_Vars.currentplayerstats->mpindex);
 				f32 targetspeed;
-				s8 contpad1 = optionsGetContpadNum1(g_Vars.currentplayerstats->mpindex);
-				s8 contpad2 = optionsGetContpadNum2(g_Vars.currentplayerstats->mpindex);
+				s8 contpad1 = options_get_contpad_num1(g_Vars.currentplayerstats->mpindex);
+				s8 contpad2 = options_get_contpad_num2(g_Vars.currentplayerstats->mpindex);
 				s8 stickx = 0;
 				s8 sticky = 0;
 #ifndef PLATFORM_N64
@@ -3576,63 +3576,63 @@ void playerTick(bool arg0)
 						|| mode == CONTROLMODE_21) {
 					if (g_PlayersWithControl[g_Vars.currentplayernum]) {
 						if (mode == CONTROLMODE_21 || mode == CONTROLMODE_22) {
-							if (joyGetButtons(contpad1, A_BUTTON | B_BUTTON)
-									|| joyGetButtons(contpad2, A_BUTTON | B_BUTTON)
-									|| joyGetButtons(contpad2, Z_TRIG)) {
+							if (joy_get_buttons(contpad1, A_BUTTON | B_BUTTON)
+									|| joy_get_buttons(contpad2, A_BUTTON | B_BUTTON)
+									|| joy_get_buttons(contpad2, Z_TRIG)) {
 								slow = true;
 							}
 
-							if (joyGetButtonsPressedThisFrame(contpad1, Z_TRIG)) {
+							if (joy_get_buttons_pressed_this_frame(contpad1, Z_TRIG)) {
 								explode = true;
 							}
 						} else {
-							if (joyGetButtons(contpad1, A_BUTTON | B_BUTTON)
-									|| joyGetButtons(contpad2, A_BUTTON | B_BUTTON)
-									|| joyGetButtons(contpad1, Z_TRIG)) {
+							if (joy_get_buttons(contpad1, A_BUTTON | B_BUTTON)
+									|| joy_get_buttons(contpad2, A_BUTTON | B_BUTTON)
+									|| joy_get_buttons(contpad1, Z_TRIG)) {
 								slow = true;
 							}
 
-							if (joyGetButtonsPressedThisFrame(contpad2, Z_TRIG)) {
+							if (joy_get_buttons_pressed_this_frame(contpad2, Z_TRIG)) {
 								explode = true;
 							}
 						}
 
-						stickx = joyGetStickX(contpad1);
-						sticky = joyGetStickY(contpad1);
+						stickx = joy_get_stick_x(contpad1);
+						sticky = joy_get_stick_y(contpad1);
 					} else {
 						slow = true;
 					}
 
-					if (joyGetButtons(contpad1, START_BUTTON) || joyGetButtons(contpad2, START_BUTTON)) {
+					if (joy_get_buttons(contpad1, START_BUTTON) || joy_get_buttons(contpad2, START_BUTTON)) {
 						pause = true;
 					}
 				} else {
 					if (g_PlayersWithControl[g_Vars.currentplayernum]) {
 						if (mode == CONTROLMODE_13 || mode == CONTROLMODE_14) {
-							if (joyGetButtonsPressedThisFrame(contpad1, A_BUTTON)) {
+							if (joy_get_buttons_pressed_this_frame(contpad1, A_BUTTON)) {
 								explode = true;
 							}
 
-							if (joyGetButtons(contpad1, B_BUTTON | Z_TRIG | R_TRIG)) {
+							if (joy_get_buttons(contpad1, B_BUTTON | Z_TRIG | R_TRIG)) {
 								slow = true;
 							}
 						} else {
-							if (joyGetButtonsPressedThisFrame(contpad1, Z_TRIG)) {
+							if (joy_get_buttons_pressed_this_frame(contpad1, Z_TRIG)) {
 								explode = true;
 							}
 
-							if (joyGetButtons(contpad1, A_BUTTON | B_BUTTON | R_TRIG)) {
+							if (joy_get_buttons(contpad1, A_BUTTON | B_BUTTON | R_TRIG)) {
 								slow = true;
 							}
 						}
 
-						stickx = joyGetStickX(contpad1);
-						sticky = joyGetStickY(contpad1);
+						stickx = joy_get_stick_x(contpad1);
+						sticky = joy_get_stick_y(contpad1);
 					} else {
 						slow = true;
 					}
 
-					if (joyGetButtons(contpad1, START_BUTTON)) {
+					if (joy_get_buttons(contpad1, START_BUTTON)) {
 						pause = true;
 					}
 				}
@@ -3645,9 +3645,9 @@ void playerTick(bool arg0)
 
 				if (pause) {
 					if (g_Vars.mplayerisrunning == false) {
-						playerPause(MENUROOT_MAINMENU);
+						player_pause(MENUROOT_MAINMENU);
 					} else {
-						mpPushPauseDialog();
+						mp_push_pause_dialog();
 					}
 				}
 
@@ -3660,7 +3660,7 @@ void playerTick(bool arg0)
 
 #ifndef PLATFORM_N64
 				// respect the invert pitch setting
-				if (optionsGetForwardPitch(g_Vars.currentplayerstats->mpindex)) {
+				if (options_get_forward_pitch(g_Vars.currentplayerstats->mpindex)) {
 					sp178 = -sp178;
 				}
 				// mouse control
@@ -3672,7 +3672,7 @@ void playerTick(bool arg0)
 						mdy *= 0.022f;
 						mdx = (mdx < -128.f) ? -128.f : (mdx > 127.f) ? 127.f : mdx;
 						mdy = (mdy < -128.f) ? -128.f : (mdy > 127.f) ? 127.f : mdy;
-						if (g_Vars.currentplayerstats && !optionsGetForwardPitch(g_Vars.currentplayerstats->mpindex)) {
+						if (g_Vars.currentplayerstats && !options_get_forward_pitch(g_Vars.currentplayerstats->mpindex)) {
 							mdy = -mdy;
 						}
 						sp178 += mdy;
@@ -3700,9 +3700,9 @@ void playerTick(bool arg0)
 				sp15c[2] = sp2b8[1][1] >= 0 ? f20 : -f20;
 				sp15c[3] = 0;
 
-				quaternionMultQuaternion(sp15c, sp14c, sp13c);
-				quaternionToMtx(sp13c, &sp1fc);
-				mtx4RotateVecInPlace(&sp1fc, &projectile->speed);
+				quaternion_mult_quaternion(sp15c, sp14c, sp13c);
+				quaternion_to_mtx(sp13c, &sp1fc);
+				mtx4_rotate_vec_in_place(&sp1fc, &projectile->speed);
 
 				projectile->powerlimit240 = -1;
 				projectile->flags |= PROJECTILEFLAG_NOTIMELIMIT;
@@ -3759,11 +3759,11 @@ void playerTick(bool arg0)
 				projectile->speed.y = (projectile->speed.y * newspeed) / prevspeed;
 				projectile->speed.z = (projectile->speed.z * newspeed) / prevspeed;
 
-				mtx3ToMtx4(sp2b8, &sp1bc);
+				mtx3_to_mtx4(sp2b8, &sp1bc);
 				quaternion0f097044(&sp1bc, sp12c);
-				quaternionMultQuaternion(sp13c, sp12c, sp11c);
-				quaternionToMtx(sp11c, &sp17c);
-				mtx4ToMtx3(&sp17c, sp2b8);
+				quaternion_mult_quaternion(sp13c, sp12c, sp11c);
+				quaternion_to_mtx(sp11c, &sp17c);
+				mtx4_to_mtx3(&sp17c, sp2b8);
 
 				rocket->base.realrot[0][0] = sp2b8[0][0] * sp2a8;
 				rocket->base.realrot[0][1] = sp2b8[0][1] * sp2a8;
@@ -3803,16 +3803,16 @@ void playerTick(bool arg0)
 		struct chrdata *chr;
 		s32 i;
 
-		playerRemoveChrBody();
+		player_remove_chr_body();
 
 		if (g_PlayersWithControl[g_Vars.currentplayernum]) {
-			bmoveTick(1, 1, arg0, 0);
+			bmove_tick(1, 1, arg0, 0);
 		} else {
-			bmoveTick(0, 0, 0, 1);
+			bmove_tick(0, 0, 0, 1);
 		}
 
-		playerUpdateShake();
-		playerSetCameraMode(CAMERAMODE_DEFAULT);
+		player_update_shake();
+		player_set_camera_mode(CAMERAMODE_DEFAULT);
 
 		spf4.x = g_Vars.currentplayer->bond2.unk10.x;
 		spf4.y = g_Vars.currentplayer->bond2.unk10.y;
@@ -3846,26 +3846,26 @@ void playerTick(bool arg0)
 								| 1 << CHEAT_HOTSHOT
 								| 1 << CHEAT_HITANDRUN
 								| 1 << CHEAT_ALIEN)) == 0) {
-					if (stageGetIndex(g_Vars.stagenum) == STAGEINDEX_AIRBASE) {
-						prop = chrSpawnAtCoord(BODY_DARK_COMBAT, HEAD_VD,
+					if (stage_get_index(g_Vars.stagenum) == STAGEINDEX_AIRBASE) {
+						prop = chr_spawn_at_coord(BODY_DARK_COMBAT, HEAD_VD,
 								&g_Vars.currentplayer->prop->pos,
 								g_Vars.currentplayer->prop->rooms,
 								BADDEG2RAD(g_Vars.currentplayer->vv_theta / 2),
-								ailistFindById(GAILIST_INIT_DEFAULT_BUDDY),
+								ailist_find_by_id(GAILIST_INIT_DEFAULT_BUDDY),
 								SPAWNFLAG_ALLOWONSCREEN);
-					} else if (stageGetIndex(g_Vars.stagenum) == STAGEINDEX_MBR) {
-						prop = chrSpawnAtCoord(BODY_MRBLONDE, HEAD_MRBLONDE,
+					} else if (stage_get_index(g_Vars.stagenum) == STAGEINDEX_MBR) {
+						prop = chr_spawn_at_coord(BODY_MRBLONDE, HEAD_MRBLONDE,
 								&g_Vars.currentplayer->prop->pos,
 								g_Vars.currentplayer->prop->rooms,
 								BADDEG2RAD(g_Vars.currentplayer->vv_theta),
-								ailistFindById(GAILIST_INIT_DEFAULT_BUDDY),
+								ailist_find_by_id(GAILIST_INIT_DEFAULT_BUDDY),
 								SPAWNFLAG_ALLOWONSCREEN);
 					} else {
-						prop = chrSpawnAtCoord(BODY_DARK_COMBAT, HEAD_VD,
+						prop = chr_spawn_at_coord(BODY_DARK_COMBAT, HEAD_VD,
 								&g_Vars.currentplayer->prop->pos,
 								g_Vars.currentplayer->prop->rooms,
 								BADDEG2RAD(g_Vars.currentplayer->vv_theta / 2),
-								ailistFindById(GAILIST_INIT_DEFAULT_BUDDY),
+								ailist_find_by_id(GAILIST_INIT_DEFAULT_BUDDY),
 								SPAWNFLAG_ALLOWONSCREEN);
 					}
 
@@ -3881,37 +3881,37 @@ void playerTick(bool arg0)
 						chr->accuracyrating = 100;
 						chr->speedrating = 100;
 
-						if (stageGetIndex(g_Vars.stagenum) == STAGEINDEX_AIRBASE) {
-							chrAddHealth(chr, 40);
+						if (stage_get_index(g_Vars.stagenum) == STAGEINDEX_AIRBASE) {
+							chr_add_health(chr, 40);
 						} else {
-							chrAddHealth(chr, 20);
+							chr_add_health(chr, 20);
 						}
 
-						chrSetMaxDamage(chr, 4);
+						chr_set_max_damage(chr, 4);
 
 						chr->chrflags |= CHRCFLAG_NEVERSLEEP;
 						chr->hidden |= CHRHFLAG_CLOAKED;
 						chr->cloakfadefinished = true;
 						chr->cloakfadefrac = 0;
 
-						chrGiveWeapon(chr, MODEL_CHRFALCON2, WEAPON_FALCON2, 0);
+						chr_give_weapon(chr, MODEL_CHRFALCON2, WEAPON_FALCON2, 0);
 					}
 				}
 
-				if (cheatIsActive(CHEAT_PUGILIST)) {
-					if (stageGetIndex(g_Vars.stagenum) == STAGEINDEX_MBR) {
-						prop = chrSpawnAtCoord(BODY_MRBLONDE, HEAD_MRBLONDE,
+				if (cheat_is_active(CHEAT_PUGILIST)) {
+					if (stage_get_index(g_Vars.stagenum) == STAGEINDEX_MBR) {
+						prop = chr_spawn_at_coord(BODY_MRBLONDE, HEAD_MRBLONDE,
 								&g_Vars.currentplayer->prop->pos,
 								g_Vars.currentplayer->prop->rooms,
 								BADDEG2RAD(g_Vars.currentplayer->vv_theta),
-								ailistFindById(GAILIST_INIT_DEFAULT_BUDDY),
+								ailist_find_by_id(GAILIST_INIT_DEFAULT_BUDDY),
 								SPAWNFLAG_ALLOWONSCREEN);
 					} else {
-						prop = chrSpawnAtCoord(BODY_CARRINGTON, HEAD_JAMIE,
+						prop = chr_spawn_at_coord(BODY_CARRINGTON, HEAD_JAMIE,
 								&g_Vars.currentplayer->prop->pos,
 								g_Vars.currentplayer->prop->rooms,
 								BADDEG2RAD(g_Vars.currentplayer->vv_theta),
-								ailistFindById(GAILIST_INIT_PUGILIST_BUDDY),
+								ailist_find_by_id(GAILIST_INIT_PUGILIST_BUDDY),
 								SPAWNFLAG_ALLOWONSCREEN);
 					}
 
@@ -3927,10 +3927,10 @@ void playerTick(bool arg0)
 						chr->accuracyrating = 100;
 						chr->speedrating = 100;
 
-						if (stageGetIndex(g_Vars.stagenum) == STAGEINDEX_AIRBASE) {
-							chrAddHealth(chr, 40);
+						if (stage_get_index(g_Vars.stagenum) == STAGEINDEX_AIRBASE) {
+							chr_add_health(chr, 40);
 						} else {
-							chrAddHealth(chr, 20);
+							chr_add_health(chr, 20);
 						}
 
 						chr->chrflags |= CHRCFLAG_NEVERSLEEP;
@@ -3938,24 +3938,24 @@ void playerTick(bool arg0)
 						chr->cloakfadefinished = true;
 						chr->cloakfadefrac = 0;
 
-						chrSetMaxDamage(chr, 20);
+						chr_set_max_damage(chr, 20);
 					}
 				}
 
-				if (cheatIsActive(CHEAT_HITANDRUN)) {
-					if (stageGetIndex(g_Vars.stagenum) == STAGEINDEX_MBR) {
-						prop = chrSpawnAtCoord(BODY_MRBLONDE, HEAD_MRBLONDE,
+				if (cheat_is_active(CHEAT_HITANDRUN)) {
+					if (stage_get_index(g_Vars.stagenum) == STAGEINDEX_MBR) {
+						prop = chr_spawn_at_coord(BODY_MRBLONDE, HEAD_MRBLONDE,
 								&g_Vars.currentplayer->prop->pos,
 								g_Vars.currentplayer->prop->rooms,
 								BADDEG2RAD(g_Vars.currentplayer->vv_theta),
-								ailistFindById(GAILIST_INIT_DEFAULT_BUDDY),
+								ailist_find_by_id(GAILIST_INIT_DEFAULT_BUDDY),
 								SPAWNFLAG_ALLOWONSCREEN);
 					} else {
-						prop = chrSpawnAtCoord(BODY_MRBLONDE, HEAD_MARK2,
+						prop = chr_spawn_at_coord(BODY_MRBLONDE, HEAD_MARK2,
 								&g_Vars.currentplayer->prop->pos,
 								g_Vars.currentplayer->prop->rooms,
 								BADDEG2RAD(g_Vars.currentplayer->vv_theta),
-								ailistFindById(GAILIST_INIT_DEFAULT_BUDDY),
+								ailist_find_by_id(GAILIST_INIT_DEFAULT_BUDDY),
 								SPAWNFLAG_ALLOWONSCREEN);
 					}
 
@@ -3971,37 +3971,37 @@ void playerTick(bool arg0)
 						chr->accuracyrating = 50;
 						chr->speedrating = 100;
 
-						if (stageGetIndex(g_Vars.stagenum) == STAGEINDEX_AIRBASE) {
-							chrAddHealth(chr, 20);
+						if (stage_get_index(g_Vars.stagenum) == STAGEINDEX_AIRBASE) {
+							chr_add_health(chr, 20);
 						} else {
-							chrAddHealth(chr, 10);
+							chr_add_health(chr, 10);
 						}
 
-						chrSetMaxDamage(chr, 10);
+						chr_set_max_damage(chr, 10);
 
 						chr->chrflags |= CHRCFLAG_NEVERSLEEP;
 						chr->hidden |= CHRHFLAG_CLOAKED;
 						chr->cloakfadefinished = true;
 						chr->cloakfadefrac = 0;
 
-						chrGiveWeapon(chr, MODEL_CHRAVENGER, WEAPON_K7AVENGER, 0);
+						chr_give_weapon(chr, MODEL_CHRAVENGER, WEAPON_K7AVENGER, 0);
 					}
 				}
 
-				if (cheatIsActive(CHEAT_HOTSHOT)) {
-					if (stageGetIndex(g_Vars.stagenum) == STAGEINDEX_MBR) {
-						prop = chrSpawnAtCoord(BODY_MRBLONDE, HEAD_MRBLONDE,
+				if (cheat_is_active(CHEAT_HOTSHOT)) {
+					if (stage_get_index(g_Vars.stagenum) == STAGEINDEX_MBR) {
+						prop = chr_spawn_at_coord(BODY_MRBLONDE, HEAD_MRBLONDE,
 								&g_Vars.currentplayer->prop->pos,
 								g_Vars.currentplayer->prop->rooms,
 								BADDEG2RAD(g_Vars.currentplayer->vv_theta),
-								ailistFindById(GAILIST_INIT_DEFAULT_BUDDY),
+								ailist_find_by_id(GAILIST_INIT_DEFAULT_BUDDY),
 								SPAWNFLAG_ALLOWONSCREEN);
 					} else {
-						prop = chrSpawnAtCoord(BODY_CISOLDIER, HEAD_CHRIST,
+						prop = chr_spawn_at_coord(BODY_CISOLDIER, HEAD_CHRIST,
 								&g_Vars.currentplayer->prop->pos,
 								g_Vars.currentplayer->prop->rooms,
 								BADDEG2RAD(g_Vars.currentplayer->vv_theta),
-								ailistFindById(GAILIST_INIT_DEFAULT_BUDDY),
+								ailist_find_by_id(GAILIST_INIT_DEFAULT_BUDDY),
 								SPAWNFLAG_ALLOWONSCREEN);
 					}
 
@@ -4017,38 +4017,38 @@ void playerTick(bool arg0)
 						chr->accuracyrating = 50;
 						chr->speedrating = 100;
 
-						if (stageGetIndex(g_Vars.stagenum) == STAGEINDEX_AIRBASE) {
-							chrAddHealth(chr, 40);
+						if (stage_get_index(g_Vars.stagenum) == STAGEINDEX_AIRBASE) {
+							chr_add_health(chr, 40);
 						} else {
-							chrAddHealth(chr, 20);
+							chr_add_health(chr, 20);
 						}
 
-						chrSetMaxDamage(chr, 10);
+						chr_set_max_damage(chr, 10);
 
 						chr->chrflags |= CHRCFLAG_NEVERSLEEP;
 						chr->hidden |= CHRHFLAG_CLOAKED;
 						chr->cloakfadefinished = true;
 						chr->cloakfadefrac = 0;
 
-						chrGiveWeapon(chr, MODEL_CHRDY357TRENT, WEAPON_DY357LX, 0);
-						chrGiveWeapon(chr, MODEL_CHRDY357, WEAPON_DY357MAGNUM, OBJFLAG_WEAPON_LEFTHANDED);
+						chr_give_weapon(chr, MODEL_CHRDY357TRENT, WEAPON_DY357LX, 0);
+						chr_give_weapon(chr, MODEL_CHRDY357, WEAPON_DY357MAGNUM, OBJFLAG_WEAPON_LEFTHANDED);
 					}
 				}
 
-				if (cheatIsActive(CHEAT_ALIEN)) {
-					if (stageGetIndex(g_Vars.stagenum) == STAGEINDEX_MBR) {
-						prop = chrSpawnAtCoord(BODY_MRBLONDE, HEAD_MRBLONDE,
+				if (cheat_is_active(CHEAT_ALIEN)) {
+					if (stage_get_index(g_Vars.stagenum) == STAGEINDEX_MBR) {
+						prop = chr_spawn_at_coord(BODY_MRBLONDE, HEAD_MRBLONDE,
 								&g_Vars.currentplayer->prop->pos,
 								g_Vars.currentplayer->prop->rooms,
 								BADDEG2RAD(g_Vars.currentplayer->vv_theta),
-								ailistFindById(GAILIST_INIT_DEFAULT_BUDDY),
+								ailist_find_by_id(GAILIST_INIT_DEFAULT_BUDDY),
 								SPAWNFLAG_ALLOWONSCREEN);
 					} else {
-						prop = chrSpawnAtCoord(BODY_ELVIS1, HEAD_MAIAN_S,
+						prop = chr_spawn_at_coord(BODY_ELVIS1, HEAD_MAIAN_S,
 								&g_Vars.currentplayer->prop->pos,
 								g_Vars.currentplayer->prop->rooms,
 								BADDEG2RAD(g_Vars.currentplayer->vv_theta),
-								ailistFindById(GAILIST_INIT_DEFAULT_BUDDY),
+								ailist_find_by_id(GAILIST_INIT_DEFAULT_BUDDY),
 								SPAWNFLAG_ALLOWONSCREEN);
 					}
 
@@ -4064,20 +4064,20 @@ void playerTick(bool arg0)
 						chr->accuracyrating = 100;
 						chr->speedrating = 100;
 
-						if (stageGetIndex(g_Vars.stagenum) == STAGEINDEX_AIRBASE) {
-							chrAddHealth(chr, 40);
+						if (stage_get_index(g_Vars.stagenum) == STAGEINDEX_AIRBASE) {
+							chr_add_health(chr, 40);
 						} else {
-							chrAddHealth(chr, 20);
+							chr_add_health(chr, 20);
 						}
 
-						chrSetMaxDamage(chr, 10);
+						chr_set_max_damage(chr, 10);
 
 						chr->chrflags |= CHRCFLAG_NEVERSLEEP;
 						chr->hidden |= CHRHFLAG_CLOAKED;
 						chr->cloakfadefinished = true;
 						chr->cloakfadefrac = 0;
 
-						chrGiveWeapon(chr, MODEL_CHRRCP120, WEAPON_RCP120, 0);
+						chr_give_weapon(chr, MODEL_CHRRCP120, WEAPON_RCP120, 0);
 					}
 				}
 
@@ -4085,10 +4085,10 @@ void playerTick(bool arg0)
 			}
 		}
 	} else if (g_Vars.tickmode == TICKMODE_GE_FADEIN || g_Vars.tickmode == TICKMODE_GE_FADEOUT) {
-		playerRemoveChrBody();
-		bmoveTick(1, 1, arg0, 0);
-		playerUpdateShake();
-		playerSetCameraMode(CAMERAMODE_DEFAULT);
+		player_remove_chr_body();
+		bmove_tick(1, 1, arg0, 0);
+		player_update_shake();
+		player_set_camera_mode(CAMERAMODE_DEFAULT);
 		player0f0c1840(&g_Vars.currentplayer->bond2.unk10,
 				&g_Vars.currentplayer->bond2.unk28,
 				&g_Vars.currentplayer->bond2.unk1c,
@@ -4096,14 +4096,14 @@ void playerTick(bool arg0)
 				g_Vars.currentplayer->prop->rooms);
 	} else if (g_Vars.tickmode == TICKMODE_MPSWIRL) {
 		// Start of an MP match where the camera circles around the player
-		playerTickChrBody();
-		bmoveTick(0, 0, 0, 1);
-		playerTickMpSwirl();
+		player_tick_chr_body();
+		bmove_tick(0, 0, 0, 1);
+		player_tick_mp_swirl();
 	} else if (g_Vars.tickmode == TICKMODE_WARP) {
 		// Eg. In CI training, warping from device hallways
 		// to device room at the end of a training session
-		playerTickChrBody();
-		bmoveTick(0, 0, 0, 1);
+		player_tick_chr_body();
+		bmove_tick(0, 0, 0, 1);
 		playerExecutePreparedWarp();
 	} else if (g_Vars.tickmode == TICKMODE_AUTOWALK) {
 		// Extraction bodyguard room and Duel
@@ -4117,10 +4117,10 @@ void playerTick(bool arg0)
 		struct pad pad;
 		f32 speedfrac;
 
-		playerRemoveChrBody();
-		padUnpack(g_Vars.currentplayer->autocontrol_aimpad, PADFIELD_POS, &pad);
+		player_remove_chr_body();
+		pad_unpack(g_Vars.currentplayer->autocontrol_aimpad, PADFIELD_POS, &pad);
 
-		if (mainGetStageNum() == g_Stages[STAGEINDEX_EXTRACTION].id
+		if (main_get_stage_num() == g_Stages[STAGEINDEX_EXTRACTION].id
 				&& g_Vars.currentplayer->autocontrol_aimpad == 0x19) {
 			pad.pos.x -= 100;
 		}
@@ -4178,11 +4178,11 @@ void playerTick(bool arg0)
 			xdist = sqrtf(xdist * xdist + zdist * zdist);
 
 			if (xdist < g_Vars.currentplayer->autocontrol_dist) {
-				playerSetTickMode(TICKMODE_NORMAL);
+				player_set_tick_mode(TICKMODE_NORMAL);
 			}
 		} else {
 			if (diffangle >= -0.2f && diffangle <= 0.2f) {
-				playerSetTickMode(TICKMODE_NORMAL);
+				player_set_tick_mode(TICKMODE_NORMAL);
 			}
 		}
 
@@ -4199,9 +4199,9 @@ void playerTick(bool arg0)
 		}
 
 		g_Vars.currentplayer->autocontrol_y = g_Vars.currentplayer->autocontrol_walkspeed * speedfrac;
-		bmoveTick(1, 1, 0, 1);
-		playerUpdateShake();
-		playerSetCameraMode(CAMERAMODE_DEFAULT);
+		bmove_tick(1, 1, 0, 1);
+		player_update_shake();
+		player_set_camera_mode(CAMERAMODE_DEFAULT);
 		player0f0c1840(&g_Vars.currentplayer->bond2.unk10,
 				&g_Vars.currentplayer->bond2.unk28,
 				&g_Vars.currentplayer->bond2.unk1c,
@@ -4220,62 +4220,62 @@ void playerTick(bool arg0)
 
 	// Also a leftover from GE? Maybe cancelling fade in mission intros?
 	if (var8007074c) {
-		s8 contpad1 = optionsGetContpadNum1(g_Vars.currentplayerstats->mpindex);
+		s8 contpad1 = options_get_contpad_num1(g_Vars.currentplayerstats->mpindex);
 
-		if (!lvIsPaused()
+		if (!lv_is_paused()
 				&& arg0
-				&& joyGetButtonsPressedThisFrame(contpad1, A_BUTTON | B_BUTTON | Z_TRIG | START_BUTTON | R_TRIG)) {
+				&& joy_get_buttons_pressed_this_frame(contpad1, A_BUTTON | B_BUTTON | Z_TRIG | START_BUTTON | R_TRIG)) {
 			var8007074c = 2;
 
-			if (playerIsFadeComplete()) {
+			if (player_is_fade_complete()) {
 				if (g_Vars.currentplayer->colourscreenfrac == 0) {
-					playerSetFadeColour(0, 0, 0, 0);
-					playerSetFadeFrac(60, 1);
+					player_set_fade_colour(0, 0, 0, 0);
+					player_set_fade_frac(60, 1);
 				}
 			} else {
 				if (g_Vars.currentplayer->colourfadefracnew == 0) {
-					playerSetFadeFrac(g_Vars.currentplayer->colourfadetime60, 1);
+					player_set_fade_frac(g_Vars.currentplayer->colourfadetime60, 1);
 				}
 			}
 		}
 
 		if (var8007074c == 2
-				&& playerIsFadeComplete()
+				&& player_is_fade_complete()
 				&& g_Vars.currentplayer->colourscreenfrac == 1) {
 			func0000e990();
 		}
 	}
 
 	if (g_PlayerTriggerGeFadeIn) {
-		playerBeginGeFadeIn();
+		player_begin_ge_fade_in();
 	}
 
 	// Handle mission exit on death
 	if (g_Vars.currentplayer->isdead) {
 		if (g_Vars.currentplayer->redbloodfinished == false) {
-			bgunHandlePlayerDead();
+			bgun_handle_player_dead();
 		}
 
 		if (g_Vars.currentplayer->redbloodfinished && g_Vars.currentplayer->deathanimfinished) {
 			if (g_Vars.mplayerisrunning == false) {
-				mainEndStage();
+				main_end_stage();
 			} else if (g_Vars.coopplayernum >= 0) {
 				if (g_Vars.currentplayer == g_Vars.bond
 						&& g_Vars.coop->isdead
 						&& g_Vars.coop->redbloodfinished
 						&& g_Vars.coop->deathanimfinished) {
-					mainEndStage();
+					main_end_stage();
 				} else {
-					chrsClearRefsToPlayer(g_Vars.currentplayernum);
+					chrs_clear_refs_to_player(g_Vars.currentplayernum);
 				}
 			} else if (g_Vars.antiplayernum >= 0 && g_Vars.currentplayer == g_Vars.bond) {
-				mainEndStage();
+				main_end_stage();
 			}
 		}
 	}
 
-	if (g_Vars.tickmode == TICKMODE_GE_FADEOUT && playerIsFadeComplete()) {
-		mainEndStage();
+	if (g_Vars.tickmode == TICKMODE_GE_FADEOUT && player_is_fade_complete()) {
+		main_end_stage();
 	}
 }
 
@@ -4344,27 +4344,27 @@ struct var80070ba4 var80070ba4[4][7] = { // [wieldmode][turnmode]
 	},
 };
 
-void playerSetGlobalDrawWorldOffset(s32 room)
+void player_set_global_draw_world_offset(s32 room)
 {
-	roomGetPos(room, &g_Vars.currentplayer->globaldrawworldoffset);
+	room_get_pos(room, &g_Vars.currentplayer->globaldrawworldoffset);
 
 	g_Vars.currentplayer->globaldrawworldbgoffset.x = g_Vars.currentplayer->globaldrawworldoffset.x;
 	g_Vars.currentplayer->globaldrawworldbgoffset.y = g_Vars.currentplayer->globaldrawworldoffset.y;
 	g_Vars.currentplayer->globaldrawworldbgoffset.z = g_Vars.currentplayer->globaldrawworldoffset.z;
 
-	roomSetLastForOffset(room);
+	room_set_last_for_offset(room);
 }
 
-void playerSetGlobalDrawCameraOffset(void)
+void player_set_global_draw_camera_offset(void)
 {
 	g_Vars.currentplayer->globaldrawcameraoffset.x = g_Vars.currentplayer->globaldrawworldoffset.x;
 	g_Vars.currentplayer->globaldrawcameraoffset.y = g_Vars.currentplayer->globaldrawworldoffset.y;
 	g_Vars.currentplayer->globaldrawcameraoffset.z = g_Vars.currentplayer->globaldrawworldoffset.z;
 
-	mtx4RotateVecInPlace(camGetWorldToScreenMtxf(), &g_Vars.currentplayer->globaldrawcameraoffset);
+	mtx4_rotate_vec_in_place(cam_get_world_to_screen_mtxf(), &g_Vars.currentplayer->globaldrawcameraoffset);
 }
 
-void playerAllocateMatrices(struct coord *cam_pos, struct coord *cam_look, struct coord *cam_up)
+void player_allocate_matrices(struct coord *cam_pos, struct coord *cam_look, struct coord *cam_up)
 {
 	Mtx spd0;
 	LookAt *lookat;
@@ -4377,8 +4377,8 @@ void playerAllocateMatrices(struct coord *cam_pos, struct coord *cam_look, struc
 	s32 i;
 	s32 j;
 
-	scale = bgGetScaleBg2Gfx();
-	playerSetGlobalDrawWorldOffset(g_Vars.currentplayer->cam_room);
+	scale = bg_get_scale_bg2gfx();
+	player_set_global_draw_world_offset(g_Vars.currentplayer->cam_room);
 
 	g_Vars.currentplayer->mtxl005c = gfxAllocateMatrix();
 	g_Vars.currentplayer->mtxl0060 = gfxAllocateMatrix();
@@ -4417,7 +4417,7 @@ void playerAllocateMatrices(struct coord *cam_pos, struct coord *cam_look, struc
 
 	s1 = gfxAllocateMatrix();
 	s0 = gfxAllocateMatrix();
-	mtx4MultMtx4(camGetMtxF1754(), &sp8c, s0);
+	mtx4_mult_mtx4(cam_get_mtxf1754(), &sp8c, s0);
 
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < 4; j++) {
@@ -4429,22 +4429,22 @@ void playerAllocateMatrices(struct coord *cam_pos, struct coord *cam_look, struc
 		}
 	}
 
-	camSetMtxF006c(s0);
+	cam_set_mtxf006c(s0);
 	guMtxF2L(s0->m, s1);
-	camSetOrthogonalMtxL(s1);
+	cam_set_orthogonal_mtxl(s1);
 	mtx00015f04(scale, &sp8c);
 	guMtxF2L(sp8c.m, g_Vars.currentplayer->mtxl005c);
 	mtx00016820(g_Vars.currentplayer->mtxl005c, g_Vars.currentplayer->mtxl0060);
-	camSetMtxL173c(g_Vars.currentplayer->mtxl005c);
-	camSetMtxL1738(g_Vars.currentplayer->mtxl0060);
-	camSetWorldToScreenMtxf(g_Vars.currentplayer->mtxf0064);
-	camSetProjectionMtxF(g_Vars.currentplayer->mtxf0068);
-	camSetLookAt(lookat);
+	cam_set_mtxl173c(g_Vars.currentplayer->mtxl005c);
+	cam_set_mtxl1738(g_Vars.currentplayer->mtxl0060);
+	cam_set_world_to_screen_mtxf(g_Vars.currentplayer->mtxf0064);
+	cam_set_projection_mtxf(g_Vars.currentplayer->mtxf0068);
+	cam_set_look_at(lookat);
 	cam0f0b5838();
-	playerSetGlobalDrawCameraOffset();
+	player_set_global_draw_camera_offset();
 }
 
-Gfx *playerUpdateShootRot(Gfx *gdl)
+Gfx *player_update_shoot_rot(Gfx *gdl)
 {
 	struct coord sp3c;
 	struct coord sp30;
@@ -4453,7 +4453,7 @@ Gfx *playerUpdateShootRot(Gfx *gdl)
 	f32 rotx;
 	f32 roty;
 
-	playerAllocateMatrices(&g_Vars.currentplayer->cam_pos,
+	player_allocate_matrices(&g_Vars.currentplayer->cam_pos,
 			&g_Vars.currentplayer->cam_look,
 			&g_Vars.currentplayer->cam_up);
 	bgun0f0a0c08(&sp30, &sp3c);
@@ -4487,7 +4487,7 @@ Gfx *playerUpdateShootRot(Gfx *gdl)
  * May be called while the shield is already being displayed, in which case the
  * effect is restarted.
  */
-void playerDisplayShield(void)
+void player_display_shield(void)
 {
 	if (g_Vars.currentplayer->shieldshowtime < 0) {
 		s32 rand = ((g_Vars.currentplayer->shieldshowrnd >> 16) % 200) * 4 + 800;
@@ -4502,7 +4502,7 @@ void playerDisplayShield(void)
 /**
  * Render the current player's shield from the first person perspective.
  */
-Gfx *playerRenderShield(Gfx *gdl)
+Gfx *player_render_shield(Gfx *gdl)
 {
 	f32 sp90[2];
 	f32 sp88[2];
@@ -4516,7 +4516,7 @@ Gfx *playerRenderShield(Gfx *gdl)
 	s32 add;
 
 	if (g_Vars.currentplayer->shieldshowtime >= 0) {
-		shield = playerGetShieldFrac() * 8;
+		shield = player_get_shield_frac() * 8;
 		maxrot = ((g_Vars.currentplayer->shieldshowrnd >> 16) % 200) * 4 + 800;
 		maxrotf = maxrot;
 		f20 = (60 - g_Vars.currentplayer->shieldshowtime) * (1.0f / 60.0f);
@@ -4528,13 +4528,13 @@ Gfx *playerRenderShield(Gfx *gdl)
 		}
 
 		f20 = (sinf(g_Vars.currentplayer->shieldshowrot * (M_BADTAU / maxrotf)) + 1) * 0.5f;
-		sp90[0] = camGetScreenLeft() + camGetScreenWidth() * f20;
+		sp90[0] = cam_get_screen_left() + cam_get_screen_width() * f20;
 
 		f20 = (cosf(g_Vars.currentplayer->shieldshowrot * (M_BADTAU / maxrotf)) + 1) * 0.5f;
-		sp90[1] = camGetScreenTop() + camGetScreenHeight() * f20;
+		sp90[1] = cam_get_screen_top() + cam_get_screen_height() * f20;
 
-		sp88[0] = camGetScreenWidth() * (1.0f + 0.002f * ((g_Vars.currentplayer->shieldshowrnd >> 20) % 100) + (g_Vars.currentplayer->shieldshowtime * (0.2f + 0.002f * (g_Vars.currentplayer->shieldshowrnd % 100)) * (1.0f / 60.0f)));
-		sp88[1] = camGetScreenHeight() * (1.0f + 0.002f * ((g_Vars.currentplayer->shieldshowrnd >> 24) % 100) + (g_Vars.currentplayer->shieldshowtime * (0.2f + 0.002f * ((g_Vars.currentplayer->shieldshowrnd >> 8) % 100)) * (1.0f / 60.0f)));
+		sp88[0] = cam_get_screen_width() * (1.0f + 0.002f * ((g_Vars.currentplayer->shieldshowrnd >> 20) % 100) + (g_Vars.currentplayer->shieldshowtime * (0.2f + 0.002f * (g_Vars.currentplayer->shieldshowrnd % 100)) * (1.0f / 60.0f)));
+		sp88[1] = cam_get_screen_height() * (1.0f + 0.002f * ((g_Vars.currentplayer->shieldshowrnd >> 24) % 100) + (g_Vars.currentplayer->shieldshowtime * (0.2f + 0.002f * ((g_Vars.currentplayer->shieldshowrnd >> 8) % 100)) * (1.0f / 60.0f)));
 
 		chr0f0295f8(shield, &red, &green, &blue);
 
@@ -4573,7 +4573,7 @@ Gfx *playerRenderShield(Gfx *gdl)
 		}
 
 		f20 = 1 - g_Vars.currentplayer->shieldshowtime * (1.0f / 60.0f);
-		texSelect(&gdl, &g_TexShieldConfigs[0], 4, 1, 2, 1, NULL);
+		tex_select(&gdl, &g_TexShieldConfigs[0], 4, 1, 2, 1, NULL);
 
 		gDPSetCycleType(gdl++, G_CYC_2CYCLE);
 		gDPSetRenderMode(gdl++, G_RM_PASS, G_RM_CLD_SURF2);
@@ -4597,43 +4597,43 @@ Gfx *playerRenderShield(Gfx *gdl)
 	return gdl;
 }
 
-Gfx *playerRenderHud(Gfx *gdl)
+Gfx *player_render_hud(Gfx *gdl)
 {
 	if (g_Vars.currentplayer->cameramode == CAMERAMODE_THIRDPERSON) {
-		gdl = boltbeamsRender(gdl);
-		gdl = bgRenderArtifacts(gdl);
-		gdl = hudmsgsRender(gdl);
+		gdl = boltbeams_render(gdl);
+		gdl = bg_render_artifacts(gdl);
+		gdl = hudmsgs_render(gdl);
 
 		if (g_Vars.currentplayer->isdead == false) {
-			gdl = playerDrawStoredFade(gdl);
+			gdl = player_draw_stored_fade(gdl);
 		}
 
 		if (g_Vars.stagenum == STAGE_ESCAPE) {
-			gdl = gasRender(gdl);
+			gdl = gas_render(gdl);
 		}
 
 		return gdl;
 	}
 
 	if (g_Vars.currentplayer->cameramode != CAMERAMODE_EYESPY) {
-		bgunTickGameplay2();
-		gdl = boltbeamsRender(gdl);
-		bgunRender(&gdl);
-		gdl = lasersightRenderDot(gdl);
+		bgun_tick_gameplay2();
+		gdl = boltbeams_render(gdl);
+		bgun_render(&gdl);
+		gdl = lasersight_render_dot(gdl);
 
 		if (g_Vars.currentplayer->visionmode != VISIONMODE_XRAY) {
-			gdl = bgRenderArtifacts(gdl);
+			gdl = bg_render_artifacts(gdl);
 		}
 
 		if (g_NbombsActive) {
-			gdl = nbombRenderOverlay(gdl);
+			gdl = nbomb_render_overlay(gdl);
 		}
 
 		if (g_Vars.stagenum == STAGE_ESCAPE) {
-			gdl = gasRender(gdl);
+			gdl = gas_render(gdl);
 		}
 
-		gdl = playerRenderShield(gdl);
+		gdl = player_render_shield(gdl);
 
 		// Adjust eyes shutting
 		if (g_Vars.currentplayer->eyesshut) {
@@ -4658,18 +4658,18 @@ Gfx *playerRenderHud(Gfx *gdl)
 				&& g_InCutscene == 0
 				&& (!g_Vars.currentplayer->eyespy || (g_Vars.currentplayer->eyespy && !g_Vars.currentplayer->eyespy->active))
 				&& ((g_Vars.currentplayer->devicesactive & ~g_Vars.currentplayer->devicesinhibit) & DEVICE_NIGHTVISION)) {
-			gdl = bviewDrawNvLens(gdl);
-			gdl = bviewDrawNvBinoculars(gdl);
+			gdl = bview_draw_nv_lens(gdl);
+			gdl = bview_draw_nv_binoculars(gdl);
 		} else if (g_Vars.currentplayer->isdead == false
 				&& g_InCutscene == 0
 				&& (!g_Vars.currentplayer->eyespy || (g_Vars.currentplayer->eyespy && !g_Vars.currentplayer->eyespy->active))
 				&& ((g_Vars.currentplayer->devicesactive & ~g_Vars.currentplayer->devicesinhibit) & DEVICE_IRSCANNER)) {
-			gdl = bviewDrawIrLens(gdl);
-			gdl = bviewDrawIrBinoculars(gdl);
+			gdl = bview_draw_ir_lens(gdl);
+			gdl = bview_draw_ir_binoculars(gdl);
 		}
 
 		if (g_Vars.currentplayer->eyesshutfrac > 0) {
-			gdl = playerDrawFade(gdl, 0, 0, 0, g_Vars.currentplayer->eyesshutfrac);
+			gdl = player_draw_fade(gdl, 0, 0, 0, g_Vars.currentplayer->eyesshutfrac);
 		}
 	}
 
@@ -4677,10 +4677,10 @@ Gfx *playerRenderHud(Gfx *gdl)
 
 	// Draw menu
 	if (g_Vars.currentplayer->cameramode != CAMERAMODE_EYESPY && g_Vars.currentplayer->mpmenuon) {
-		s32 a = viGetViewLeft();
-		s32 b = viGetViewTop();
-		s32 c = viGetViewLeft() + viGetViewWidth();
-		s32 d = viGetViewTop() + viGetViewHeight();
+		s32 a = vi_get_view_left();
+		s32 b = vi_get_view_top();
+		s32 c = vi_get_view_left() + vi_get_view_width();
+		s32 d = vi_get_view_top() + vi_get_view_height();
 
 		gdl = text0f153628(gdl);
 		gdl = text0f153a34(gdl, a, b, c, d, 0x000000a0);
@@ -4688,13 +4688,13 @@ Gfx *playerRenderHud(Gfx *gdl)
 	}
 
 	if (g_Vars.currentplayer->cameramode != CAMERAMODE_EYESPY
-			&& playerIsHealthVisible()
+			&& player_is_health_visible()
 			&& func0f0f0c68()) {
-		gdl = playerRenderHealthBar(gdl);
+		gdl = player_render_health_bar(gdl);
 	}
 
 	if (g_Vars.normmplayerisrunning == false) {
-		objectivesCheckAll();
+		objectives_check_all();
 	}
 
 	if (g_Vars.currentplayer->isdead) {
@@ -4704,35 +4704,35 @@ Gfx *playerRenderHud(Gfx *gdl)
 			bool pass = false;
 
 			if (g_Vars.currentplayer->isdead == 1) {
-				pakDisableRumbleForPlayer(g_Vars.currentplayernum);
+				pak_disable_rumble_for_player(g_Vars.currentplayernum);
 				g_Vars.currentplayer->isdead = 2;
 				pass = true;
 			}
 
 			if (pass) {
 				if (g_Vars.mplayerisrunning == false) {
-					musicStartSoloDeath();
+					music_start_solo_death();
 				} else {
-					musicStartMpDeath();
+					music_start_mp_death();
 				}
 			} else {
 				if (g_Vars.currentplayer->redbloodfinished) {
-					playerSetFadeColour(0x96, 0, 0, 0.70588237f);
+					player_set_fade_colour(0x96, 0, 0, 0.70588237f);
 				} else {
 					g_Vars.currentplayer->redbloodfinished = true;
 				}
 			}
 		}
 
-		if (modelGetCurAnimFrame(&g_Vars.currentplayer->model) >= modelGetAnimEndFrame(&g_Vars.currentplayer->model)
+		if (model_get_cur_anim_frame(&g_Vars.currentplayer->model) >= model_get_anim_end_frame(&g_Vars.currentplayer->model)
 				&& g_Vars.currentplayer->redbloodfinished) {
 			if (g_Vars.currentplayer->deathanimfinished == false) {
 				g_Vars.currentplayer->deathanimfinished = true;
-				playerAdjustFade(60, 0, 0, 0, 1);
-				playerStartChrFade(120, 0);
+				player_adjust_fade(60, 0, 0, 0, 1);
+				player_start_chr_fade(120, 0);
 			}
 
-			if (playerIsFadeComplete()) {
+			if (player_is_fade_complete()) {
 				bool canrestart = false;
 
 				if (g_Vars.mplayerisrunning) {
@@ -4746,7 +4746,7 @@ Gfx *playerRenderHud(Gfx *gdl)
 
 						if (g_Vars.antiplayernum >= 0 && g_Vars.currentplayer == g_Vars.anti) {
 							// Anti
-							if (joyGetButtons(optionsGetContpadNum1(g_Vars.currentplayerstats->mpindex), 0xb000) && !mpIsPaused()) {
+							if (joy_get_buttons(options_get_contpad_num1(g_Vars.currentplayerstats->mpindex), 0xb000) && !mp_is_paused()) {
 								g_Vars.currentplayer->dostartnewlife = true;
 							}
 						} else {
@@ -4759,15 +4759,15 @@ Gfx *playerRenderHud(Gfx *gdl)
 								f32 stealhealth;
 								f32 shield;
 
-								canrestart = joyGetButtons(optionsGetContpadNum1(g_Vars.currentplayerstats->mpindex), 0xb000)
-									&& !mpIsPaused();
+								canrestart = joy_get_buttons(options_get_contpad_num1(g_Vars.currentplayerstats->mpindex), 0xb000)
+									&& !mp_is_paused();
 
 								// Get ready to respawn.
 								// The other player's health will be halved.
 								buddyplayernum = g_Vars.currentplayer == g_Vars.coop ? g_Vars.bondplayernum : g_Vars.coopplayernum;
 
-								setCurrentPlayerNum(buddyplayernum);
-								shield = chrGetShield(g_Vars.currentplayer->prop->chr) * 0.125f;
+								set_current_player_num(buddyplayernum);
+								shield = chr_get_shield(g_Vars.currentplayer->prop->chr) * 0.125f;
 								totalhealth = g_Vars.currentplayer->bondhealth + shield;
 
 #if VERSION >= VERSION_NTSC_FINAL
@@ -4776,21 +4776,21 @@ Gfx *playerRenderHud(Gfx *gdl)
 								// the player could respawn on the other side of the exit trigger.
 								// Additionally, the logic for coopcanrestart is different.
 								if (totalhealth > 0.125f
-										&& !(mainGetStageNum() == STAGE_DEEPSEA && chrHasStageFlag(NULL, 0x00000200))) {
+										&& !(main_get_stage_num() == STAGE_DEEPSEA && chr_has_stage_flag(NULL, 0x00000200))) {
 									if (canrestart) {
-										playerDisplayHealth();
+										player_display_health();
 
 										stealhealth = totalhealth * 0.5f;
 
 										if (stealhealth < shield) {
-											chrSetShield(g_Vars.currentplayer->prop->chr, (shield - stealhealth) * 8.0f);
+											chr_set_shield(g_Vars.currentplayer->prop->chr, (shield - stealhealth) * 8.0f);
 										} else {
-											chrSetShield(g_Vars.currentplayer->prop->chr, 0);
+											chr_set_shield(g_Vars.currentplayer->prop->chr, 0);
 											g_Vars.currentplayer->bondhealth -= stealhealth - shield;
 										}
 
 										// Back to the player who died
-										setCurrentPlayerNum(prevplayernum);
+										set_current_player_num(prevplayernum);
 										g_Vars.currentplayer->dostartnewlife = true;
 										g_Vars.currentplayer->oldhealth = 0;
 										g_Vars.currentplayer->oldarmour = 0;
@@ -4798,29 +4798,29 @@ Gfx *playerRenderHud(Gfx *gdl)
 										g_Vars.currentplayer->apparentarmour = 0;
 										g_Vars.currentplayer->stealhealth = stealhealth;
 									} else {
-										setCurrentPlayerNum(prevplayernum);
+										set_current_player_num(prevplayernum);
 									}
 
 									g_Vars.currentplayer->coopcanrestart = true;
 								} else {
 									// Can't respawn
-									setCurrentPlayerNum(prevplayernum);
+									set_current_player_num(prevplayernum);
 								}
 #else
 								if (totalhealth > 0.125f && canrestart) {
-									playerDisplayHealth();
+									player_display_health();
 
 									stealhealth = totalhealth * 0.5f;
 
 									if (stealhealth < shield) {
-										chrSetShield(g_Vars.currentplayer->prop->chr, (shield - stealhealth) * 8.0f);
+										chr_set_shield(g_Vars.currentplayer->prop->chr, (shield - stealhealth) * 8.0f);
 									} else {
-										chrSetShield(g_Vars.currentplayer->prop->chr, 0);
+										chr_set_shield(g_Vars.currentplayer->prop->chr, 0);
 										g_Vars.currentplayer->bondhealth -= stealhealth - shield;
 									}
 
 									// Back to the player who died
-									setCurrentPlayerNum(prevplayernum);
+									set_current_player_num(prevplayernum);
 									g_Vars.currentplayer->dostartnewlife = true;
 									g_Vars.currentplayer->oldhealth = 0;
 									g_Vars.currentplayer->oldarmour = 0;
@@ -4828,7 +4828,7 @@ Gfx *playerRenderHud(Gfx *gdl)
 									g_Vars.currentplayer->apparentarmour = 0;
 									g_Vars.currentplayer->stealhealth = stealhealth;
 								} else {
-									setCurrentPlayerNum(prevplayernum);
+									set_current_player_num(prevplayernum);
 								}
 
 								if (totalhealth > 0.125f) {
@@ -4866,8 +4866,8 @@ Gfx *playerRenderHud(Gfx *gdl)
 							}
 						}
 
-						if (joyGetButtons(optionsGetContpadNum1(g_Vars.currentplayerstats->mpindex), 0xb000)
-								&& !mpIsPaused()
+						if (joy_get_buttons(options_get_contpad_num1(g_Vars.currentplayerstats->mpindex), 0xb000)
+								&& !mp_is_paused()
 								&& g_NumReasonsToEndMpMatch == 0) {
 							canrestart = true;
 						}
@@ -4882,69 +4882,69 @@ Gfx *playerRenderHud(Gfx *gdl)
 	}
 
 	if (g_Vars.currentplayer->cameramode != CAMERAMODE_EYESPY) {
-		gdl = bgunDrawSight(gdl);
+		gdl = bgun_draw_sight(gdl);
 
-		if (bgunGetWeaponNum(HAND_RIGHT) == WEAPON_HORIZONSCANNER) {
-			gdl = bviewDrawHorizonScanner(gdl);
+		if (bgun_get_weapon_num(HAND_RIGHT) == WEAPON_HORIZONSCANNER) {
+			gdl = bview_draw_horizon_scanner(gdl);
 		}
 
-		if (optionsGetAmmoOnScreen(g_Vars.currentplayerstats->mpindex)) {
-			gdl = bgunDrawHud(gdl);
+		if (options_get_ammo_on_screen(g_Vars.currentplayerstats->mpindex)) {
+			gdl = bgun_draw_hud(gdl);
 		}
 
 #if VERSION >= VERSION_NTSC_1_0
-		gdl = radarRender(gdl);
-		gdl = hudmsgsRender(gdl);
+		gdl = radar_render(gdl);
+		gdl = hudmsgs_render(gdl);
 #else
-		gdl = hudmsgsRender(gdl);
-		gdl = radarRender(gdl);
+		gdl = hudmsgs_render(gdl);
+		gdl = radar_render(gdl);
 #endif
 
-		gdl = playerDrawStoredFade(gdl);
+		gdl = player_draw_stored_fade(gdl);
 	} else {
-		gdl = bgRenderArtifacts(gdl);
+		gdl = bg_render_artifacts(gdl);
 
 		if (g_Vars.currentplayer->eyespy) {
 			if (g_Vars.currentplayer->eyespy->startuptimer60 < TICKS(50)) {
-				gdl = bviewDrawFisheye(gdl, 0xffffffff, 255, 0, g_Vars.currentplayer->eyespy->startuptimer60, g_Vars.currentplayer->eyespy->hit);
+				gdl = bview_draw_fisheye(gdl, 0xffffffff, 255, 0, g_Vars.currentplayer->eyespy->startuptimer60, g_Vars.currentplayer->eyespy->hit);
 			} else {
 				s32 time = g_Vars.currentplayer->eyespy->camerashuttertime;
 
 				if (time > 0) {
 					if (g_Vars.currentplayer->eyespy->mode == EYESPYMODE_CAMSPY) {
-						gdl = bviewDrawFisheye(gdl, 0xffffffff, 255, time, TICKS(50), g_Vars.currentplayer->eyespy->hit);
+						gdl = bview_draw_fisheye(gdl, 0xffffffff, 255, time, TICKS(50), g_Vars.currentplayer->eyespy->hit);
 					} else {
-						gdl = bviewDrawFisheye(gdl, 0xffffffff, 255, 0, TICKS(50), g_Vars.currentplayer->eyespy->hit);
+						gdl = bview_draw_fisheye(gdl, 0xffffffff, 255, 0, TICKS(50), g_Vars.currentplayer->eyespy->hit);
 					}
 
 					g_Vars.currentplayer->eyespy->camerashuttertime -= g_Vars.lvupdate60;
 				} else {
-					gdl = bviewDrawFisheye(gdl, 0xffffffff, 255, 0, TICKS(50), g_Vars.currentplayer->eyespy->hit);
+					gdl = bview_draw_fisheye(gdl, 0xffffffff, 255, 0, TICKS(50), g_Vars.currentplayer->eyespy->hit);
 				}
 			}
 
-			gdl = bviewDrawEyespyMetrics(gdl);
+			gdl = bview_draw_eyespy_metrics(gdl);
 		}
 
 		if (g_Vars.currentplayer->mpmenuon) {
-			s32 a = viGetViewLeft();
-			s32 b = viGetViewTop();
-			s32 c = viGetViewLeft() + viGetViewWidth();
-			s32 d = viGetViewTop() + viGetViewHeight();
+			s32 a = vi_get_view_left();
+			s32 b = vi_get_view_top();
+			s32 c = vi_get_view_left() + vi_get_view_width();
+			s32 d = vi_get_view_top() + vi_get_view_height();
 
 			gdl = text0f153628(gdl);
 			gdl = text0f153a34(gdl, a, b, c, d, 0x000000a0);
 			gdl = text0f153780(gdl);
 		}
 
-		gdl = hudmsgsRender(gdl);
-		gdl = playerDrawStoredFade(gdl);
+		gdl = hudmsgs_render(gdl);
+		gdl = player_draw_stored_fade(gdl);
 	}
 
 	return gdl;
 }
 
-void playerDie(bool force)
+void player_die(bool force)
 {
 	struct chrdata *chr = g_Vars.currentplayer->prop->chr;
 	s32 shooter;
@@ -4955,10 +4955,10 @@ void playerDie(bool force)
 		shooter = g_Vars.currentplayernum;
 	}
 
-	playerDieByShooter(shooter, force);
+	player_die_by_shooter(shooter, force);
 }
 
-void playerDieByShooter(u32 shooter, bool force)
+void player_die_by_shooter(u32 shooter, bool force)
 {
 #if VERSION >= VERSION_NTSC_1_0
 	if (!g_Vars.currentplayer->isdead && (force || !g_Vars.currentplayer->invincible))
@@ -4971,19 +4971,19 @@ void playerDieByShooter(u32 shooter, bool force)
 		func0f0f8120();
 		g_MpPlayerNum = prevplayernum;
 
-		hudmsgsRemoveForDeadPlayer(g_Vars.currentplayernum);
+		hudmsgs_remove_for_dead_player(g_Vars.currentplayernum);
 
 		if (g_Vars.mplayerisrunning) {
-			mpstatsRecordDeath(shooter, g_Vars.currentplayernum);
+			mpstats_record_death(shooter, g_Vars.currentplayernum);
 		}
 
-		chrUncloak(g_Vars.currentplayer->prop->chr, true);
+		chr_uncloak(g_Vars.currentplayer->prop->chr, true);
 
 		if (g_Vars.mplayerisrunning &&
 				(g_Vars.antiplayernum < 0
 				 || g_Vars.currentplayernum != g_Vars.antiplayernum
 				 || shooter != g_Vars.antiplayernum)) {
-			currentPlayerDropAllItems();
+			current_player_drop_all_items();
 		}
 
 		g_Vars.currentplayer->isdead = true;
@@ -5002,18 +5002,18 @@ void playerDieByShooter(u32 shooter, bool force)
 			g_Vars.currentplayer->bondtankexplode = true;
 		}
 
-		bmoveSetMode(MOVEMODE_WALK);
-		bgunHandlePlayerDead();
+		bmove_set_mode(MOVEMODE_WALK);
+		bgun_handle_player_dead();
 
-		if (playerGetMissionTime() - g_Vars.currentplayer->lifestarttime60 < g_Vars.currentplayerstats->shortestlife) {
-			g_Vars.currentplayerstats->shortestlife = playerGetMissionTime() - g_Vars.currentplayer->lifestarttime60;
+		if (player_get_mission_time() - g_Vars.currentplayer->lifestarttime60 < g_Vars.currentplayerstats->shortestlife) {
+			g_Vars.currentplayerstats->shortestlife = player_get_mission_time() - g_Vars.currentplayer->lifestarttime60;
 		}
 
-		g_Vars.currentplayer->lifestarttime60 = playerGetMissionTime();
+		g_Vars.currentplayer->lifestarttime60 = player_get_mission_time();
 	}
 }
 
-void playerCheckIfShotInBack(s32 attackerplayernum, f32 x, f32 z)
+void player_check_if_shot_in_back(s32 attackerplayernum, f32 x, f32 z)
 {
 	if (g_Vars.normmplayerisrunning) {
 		s32 victimplayernum = g_Vars.currentplayernum;
@@ -5036,7 +5036,7 @@ void playerCheckIfShotInBack(s32 attackerplayernum, f32 x, f32 z)
  *
  * A return value of 0 means zero height, while 1 means full expanded height.
  */
-f32 playerGetHealthBarHeightFrac(void)
+f32 player_get_health_bar_height_frac(void)
 {
 	f32 done;
 	f32 total;
@@ -5057,32 +5057,32 @@ f32 playerGetHealthBarHeightFrac(void)
 	return 1;
 }
 
-bool playerIsHealthVisible(void)
+bool player_is_health_visible(void)
 {
 	return g_Vars.currentplayer->healthshowmode != HEALTHSHOWMODE_HIDDEN;
 }
 
 // Never called
-void playerSetInvincible(bool enable)
+void player_set_invincible(bool enable)
 {
 	if (enable) {
-		cheatActivate(CHEAT_INVINCIBLE);
+		cheat_activate(CHEAT_INVINCIBLE);
 	} else {
-		cheatDeactivate(CHEAT_INVINCIBLE);
+		cheat_deactivate(CHEAT_INVINCIBLE);
 	}
 }
 
-void playerSetBondVisible(bool visible)
+void player_set_bond_visible(bool visible)
 {
 	g_Vars.bondvisible = visible;
 }
 
-void playerSetBondCollisionsEnabled(bool enabled)
+void player_set_bond_collisions_enabled(bool enabled)
 {
 	g_Vars.bondcollisions = enabled;
 }
 
-void playerSetCameraMode(s32 mode)
+void player_set_camera_mode(s32 mode)
 {
 	g_Vars.currentplayer->cameramode = mode;
 }
@@ -5104,7 +5104,7 @@ void player0f0c1840(struct coord *pos, struct coord *up, struct coord *look, str
 		// Remove values from sp54 (room numbers) if that room doesn't contain
 		// the coord, and shuffle the array back when removing values.
 		for (i = 0; sp54[i] != -1; i++) {
-			if (!bgRoomContainsCoord(pos, sp54[i])) {
+			if (!bg_room_contains_coord(pos, sp54[i])) {
 				s32 j;
 
 #if VERSION >= VERSION_NTSC_1_0
@@ -5134,7 +5134,7 @@ void player0f0c1840(struct coord *pos, struct coord *up, struct coord *look, str
 		if (!done) {
 			for (i = 0; sp54[i] != -1; i++) {
 				if ((g_Rooms[sp54[i]].flags & ROOMFLAG_COMPLICATEDPORTALS) == 0) {
-					if (bgTestPosInRoom(pos, sp54[i])) {
+					if (bg_test_pos_in_room(pos, sp54[i])) {
 						playerSetCamPropertiesWithRoom(pos, up, look, sp54[i]);
 						done = true;
 						break;
@@ -5147,7 +5147,7 @@ void player0f0c1840(struct coord *pos, struct coord *up, struct coord *look, str
 		if (!done) {
 			for (i = 0; sp54[i] != -1; i++) {
 				if (g_Rooms[sp54[i]].flags & ROOMFLAG_COMPLICATEDPORTALS) {
-					if (bgTestPosInRoom(pos, sp54[i])) {
+					if (bg_test_pos_in_room(pos, sp54[i])) {
 						playerSetCamPropertiesWithRoom(pos, up, look, sp54[i]);
 						done = true;
 						break;
@@ -5158,10 +5158,10 @@ void player0f0c1840(struct coord *pos, struct coord *up, struct coord *look, str
 	}
 
 	if (!done) {
-		bgFindRoomsByPos(pos, inrooms, aboverooms, 20, &bestroom);
+		bg_find_rooms_by_pos(pos, inrooms, aboverooms, 20, &bestroom);
 
 		if (inrooms[0] != -1) {
-			tmp = room = cdFindFloorRoomAtPos(pos, inrooms);
+			tmp = room = cd_find_floor_room_at_pos(pos, inrooms);
 
 			if (room > 0) {
 				playerSetCamPropertiesWithRoom(pos, up, look, tmp);
@@ -5169,7 +5169,7 @@ void player0f0c1840(struct coord *pos, struct coord *up, struct coord *look, str
 				playerSetCamPropertiesWithRoom(pos, up, look, inrooms[0]);
 			}
 		} else if (aboverooms[0] != -1) {
-			tmp = room = cdFindFloorRoomAtPos(pos, aboverooms);
+			tmp = room = cd_find_floor_room_at_pos(pos, aboverooms);
 
 			if (room > 0) {
 				playerSetCamPropertiesWithoutRoom(pos, up, look, tmp);
@@ -5211,16 +5211,16 @@ void playerSetCamPropertiesWithRoom(struct coord *pos, struct coord *up, struct 
 	g_Vars.currentplayer->memcampos.z = pos->z;
 	g_Vars.currentplayer->memcamroom = room;
 
-	playerSetCamProperties(pos, up, look, room);
+	player_set_cam_properties(pos, up, look, room);
 }
 
 void playerSetCamPropertiesWithoutRoom(struct coord *pos, struct coord *up, struct coord *look, s32 room)
 {
-	playerClearMemCamRoom();
-	playerSetCamProperties(pos, up, look, room);
+	player_clear_mem_cam_room();
+	player_set_cam_properties(pos, up, look, room);
 }
 
-void playerSetCamProperties(struct coord *pos, struct coord *up, struct coord *look, s32 room)
+void player_set_cam_properties(struct coord *pos, struct coord *up, struct coord *look, s32 room)
 {
 	struct player *player = g_Vars.currentplayer;
 
@@ -5236,46 +5236,46 @@ void playerSetCamProperties(struct coord *pos, struct coord *up, struct coord *l
 	player->cam_room = room;
 }
 
-void playerClearMemCamRoom(void)
+void player_clear_mem_cam_room(void)
 {
 	g_Vars.currentplayer->memcamroom = -1;
 }
 
-void playersClearMemCamRoom(void)
+void players_clear_mem_cam_room(void)
 {
 	s32 prevplayernum = g_Vars.currentplayernum;
 	s32 i;
 
 	for (i = 0; i < PLAYERCOUNT(); i++) {
-		setCurrentPlayerNum(i);
-		playerClearMemCamRoom();
+		set_current_player_num(i);
+		player_clear_mem_cam_room();
 	}
 
-	setCurrentPlayerNum(prevplayernum);
+	set_current_player_num(prevplayernum);
 }
 
-void playerSetPerimEnabled(struct prop *prop, bool enable)
+void player_set_perim_enabled(struct prop *prop, bool enable)
 {
-	u32 playernum = playermgrGetPlayerNumByProp(prop);
+	u32 playernum = playermgr_get_player_num_by_prop(prop);
 
 	if (g_Vars.players[playernum]->haschrbody) {
-		chrSetPerimEnabled(prop->chr, enable);
+		chr_set_perim_enabled(prop->chr, enable);
 	}
 
 	if (g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK) {
 		if (g_Vars.currentplayer->unk1af0) {
-			objSetPerimEnabled(g_Vars.currentplayer->unk1af0, enable);
+			obj_set_perim_enabled(g_Vars.currentplayer->unk1af0, enable);
 		}
 	} else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_BIKE) {
-		objSetPerimEnabled(g_Vars.currentplayer->hoverbike, enable);
+		obj_set_perim_enabled(g_Vars.currentplayer->hoverbike, enable);
 	}
 
 	g_Vars.players[playernum]->bondperimenabled = enable;
 }
 
-bool playerUpdateGeometry(struct prop *prop, u8 **start, u8 **end)
+bool player_update_geometry(struct prop *prop, u8 **start, u8 **end)
 {
-	s32 playernum = playermgrGetPlayerNumByProp(prop);
+	s32 playernum = playermgr_get_player_num_by_prop(prop);
 
 	if (g_Vars.players[playernum]->bondperimenabled
 			&& (!g_Vars.mplayerisrunning || !g_Vars.players[playernum]->isdead)) {
@@ -5299,7 +5299,7 @@ bool playerUpdateGeometry(struct prop *prop, u8 **start, u8 **end)
 	return false;
 }
 
-void playerUpdatePerimInfo(void)
+void player_update_perim_info(void)
 {
 	g_Vars.currentplayer->periminfo.header.type = GEOTYPE_CYL;
 	g_Vars.currentplayer->periminfo.header.flags = GEOFLAG_WALL | GEOFLAG_BLOCK_SHOOT;
@@ -5332,9 +5332,9 @@ void playerUpdatePerimInfo(void)
  * ymax is the top of the head, minus some if crouching, and always at least 80
  * units above the feet.
  */
-void playerGetBbox(struct prop *prop, f32 *radius, f32 *ymax, f32 *ymin)
+void player_get_bbox(struct prop *prop, f32 *radius, f32 *ymax, f32 *ymin)
 {
-	s32 playernum = playermgrGetPlayerNumByProp(prop);
+	s32 playernum = playermgr_get_player_num_by_prop(prop);
 
 	*radius = g_Vars.players[playernum]->bond2.radius;
 	*ymin = g_Vars.currentplayer->vv_manground + 30;
@@ -5352,14 +5352,14 @@ void playerGetBbox(struct prop *prop, f32 *radius, f32 *ymax, f32 *ymin)
 	}
 }
 
-f32 playerGetHealthFrac(void)
+f32 player_get_health_frac(void)
 {
 	return g_Vars.currentplayer->bondhealth;
 }
 
-f32 playerGetShieldFrac(void)
+f32 player_get_shield_frac(void)
 {
-	f32 frac = chrGetShield(g_Vars.currentplayer->prop->chr) * 0.125f;
+	f32 frac = chr_get_shield(g_Vars.currentplayer->prop->chr) * 0.125f;
 
 	if (frac < 0) {
 		frac = 0;
@@ -5372,7 +5372,7 @@ f32 playerGetShieldFrac(void)
 	return frac;
 }
 
-void playerSetShieldFrac(f32 frac)
+void player_set_shield_frac(f32 frac)
 {
 	if (frac < 0) {
 		frac = 0;
@@ -5382,10 +5382,10 @@ void playerSetShieldFrac(f32 frac)
 		frac = 1;
 	}
 
-	chrSetShield(g_Vars.currentplayer->prop->chr, frac * 8);
+	chr_set_shield(g_Vars.currentplayer->prop->chr, frac * 8);
 }
 
-s32 playerGetMissionTime(void)
+s32 player_get_mission_time(void)
 {
 #if PAL
 	return g_Vars.currentplayer->bondviewlevtime60 * 60 / 50;
@@ -5394,29 +5394,29 @@ s32 playerGetMissionTime(void)
 #endif
 }
 
-s32 playerTickBeams(struct prop *prop)
+s32 player_tick_beams(struct prop *prop)
 {
-	beamTick(&g_Vars.players[playermgrGetPlayerNumByProp(prop)]->hands[0].beam);
-	beamTick(&g_Vars.players[playermgrGetPlayerNumByProp(prop)]->hands[1].beam);
+	beam_tick(&g_Vars.players[playermgr_get_player_num_by_prop(prop)]->hands[0].beam);
+	beam_tick(&g_Vars.players[playermgr_get_player_num_by_prop(prop)]->hands[1].beam);
 
 	if (prop->chr && g_Vars.mplayerisrunning) {
 		struct chrdata *chr = prop->chr;
 
 		if (chr->fireslots[0] >= 0) {
-			beamTick(&g_Fireslots[chr->fireslots[0]].beam);
+			beam_tick(&g_Fireslots[chr->fireslots[0]].beam);
 		}
 
 		if (chr->fireslots[1] >= 0) {
-			beamTick(&g_Fireslots[chr->fireslots[1]].beam);
+			beam_tick(&g_Fireslots[chr->fireslots[1]].beam);
 		}
 	}
 
 	return 0;
 }
 
-s32 playerTickThirdPerson(struct prop *prop)
+s32 player_tick_third_person(struct prop *prop)
 {
-	s32 playernum = playermgrGetPlayerNumByProp(prop);
+	s32 playernum = playermgr_get_player_num_by_prop(prop);
 	struct player *player = g_Vars.players[playernum];
 	struct chrdata *chr = prop->chr;
 	s32 i;
@@ -5446,7 +5446,7 @@ s32 playerTickThirdPerson(struct prop *prop)
 			chr->chrflags |= CHRCFLAG_FORCETOGROUND;
 
 			player->bondperimenabled = false;
-			tickop1 = chrTick(prop);
+			tickop1 = chr_tick(prop);
 			player->bondperimenabled = true;
 
 			player->vv_ground = chr->ground;
@@ -5461,24 +5461,24 @@ s32 playerTickThirdPerson(struct prop *prop)
 					spe8 = player->model00d4->matrices;
 				}
 
-				mtx00015be4(camGetProjectionMtxF(), spe8, &spa8);
+				mtx00015be4(cam_get_projection_mtxf(), spe8, &spa8);
 
 				sp9c.x = spa8.m[3][0] + spa8.m[1][0] * 7;
 				sp9c.y = spa8.m[3][1] + spa8.m[1][1] * 7;
 				sp9c.z = spa8.m[3][2] + spa8.m[1][2] * 7;
 
-				player->vv_theta = (M_BADTAU - chrGetInverseTheta(chr)) * 360.0f / M_BADTAU;
+				player->vv_theta = (M_BADTAU - chr_get_inverse_theta(chr)) * 360.0f / M_BADTAU;
 				player->vv_verta = 0;
 			} else {
 				sp9c.x = player->prop->pos.x;
 				sp9c.y = player->prop->pos.y;
 				sp9c.z = player->prop->pos.z;
 
-				player->vv_theta = (M_BADTAU - chrGetInverseTheta(chr)) * 360.0f / M_BADTAU;
+				player->vv_theta = (M_BADTAU - chr_get_inverse_theta(chr)) * 360.0f / M_BADTAU;
 				player->vv_verta = 0;
 			}
 
-			bmoveUpdateVerta();
+			bmove_update_verta();
 			bmove0f0cc19c(&sp9c);
 
 			return tickop1;
@@ -5493,13 +5493,13 @@ s32 playerTickThirdPerson(struct prop *prop)
 		chr->actiontype = ACT_BONDMULTI;
 
 		if ((chr->hidden & CHRHFLAG_00000800) == 0) {
-			leftprop = chrGetHeldProp(chr, HAND_LEFT);
-			rightprop = chrGetHeldProp(chr, HAND_RIGHT);
-			animnum = modelGetAnimNum(chr->model);
+			leftprop = chr_get_held_prop(chr, HAND_LEFT);
+			rightprop = chr_get_held_prop(chr, HAND_RIGHT);
+			animnum = model_get_anim_num(chr->model);
 
-			playerChooseThirdPersonAnimation(chr, bmoveGetCrouchPosByPlayer(playernum), player->speedsideways, player->speedforwards, player->speedtheta, &player->angleoffset, &chr->act_bondmulti.animcfg);
+			player_choose_third_person_animation(chr, bmove_get_crouch_pos_by_player(playernum), player->speedsideways, player->speedforwards, player->speedtheta, &player->angleoffset, &chr->act_bondmulti.animcfg);
 
-			if (chrIsDead(chr)) {
+			if (chr_is_dead(chr)) {
 				shootrotx = 0;
 				shootroty = 0;
 			} else {
@@ -5507,10 +5507,10 @@ s32 playerTickThirdPerson(struct prop *prop)
 				shootroty = player->shootroty;
 			}
 
-			if (modelGetAnimNum(chr->model) == animnum) {
+			if (model_get_anim_num(chr->model) == animnum) {
 				if (chr->act_bondmulti.animcfg) {
 					chr->hidden2 &= ~CHRH2FLAG_AUTOANIM;
-					chrCalculateAimEndProperties(chr, chr->act_bondmulti.animcfg, leftprop != NULL, rightprop != NULL, shootrotx);
+					chr_calculate_aim_end_properties(chr, chr->act_bondmulti.animcfg, leftprop != NULL, rightprop != NULL, shootrotx);
 				} else {
 					chr->hidden2 |= CHRH2FLAG_AUTOANIM;
 					chr->aimendback = shootrotx;
@@ -5522,20 +5522,20 @@ s32 playerTickThirdPerson(struct prop *prop)
 			chr->aimendsideback = shootroty;
 			chr->aimendcount = 10;
 
-			chrSetFiring(chr, HAND_RIGHT, player->hands[HAND_RIGHT].flashon);
-			chrSetFiring(chr, HAND_LEFT, player->hands[HAND_LEFT].flashon);
+			chr_set_firing(chr, HAND_RIGHT, player->hands[HAND_RIGHT].flashon);
+			chr_set_firing(chr, HAND_LEFT, player->hands[HAND_LEFT].flashon);
 		}
 
 		sp80.x = prop->pos.x;
 		sp80.y = prop->pos.y;
 		sp80.z = prop->pos.z;
 
-		modelGetRootPosition(chr->model, &sp8c);
+		model_get_root_position(chr->model, &sp8c);
 
 		sp8c.x = prop->pos.x;
 		sp8c.z = prop->pos.z;
 
-		modelSetRootPosition(chr->model, &sp8c);
+		model_set_root_position(chr->model, &sp8c);
 
 		angle = (360.0f - player->vv_theta) * 0.017450513318181f - player->angleoffset;
 
@@ -5545,11 +5545,11 @@ s32 playerTickThirdPerson(struct prop *prop)
 			angle += M_BADTAU;
 		}
 
-		chrSetLookAngle(chr, angle);
+		chr_set_look_angle(chr, angle);
 
 		chr->chrflags |= CHRHFLAG_DROPPINGITEM;
 
-		tickop2 = chrTick(prop);
+		tickop2 = chr_tick(prop);
 
 		prop->pos.x = sp80.x;
 		prop->pos.y = sp80.y;
@@ -5557,7 +5557,7 @@ s32 playerTickThirdPerson(struct prop *prop)
 
 		if ((chr->hidden & CHRHFLAG_00000800) == 0) {
 			for (i = 0; i < 2; i++) {
-				if (chrGetGunPos(chr, i, &player->chrmuzzlelastpos[i])) {
+				if (chr_get_gun_pos(chr, i, &player->chrmuzzlelastpos[i])) {
 					player->chrmuzzlelast[i] = g_Vars.lvframenum;
 				} else if (player->chrmuzzlelast[i] < g_Vars.lvframenum - 1) {
 					player->chrmuzzlelastpos[i].x = player->hands[i].muzzlepos.x;
@@ -5573,16 +5573,16 @@ s32 playerTickThirdPerson(struct prop *prop)
 	}
 
 	if (PLAYERCOUNT() == 1) {
-		chrUpdateCloak(chr);
+		chr_update_cloak(chr);
 	}
 
 	if (player->haschrbody && chr->model) {
-		modelGetRootPosition(chr->model, &sp5c);
+		model_get_root_position(chr->model, &sp5c);
 
 		sp5c.x = prop->pos.x;
 		sp5c.z = prop->pos.z;
 
-		modelSetRootPosition(chr->model, &sp5c);
+		model_set_root_position(chr->model, &sp5c);
 	}
 
 	chr->ground = player->vv_ground;
@@ -5591,11 +5591,11 @@ s32 playerTickThirdPerson(struct prop *prop)
 
 	if (g_Vars.mplayerisrunning) {
 		if (chr->weapons_held[0] && (chr->weapons_held[0]->obj->hidden & OBJHFLAG_DELETING)) {
-			objFree(chr->weapons_held[0]->obj, true, false);
+			obj_free(chr->weapons_held[0]->obj, true, false);
 		}
 
 		if (chr->weapons_held[1] && (chr->weapons_held[1]->obj->hidden & OBJHFLAG_DELETING)) {
-			objFree(chr->weapons_held[1]->obj, true, false);
+			obj_free(chr->weapons_held[1]->obj, true, false);
 		}
 	}
 
@@ -5611,10 +5611,10 @@ s32 playerTickThirdPerson(struct prop *prop)
  *
  * Despite the function name, this is also used for bots.
  */
-void playerChooseThirdPersonAnimation(struct chrdata *chr, s32 crouchpos, f32 speedsideways, f32 speedforwards, f32 speedtheta, f32 *angleoffset, struct attackanimconfig **animcfgptr)
+void player_choose_third_person_animation(struct chrdata *chr, s32 crouchpos, f32 speedsideways, f32 speedforwards, f32 speedtheta, f32 *angleoffset, struct attackanimconfig **animcfgptr)
 {
-	struct prop *leftprop = chrGetHeldProp(chr, HAND_LEFT);
-	struct prop *rightprop = chrGetHeldProp(chr, HAND_RIGHT);
+	struct prop *leftprop = chr_get_held_prop(chr, HAND_LEFT);
+	struct prop *rightprop = chr_get_held_prop(chr, HAND_RIGHT);
 	struct weaponobj *leftgun = NULL;
 	struct weaponobj *rightgun = NULL;
 	s16 animnum = 0;
@@ -5640,9 +5640,9 @@ void playerChooseThirdPersonAnimation(struct chrdata *chr, s32 crouchpos, f32 sp
 		rightgun = rightprop->weapon;
 	}
 
-	prevanimnum = modelGetAnimNum(chr->model);
+	prevanimnum = model_get_anim_num(chr->model);
 
-	if (chrIsDead(chr)) {
+	if (chr_is_dead(chr)) {
 		// Choose a death animation
 		bool found = false;
 
@@ -5666,15 +5666,15 @@ void playerChooseThirdPersonAnimation(struct chrdata *chr, s32 crouchpos, f32 sp
 		struct prop *chrprop = chr->prop;
 
 		if (chrprop->type == PROPTYPE_PLAYER
-				&& g_Vars.players[playermgrGetPlayerNumByProp(chrprop)]->bondmovemode == MOVEMODE_BIKE) {
+				&& g_Vars.players[playermgr_get_player_num_by_prop(chrprop)]->bondmovemode == MOVEMODE_BIKE) {
 			// Player on a hoverbike
 			if (leftprop && rightprop) {
 				wieldmode = WIELDMODE_DUALGUNS;
 			} else if (!leftprop && !rightprop) {
 				wieldmode = WIELDMODE_UNARMED;
-			} else if (leftgun && weaponHasFlag(leftgun->weaponnum, WEAPONFLAG_ONEHANDED)) {
+			} else if (leftgun && weapon_has_flag(leftgun->weaponnum, WEAPONFLAG_ONEHANDED)) {
 				wieldmode = WIELDMODE_PISTOL;
-			} else if (rightgun && weaponHasFlag(rightgun->weaponnum, WEAPONFLAG_ONEHANDED)) {
+			} else if (rightgun && weapon_has_flag(rightgun->weaponnum, WEAPONFLAG_ONEHANDED)) {
 				wieldmode = WIELDMODE_PISTOL;
 			} else {
 				wieldmode = WIELDMODE_HEAVY;
@@ -5698,13 +5698,13 @@ void playerChooseThirdPersonAnimation(struct chrdata *chr, s32 crouchpos, f32 sp
 				wieldmode = WIELDMODE_DUALGUNS;
 			} else if (!leftprop && !rightprop) {
 				wieldmode = WIELDMODE_UNARMED;
-			} else if (leftgun && !weaponHasFlag(leftgun->weaponnum, WEAPONFLAG_AICANUSE)) {
+			} else if (leftgun && !weapon_has_flag(leftgun->weaponnum, WEAPONFLAG_AICANUSE)) {
 				wieldmode = WIELDMODE_UNARMED;
-			} else if (rightgun && !weaponHasFlag(rightgun->weaponnum, WEAPONFLAG_AICANUSE)) {
+			} else if (rightgun && !weapon_has_flag(rightgun->weaponnum, WEAPONFLAG_AICANUSE)) {
 				wieldmode = WIELDMODE_UNARMED;
-			} else if (leftgun && weaponHasFlag(leftgun->weaponnum, WEAPONFLAG_ONEHANDED)) {
+			} else if (leftgun && weapon_has_flag(leftgun->weaponnum, WEAPONFLAG_ONEHANDED)) {
 				wieldmode = WIELDMODE_PISTOL;
-			} else if (rightgun && weaponHasFlag(rightgun->weaponnum, WEAPONFLAG_ONEHANDED)) {
+			} else if (rightgun && weapon_has_flag(rightgun->weaponnum, WEAPONFLAG_ONEHANDED)) {
 				wieldmode = WIELDMODE_PISTOL;
 			} else {
 				wieldmode = WIELDMODE_HEAVY;
@@ -5755,7 +5755,7 @@ void playerChooseThirdPersonAnimation(struct chrdata *chr, s32 crouchpos, f32 sp
 					}
 				} else if (turnspeed < 0.4f
 						|| (chr->prop->type == PROPTYPE_PLAYER
-							&& g_Vars.players[playermgrGetPlayerNumByProp(chr->prop)]->headanim == HEADANIM_RESTING)) {
+							&& g_Vars.players[playermgr_get_player_num_by_prop(chr->prop)]->headanim == HEADANIM_RESTING)) {
 					turnmode = TURNMODE_STAND_SOFTTURN;
 					speed = 2.0f * turnspeed;
 
@@ -5828,35 +5828,35 @@ void playerChooseThirdPersonAnimation(struct chrdata *chr, s32 crouchpos, f32 sp
 
 	if (reconfigure) {
 		if (chr->model->anim->animnum2 == 0) {
-			modelSetAnimation(chr->model, animnum, false, startframe >= 0 ? startframe : 0, speed, 16);
+			model_set_animation(chr->model, animnum, false, startframe >= 0 ? startframe : 0, speed, 16);
 
 			if (startframe >= 0) {
-				modelSetAnimLooping(chr->model, startframe, 16);
+				model_set_anim_looping(chr->model, startframe, 16);
 			}
 
 			if (endframe >= 0) {
-				modelSetAnimEndFrame(chr->model, endframe);
+				model_set_anim_end_frame(chr->model, endframe);
 			}
 		}
 	} else {
-		if (speed != modelGetAnimSpeed(chr->model)) {
-			modelSetAnimSpeed(chr->model, speed, 1);
+		if (speed != model_get_anim_speed(chr->model)) {
+			model_set_anim_speed(chr->model, speed, 1);
 		}
 	}
 
 	*animcfgptr = animcfg;
 }
 
-Gfx *playerRender(struct prop *prop, Gfx *gdl, bool xlupass)
+Gfx *player_render(struct prop *prop, Gfx *gdl, bool xlupass)
 {
-	if (g_Vars.players[playermgrGetPlayerNumByProp(prop)]->haschrbody) {
-		gdl = chrRender(prop, gdl, xlupass);
+	if (g_Vars.players[playermgr_get_player_num_by_prop(prop)]->haschrbody) {
+		gdl = chr_render(prop, gdl, xlupass);
 	}
 
 	return gdl;
 }
 
-Gfx *playerLoadMatrix(Gfx *gdl)
+Gfx *player_load_matrix(Gfx *gdl)
 {
 	gSPMatrix(gdl++, g_Vars.currentplayer->mtxl005c, G_MTX_LOAD);
 	return gdl;
@@ -5869,12 +5869,12 @@ void player0f0c3320(Mtxf *matrices, s32 count)
 	s32 j;
 
 	for (i = 0, j = 0; i < count; i++, j += sizeof(Mtxf)) {
-		mtx00015be4(camGetProjectionMtxF(), (Mtxf *)((uintptr_t)matrices + j), &sp40);
+		mtx00015be4(cam_get_projection_mtxf(), (Mtxf *)((uintptr_t)matrices + j), &sp40);
 
 		sp40.m[3][0] -= g_Vars.currentplayer->globaldrawworldoffset.x;
 		sp40.m[3][1] -= g_Vars.currentplayer->globaldrawworldoffset.y;
 		sp40.m[3][2] -= g_Vars.currentplayer->globaldrawworldoffset.z;
 
-		mtxF2L(&sp40, matrices + i);
+		mtx_f2l(&sp40, matrices + i);
 	}
 }

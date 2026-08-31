@@ -135,14 +135,14 @@ Gfx *func0f0073ac(Gfx *gdl, struct coord *pos, f32 arg2)
 	spf8[0].y = 0.0f;
 	spf8[0].z = -100.0f;
 
-	mtx4LoadIdentity(&sp104);
-	mtx4LoadTranslation(pos, &sp104);
-	mtx00015be0(camGetWorldToScreenMtxf(), &sp104);
-	mtxF2L(&sp104, modelmtx);
+	mtx4_load_identity(&sp104);
+	mtx4_load_translation(pos, &sp104);
+	mtx00015be0(cam_get_world_to_screen_mtxf(), &sp104);
+	mtx_f2l(&sp104, modelmtx);
 
 	gSPMatrix(gdl++, osVirtualToPhysical(modelmtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 
-	texSelect(&gdl, &g_TexGeneralConfigs[10], 2, 1, 2, true, NULL);
+	tex_select(&gdl, &g_TexGeneralConfigs[10], 2, 1, 2, true, NULL);
 
 	gDPPipeSync(gdl++);
 	gDPSetCycleType(gdl++, G_CYC_1CYCLE);
@@ -164,7 +164,7 @@ Gfx *func0f0073ac(Gfx *gdl, struct coord *pos, f32 arg2)
 	gDPSetRenderMode(gdl++, G_RM_ZB_XLU_SURF, G_RM_ZB_XLU_SURF2);
 	gDPSetTexturePersp(gdl++, G_TP_PERSP);
 
-	texSelect(&gdl, NULL, 2, 1, 2, true, NULL);
+	tex_select(&gdl, NULL, 2, 1, 2, true, NULL);
 
 	gDPSetRenderMode(gdl++, G_RM_ZB_XLU_SURF, G_RM_ZB_XLU_SURF2);
 
@@ -276,7 +276,7 @@ void nbomb0f0093c4(f32 *arg0)
 	guNormalize(&arg0[1], &arg0[2], &arg0[3]);
 }
 
-void nbombReset(struct nbomb *nbomb)
+void nbomb_reset(struct nbomb *nbomb)
 {
 	nbomb->age240 = 0;
 #if VERSION >= VERSION_PAL_BETA
@@ -292,7 +292,7 @@ void nbombReset(struct nbomb *nbomb)
  * If nbomb->age240 is 311 to 349, return a scaled number between 127 and 0
  * If nbomb->age240 is 350+, return 0
  */
-s32 nbombCalculateAlpha(struct nbomb *nbomb)
+s32 nbomb_calculate_alpha(struct nbomb *nbomb)
 {
 	s32 alpha = 127;
 
@@ -312,7 +312,7 @@ s32 nbombCalculateAlpha(struct nbomb *nbomb)
  *
  * The gdl sets up a single vertex but has no colour or triangles.
  */
-Gfx *nbombCreateGdl(void)
+Gfx *nbomb_create_gdl(void)
 {
 	Vtx *vertices;
 #ifdef PLATFORM_64BIT
@@ -332,7 +332,7 @@ Gfx *nbombCreateGdl(void)
 
 	gdl = gdlstart = gfxAllocate(gdlsizes[index]);
 
-	texSelect(&gdl, &g_TexGeneralConfigs[10], 2, 1, 2, 1, NULL);
+	tex_select(&gdl, &g_TexGeneralConfigs[10], 2, 1, 2, 1, NULL);
 
 	gDPPipeSync(gdl++);
 	gDPSetCycleType(gdl++, G_CYC_1CYCLE);
@@ -369,7 +369,7 @@ Gfx *nbombCreateGdl(void)
 
 struct sndstate *g_NbombAudioHandle = NULL;
 
-Gfx *nbombRender(Gfx *gdl, struct nbomb *nbomb, Gfx *subgdl)
+Gfx *nbomb_render(Gfx *gdl, struct nbomb *nbomb, Gfx *subgdl)
 {
 	f32 divider = 2048;
 	Mtxf *mtx;
@@ -382,7 +382,7 @@ Gfx *nbombRender(Gfx *gdl, struct nbomb *nbomb, Gfx *subgdl)
 
 	mtx = gfxAllocateMatrix();
 	var80061644 = 2000.0f;
-	colour = nbombCalculateAlpha(nbomb);
+	colour = nbomb_calculate_alpha(nbomb);
 
 	colours = gfxAllocateColours(2);
 	colours[0].word = PD_BE32(colour);
@@ -394,19 +394,19 @@ Gfx *nbombRender(Gfx *gdl, struct nbomb *nbomb, Gfx *subgdl)
 	sp3c.y = 0;
 	sp3c.z = -100;
 
-	mtx4LoadIdentity(&sp48);
-	mtx4LoadTranslation(&nbomb->pos, &sp48);
+	mtx4_load_identity(&sp48);
+	mtx4_load_translation(&nbomb->pos, &sp48);
 
 	sp3c.x = 0;
 	sp3c.y = nbomb->unk14 / divider * M_TAU;
 	sp3c.z = 0;
 
-	mtx4LoadRotation(&sp3c, &sp88);
+	mtx4_load_rotation(&sp3c, &sp88);
 	mtx00015f04(nbomb->radius / 2000.0f, &sp88);
-	mtx4MultMtx4(&sp48, &sp88, &spc8);
+	mtx4_mult_mtx4(&sp48, &sp88, &spc8);
 
-	mtx00015be0(camGetWorldToScreenMtxf(), &spc8);
-	mtxF2L(&spc8, mtx);
+	mtx00015be0(cam_get_world_to_screen_mtxf(), &spc8);
+	mtx_f2l(&spc8, mtx);
 
 	gSPMatrix(gdl++, osVirtualToPhysical(mtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 
@@ -432,7 +432,7 @@ void func0f0099a4(void)
 	}
 }
 
-void nbombInflictDamage(struct nbomb *nbomb)
+void nbomb_inflict_damage(struct nbomb *nbomb)
 {
 	s32 index = 0;
 	u32 stack;
@@ -470,7 +470,7 @@ void nbombInflictDamage(struct nbomb *nbomb)
 			if (index < 52) {
 				roomnums[index] = i;
 				index++;
-				roomFlashLighting(i, -38, -180);
+				room_flash_lighting(i, -38, -180);
 			}
 		}
 	}
@@ -480,7 +480,7 @@ void nbombInflictDamage(struct nbomb *nbomb)
 	if (1);
 
 	// Iterate props in the affected rooms and damage any chrs
-	roomGetProps(roomnums, propnums, 256);
+	room_get_props(roomnums, propnums, 256);
 
 	propnumptr = propnums;
 
@@ -505,7 +505,7 @@ void nbombInflictDamage(struct nbomb *nbomb)
 						struct coord vector = {0, 0, 0};
 						f32 damage = 0.01f * g_Vars.lvupdate60freal;
 
-						chrDamageByMisc(chr, damage, &vector, &gset, nbomb->ownerprop);
+						chr_damage_by_misc(chr, damage, &vector, &gset, nbomb->ownerprop);
 
 #if VERSION >= VERSION_NTSC_1_0
 						if (chr->actiontype);
@@ -514,7 +514,7 @@ void nbombInflictDamage(struct nbomb *nbomb)
 						chr->chrflags |= CHRCFLAG_TRIGGERSHOTLIST;
 
 						if (chr->hidden & CHRHFLAG_CLOAKED) {
-							chrUncloak(chr, true);
+							chr_uncloak(chr, true);
 						}
 					}
 
@@ -527,7 +527,7 @@ void nbombInflictDamage(struct nbomb *nbomb)
 	}
 }
 
-void nbombTick(struct nbomb *nbomb)
+void nbomb_tick(struct nbomb *nbomb)
 {
 	if (nbomb->age240 >= 0) {
 		s32 age60;
@@ -555,7 +555,7 @@ void nbombTick(struct nbomb *nbomb)
 
 		nbomb->radius *= 500.0f;
 
-		nbombInflictDamage(nbomb);
+		nbomb_inflict_damage(nbomb);
 
 		age60 = nbomb->age240 / 4;
 
@@ -577,7 +577,7 @@ void nbombTick(struct nbomb *nbomb)
 	}
 }
 
-void nbombsTick(void)
+void nbombs_tick(void)
 {
 	s32 i;
 	s32 youngest240 = 20000;
@@ -589,7 +589,7 @@ void nbombsTick(void)
 
 	for (i = 0; i < ARRAYCOUNT(g_Nbombs); i++) {
 		if (g_Vars.lvupdate240 != 0 && g_Nbombs[i].age240 >= 0) {
-			nbombTick(&g_Nbombs[i]);
+			nbomb_tick(&g_Nbombs[i]);
 
 			if (g_Nbombs[i].age240 < youngest240) {
 				youngest240 = g_Nbombs[i].age240;
@@ -604,13 +604,13 @@ void nbombsTick(void)
 	if (youngest240 < TICKS(350)) {
 		if (g_Vars.lvupdate240 != 0) {
 			if (g_NbombAudioHandle == 0) {
-				sndStart(var80095200, SFX_SHIP_HUM, &g_NbombAudioHandle, -1, -1, -1, -1, -1);
+				snd_start(var80095200, SFX_SHIP_HUM, &g_NbombAudioHandle, -1, -1, -1, -1, -1);
 			}
 
 			volume = AL_VOL_FULL;
 
 			if (g_NbombAudioHandle) {
-				f32 speed = menuGetSinOscFrac(20) * 0.02f + 0.4f;
+				f32 speed = menu_get_sin_osc_frac(20) * 0.02f + 0.4f;
 
 				if (youngest240 > TICKS(300)) {
 					volume = (1.0f - (f32)(youngest240 - TICKS(300)) / (PAL ? 41.0f : 50.0f)) * AL_VOL_FULL;
@@ -620,32 +620,32 @@ void nbombsTick(void)
 					volume = 0;
 				}
 
-				audioPostEvent(g_NbombAudioHandle, AL_SNDP_VOL_EVT, volume);
-				audioPostEvent(g_NbombAudioHandle, AL_SNDP_PITCH_EVT, *(s32 *)&speed);
+				sndp_post_event(g_NbombAudioHandle, AL_SNDP_VOL_EVT, volume);
+				sndp_post_event(g_NbombAudioHandle, AL_SNDP_PITCH_EVT, *(s32 *)&speed);
 			}
 		} else {
-			if (g_NbombAudioHandle && sndGetState(g_NbombAudioHandle) != AL_STOPPED) {
-				audioStop(g_NbombAudioHandle);
+			if (g_NbombAudioHandle && sndp_get_state(g_NbombAudioHandle) != AL_STOPPED) {
+				sndp_stop_sound(g_NbombAudioHandle);
 			}
 		}
 	} else {
-		if (g_NbombAudioHandle && sndGetState(g_NbombAudioHandle) != AL_STOPPED) {
-			audioStop(g_NbombAudioHandle);
+		if (g_NbombAudioHandle && sndp_get_state(g_NbombAudioHandle) != AL_STOPPED) {
+			sndp_stop_sound(g_NbombAudioHandle);
 		}
 	}
 
 	if (g_Vars.lvupdate240 == 0) {
 		for (i = 0; i < ARRAYCOUNT(g_Nbombs); i++) {
 			if (g_Nbombs[i].age240 >= 0) {
-				if (g_Nbombs[i].audiohandle20 && sndGetState(g_Nbombs[i].audiohandle20) != AL_STOPPED) {
-					audioStop(g_Nbombs[i].audiohandle20);
+				if (g_Nbombs[i].audiohandle20 && sndp_get_state(g_Nbombs[i].audiohandle20) != AL_STOPPED) {
+					sndp_stop_sound(g_Nbombs[i].audiohandle20);
 #if VERSION < VERSION_NTSC_1_0
 					g_Nbombs[i].audiohandle20 = NULL;
 #endif
 				}
 
-				if (g_Nbombs[i].audiohandle24 && sndGetState(g_Nbombs[i].audiohandle24) != AL_STOPPED) {
-					audioStop(g_Nbombs[i].audiohandle24);
+				if (g_Nbombs[i].audiohandle24 && sndp_get_state(g_Nbombs[i].audiohandle24) != AL_STOPPED) {
+					sndp_stop_sound(g_Nbombs[i].audiohandle24);
 #if VERSION < VERSION_NTSC_1_0
 					g_Nbombs[i].audiohandle24 = NULL;
 #endif
@@ -655,7 +655,7 @@ void nbombsTick(void)
 	}
 }
 
-Gfx *nbombsRender(Gfx *gdl)
+Gfx *nbombs_render(Gfx *gdl)
 {
 	s32 i;
 	Gfx *subgdl = NULL;
@@ -663,17 +663,17 @@ Gfx *nbombsRender(Gfx *gdl)
 	for (i = 0; i < ARRAYCOUNT(g_Nbombs); i++) {
 		if (g_Nbombs[i].age240 >= 0) {
 			if (!subgdl) {
-				subgdl = nbombCreateGdl();
+				subgdl = nbomb_create_gdl();
 			}
 
-			gdl = nbombRender(gdl, &g_Nbombs[i], subgdl);
+			gdl = nbomb_render(gdl, &g_Nbombs[i], subgdl);
 		}
 	}
 
 	return gdl;
 }
 
-void nbombCreateStorm(struct coord *pos, struct prop *ownerprop)
+void nbomb_create_storm(struct coord *pos, struct prop *ownerprop)
 {
 	u32 stack;
 	s32 oldest240;
@@ -702,7 +702,7 @@ void nbombCreateStorm(struct coord *pos, struct prop *ownerprop)
 		}
 	}
 
-	nbombReset(&g_Nbombs[index]);
+	nbomb_reset(&g_Nbombs[index]);
 
 	g_Nbombs[index].pos.x = pos->x;
 	g_Nbombs[index].pos.y = pos->y;
@@ -714,49 +714,49 @@ void nbombCreateStorm(struct coord *pos, struct prop *ownerprop)
 	// Newer versions only play audio if the handles are null,
 	// while ntsc-beta clears the handles then plays them unconditionally.
 	if (g_Nbombs[index].audiohandle20 == NULL) {
-		sndStart(var80095200, SFX_LAUNCH_ROCKET, &g_Nbombs[index].audiohandle20, -1, -1, -1, -1, -1);
+		snd_start(var80095200, SFX_LAUNCH_ROCKET, &g_Nbombs[index].audiohandle20, -1, -1, -1, -1, -1);
 
 		if (g_Nbombs[index].audiohandle20) {
 			union audioparam param;
 			param.f32 = 0.4f;
-			audioPostEvent(g_Nbombs[index].audiohandle20, AL_SNDP_PITCH_EVT, param.s32);
+			sndp_post_event(g_Nbombs[index].audiohandle20, AL_SNDP_PITCH_EVT, param.s32);
 		}
 	}
 
 	if (g_Nbombs[index].audiohandle24 == NULL) {
-		sndStart(var80095200, SFX_LAUNCH_ROCKET, &g_Nbombs[index].audiohandle24, -1, -1, -1, -1, -1);
+		snd_start(var80095200, SFX_LAUNCH_ROCKET, &g_Nbombs[index].audiohandle24, -1, -1, -1, -1, -1);
 
 		if (g_Nbombs[index].audiohandle24) {
 			union audioparam param;
 			param.f32 = 0.4f;
-			audioPostEvent(g_Nbombs[index].audiohandle24, AL_SNDP_PITCH_EVT, param.s32);
+			sndp_post_event(g_Nbombs[index].audiohandle24, AL_SNDP_PITCH_EVT, param.s32);
 		}
 	}
 #else
 	g_Nbombs[index].audiohandle20 = NULL;
 	g_Nbombs[index].audiohandle24 = NULL;
 
-	sndStart(var80095200, SFX_LAUNCH_ROCKET, &g_Nbombs[index].audiohandle20, -1, -1, -1, -1, -1);
+	snd_start(var80095200, SFX_LAUNCH_ROCKET, &g_Nbombs[index].audiohandle20, -1, -1, -1, -1, -1);
 
 	if (g_Nbombs[index].audiohandle20) {
 		union audioparam param;
 		param.f32 = 0.4f;
-		audioPostEvent(g_Nbombs[index].audiohandle20, AL_SNDP_PITCH_EVT, param.s32);
+		sndp_post_event(g_Nbombs[index].audiohandle20, AL_SNDP_PITCH_EVT, param.s32);
 	}
 
-	sndStart(var80095200, SFX_LAUNCH_ROCKET, &g_Nbombs[index].audiohandle24, -1, -1, -1, -1, -1);
+	snd_start(var80095200, SFX_LAUNCH_ROCKET, &g_Nbombs[index].audiohandle24, -1, -1, -1, -1, -1);
 
 	if (g_Nbombs[index].audiohandle24) {
 		union audioparam param;
 		param.f32 = 0.4f;
-		audioPostEvent(g_Nbombs[index].audiohandle24, AL_SNDP_PITCH_EVT, param.s32);
+		sndp_post_event(g_Nbombs[index].audiohandle24, AL_SNDP_PITCH_EVT, param.s32);
 	}
 #endif
 }
 
-bool doorIsOpenOrOpening(s32 tagnum)
+bool door_is_open_or_opening(s32 tagnum)
 {
-	struct defaultobj *obj = objFindByTagId(tagnum);
+	struct defaultobj *obj = obj_find_by_tag_id(tagnum);
 
 	if (obj && obj->prop && obj->type == OBJTYPE_DOOR) {
 		struct doorobj *door = (struct doorobj *)obj;
@@ -778,9 +778,9 @@ bool doorIsOpenOrOpening(s32 tagnum)
 	return false;
 }
 
-f32 gasGetDoorFrac(s32 tagnum)
+f32 gas_get_door_frac(s32 tagnum)
 {
-	struct defaultobj *obj = objFindByTagId(tagnum);
+	struct defaultobj *obj = obj_find_by_tag_id(tagnum);
 
 	if (obj && obj->prop && obj->type == OBJTYPE_DOOR) {
 		struct doorobj *door = (struct doorobj *)obj;
@@ -794,7 +794,7 @@ f32 gasGetDoorFrac(s32 tagnum)
  * Checks if the player is inside an nbomb storm, and if so renders the black
  * storm texture directly over the screen.
  */
-Gfx *nbombRenderOverlay(Gfx *gdl)
+Gfx *nbomb_render_overlay(Gfx *gdl)
 {
 	bool inside = false;
 	struct coord campos;
@@ -824,7 +824,7 @@ Gfx *nbombRenderOverlay(Gfx *gdl)
 			f32 zdiff = campos.f[2] - g_Nbombs[i].pos.f[2];
 
 			if (sqrtf(xdiff * xdiff + ydiff * ydiff + zdiff * zdiff) < g_Nbombs[i].radius) {
-				u32 alpha = nbombCalculateAlpha(&g_Nbombs[i]);
+				u32 alpha = nbomb_calculate_alpha(&g_Nbombs[i]);
 
 				inside = true;
 
@@ -839,10 +839,10 @@ Gfx *nbombRenderOverlay(Gfx *gdl)
 		colours = gfxAllocateColours(1);
 		vertices = gfxAllocateVertices(4);
 
-		viewleft = viGetViewLeft() * 10;
-		viewtop = viGetViewTop() * 10;
-		viewright = (s16) (viGetViewLeft() + viGetViewWidth()) * 10;
-		viewbottom = (s16) (viGetViewTop() + viGetViewHeight()) * 10;
+		viewleft = vi_get_view_left() * 10;
+		viewtop = vi_get_view_top() * 10;
+		viewright = (s16) (vi_get_view_left() + vi_get_view_width()) * 10;
+		viewbottom = (s16) (vi_get_view_top() + vi_get_view_height()) * 10;
 
 		s = (s32) (8.0f * g_20SecIntervalFrac * 128.0f * 32.0f) % 2048;
 		t = (s16) ((s32) (campos.f[1] * 8.0f) % 2048) + (s16) (2.0f * g_20SecIntervalFrac * 128.0f * 32.0f);
@@ -856,7 +856,7 @@ Gfx *nbombRenderOverlay(Gfx *gdl)
 
 		if (1);
 
-		texSelect(&gdl, &g_TexGeneralConfigs[10], 2, 1, 2, true, NULL);
+		tex_select(&gdl, &g_TexGeneralConfigs[10], 2, 1, 2, true, NULL);
 
 		gDPPipeSync(gdl++);
 		gDPSetCycleType(gdl++, G_CYC_1CYCLE);
@@ -913,7 +913,7 @@ Gfx *nbombRenderOverlay(Gfx *gdl)
 	return gdl;
 }
 
-Gfx *gasRender(Gfx *gdl)
+Gfx *gas_render(Gfx *gdl)
 {
 	bool show = false;
 	f32 alphafrac = 1.0f;
@@ -946,7 +946,7 @@ Gfx *gasRender(Gfx *gdl)
 		campos.z = g_Vars.currentplayer->cam_pos.z;
 
 		for (i = 0; i < ARRAYCOUNT(gasrooms); i++) {
-			if (bgRoomContainsCoord(&campos, gasrooms[i])) {
+			if (bg_room_contains_coord(&campos, gasrooms[i])) {
 				show = true;
 			}
 		}
@@ -961,13 +961,13 @@ Gfx *gasRender(Gfx *gdl)
 			if (distance < 1328.0f) {
 				show = true;
 				alphafrac = 1.0f - distance / 1328.0f;
-				intensityfrac = gasGetDoorFrac(0x32);
+				intensityfrac = gas_get_door_frac(0x32);
 			}
 		} else {
-			if (bgRoomContainsCoord(&campos, 0x91)) {
+			if (bg_room_contains_coord(&campos, 0x91)) {
 				// In the small room between the first two doors
-				f32 frac1 = gasGetDoorFrac(0x30);
-				f32 frac2 = gasGetDoorFrac(0x31);
+				f32 frac1 = gas_get_door_frac(0x30);
+				f32 frac2 = gas_get_door_frac(0x31);
 
 				if (frac2 > frac1) {
 					intensityfrac = frac2;
@@ -993,10 +993,10 @@ Gfx *gasRender(Gfx *gdl)
 		if (show) {
 			Col *colours = gfxAllocateColours(1);
 			Vtx *vertices = gfxAllocateVertices(8);
-			s16 viewleft = viGetViewLeft() * 10;
-			s16 viewtop = viGetViewTop() * 10;
-			s16 viewright = (s16) (viGetViewLeft() + viGetViewWidth()) * 10;
-			s16 viewbottom = (s16) (viGetViewTop() + viGetViewHeight()) * 10;
+			s16 viewleft = vi_get_view_left() * 10;
+			s16 viewtop = vi_get_view_top() * 10;
+			s16 viewright = (s16) (vi_get_view_left() + vi_get_view_width()) * 10;
+			s16 viewbottom = (s16) (vi_get_view_top() + vi_get_view_height()) * 10;
 			f32 lookx = g_Vars.currentplayer->cam_look.x;
 			f32 lookz = g_Vars.currentplayer->cam_look.z;
 			f32 camposx = g_Vars.currentplayer->cam_pos.x;
@@ -1014,8 +1014,8 @@ Gfx *gasRender(Gfx *gdl)
 
 			sp78 = atan2f(-lookx, lookz) / M_BADTAU;
 
-			layer2s = ((s32) (2.0f * ((menuGetSinOscFrac(4.0f) - 0.5f) / 6.0f + sp78 + f16 * 1.5f) * 128.0f * 32.0f) % 2048);
-			layer1s = ((s32) (2.0f * ((menuGetCosOscFrac(4.0f) - 0.5f) / -9.0f + sp78 + f16) * 128.0f * 32.0f) % 2048);
+			layer2s = ((s32) (2.0f * ((menu_get_sin_osc_frac(4.0f) - 0.5f) / 6.0f + sp78 + f16 * 1.5f) * 128.0f * 32.0f) % 2048);
+			layer1s = ((s32) (2.0f * ((menu_get_cos_osc_frac(4.0f) - 0.5f) / -9.0f + sp78 + f16) * 128.0f * 32.0f) % 2048);
 
 			layer2t = (s16) ((s32) (campos.y * 8.0f) % 2048) + (s16) (2.0f * g_20SecIntervalFrac * 128.0f * 32.0f);
 			layer1t = (s16) ((s32) (campos.y * 8.0f) % 2048) + (s16) (2.0f * g_20SecIntervalFrac * 64.0f * 32.0f);
@@ -1026,7 +1026,7 @@ Gfx *gasRender(Gfx *gdl)
 
 			if (1);
 
-			texSelect(&gdl, &g_TexGeneralConfigs[6], 4, 1, 2, true, NULL);
+			tex_select(&gdl, &g_TexGeneralConfigs[6], 4, 1, 2, true, NULL);
 
 			gDPPipeSync(gdl++);
 			gDPSetCycleType(gdl++, G_CYC_1CYCLE);

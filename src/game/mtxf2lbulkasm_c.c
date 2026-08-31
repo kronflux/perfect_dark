@@ -5,7 +5,7 @@
 #include "data.h"
 #include "types.h"
 
-void mtxF2LBulk(Mtxf *mtx, s32 count)
+void mtx_f2l_bulk(Mtxf *mtx, s32 count)
 {
 #ifndef GBI_FLOATS
 	do {

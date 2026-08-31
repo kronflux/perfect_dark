@@ -93,7 +93,7 @@ struct sparktype g_SparkTypes[] = {
 
 bool g_SparksAreActive = false;
 
-void sparkCreate(struct coord *pos, struct sparktype *type)
+void spark_create(struct coord *pos, struct sparktype *type)
 {
 	f32 tmp;
 	f32 maxspeed = 0.0f;
@@ -158,7 +158,7 @@ void sparkCreate(struct coord *pos, struct sparktype *type)
  * This function handles an out-of-memory situation when creating a spark, by
  * shrinking whichever spark group was about to be overwritten.
  */
-void sparkgroupEnsureFreeSparkSlot(struct sparkgroup *group)
+void sparkgroup_ensure_free_spark_slot(struct sparkgroup *group)
 {
 	s32 i;
 
@@ -174,7 +174,7 @@ void sparkgroupEnsureFreeSparkSlot(struct sparkgroup *group)
 	}
 }
 
-void sparksCreate(s32 room, struct prop *prop, struct coord *pos, struct coord *arg3, struct coord *arg4, s32 typenum)
+void sparks_create(s32 room, struct prop *prop, struct coord *pos, struct coord *arg3, struct coord *arg4, s32 typenum)
 {
 	struct sparkgroup *group = &g_SparkGroups[g_NextSparkGroupIndex];
 	struct sparktype *type = &g_SparkTypes[typenum];
@@ -186,7 +186,7 @@ void sparksCreate(s32 room, struct prop *prop, struct coord *pos, struct coord *
 		u32 colours[3];
 		u32 stack;
 
-		chrGetBloodColour(chr->bodynum, NULL, colours);
+		chr_get_blood_colour(chr->bodynum, NULL, colours);
 
 		if (typenum == SPARKTYPE_BLOOD) {
 			type->unk1c = colours[0];
@@ -271,27 +271,27 @@ void sparksCreate(s32 room, struct prop *prop, struct coord *pos, struct coord *
 	group->prop = prop;
 
 	for (i = 0; i < type->numsparks; i++) {
-		sparkgroupEnsureFreeSparkSlot(group);
-		sparkCreate(&grouppos, type);
+		sparkgroup_ensure_free_spark_slot(group);
+		spark_create(&grouppos, type);
 	}
 
 	switch (typenum) {
 	case SPARKTYPE_DEFAULT:
-		roomFlashLighting(group->room, 24, 32);
+		room_flash_lighting(group->room, 24, 32);
 		break;
 	case SPARKTYPE_ENVIRONMENTAL1:
 		if (g_Vars.stagenum != STAGE_CRASHSITE) {
-			roomFlashLighting(group->room, 32, 128);
+			room_flash_lighting(group->room, 32, 128);
 		}
 		break;
 	case SPARKTYPE_ENVIRONMENTAL2:
 		if (g_Vars.stagenum != STAGE_CRASHSITE) {
-			roomFlashLighting(group->room, 64, 128);
+			room_flash_lighting(group->room, 64, 128);
 		}
 		break;
 	case SPARKTYPE_ENVIRONMENTAL3:
 		if (g_Vars.stagenum != STAGE_CRASHSITE) {
-			roomFlashLighting(group->room, 200, 255);
+			room_flash_lighting(group->room, 200, 255);
 		}
 		break;
 	}
@@ -299,7 +299,7 @@ void sparksCreate(s32 room, struct prop *prop, struct coord *pos, struct coord *
 	g_SparksAreActive = true;
 }
 
-Gfx *sparksRender(Gfx *gdl)
+Gfx *sparks_render(Gfx *gdl)
 {
 	struct sparkgroup *group;
 	s32 axis;
@@ -331,7 +331,7 @@ Gfx *sparksRender(Gfx *gdl)
 			axis = ABS(g_Vars.currentplayer->cam_look.z) > ABS(g_Vars.currentplayer->cam_look.x) ? 2 : 0;
 		}
 
-		texSelect(&gdl, &g_TexSparkConfigs[0], 4, 0, 2, 1, NULL);
+		tex_select(&gdl, &g_TexSparkConfigs[0], 4, 0, 2, 1, NULL);
 
 		gDPSetCycleType(gdl++, G_CYC_1CYCLE);
 		gDPSetColorDither(gdl++, G_CD_DISABLE);
@@ -424,23 +424,23 @@ Gfx *sparksRender(Gfx *gdl)
 					gSPColor(gdl++, osVirtualToPhysical(colours), 2);
 
 					sp120 *= 0.2f;
-					sp120 *= viGetFovY() / 60.0f;
+					sp120 *= vi_get_fov_y() / 60.0f;
 #ifndef PLATFORM_N64 // adjust scale for port
 					sp120 *= (float)(SCREEN_WIDTH_LO * SCREEN_HEIGHT_LO) / (float)(SCREEN_WIDTH_HI * SCREEN_HEIGHT_HI);
 #endif
 
-					mtx4LoadIdentity(&spd4);
+					mtx4_load_identity(&spd4);
 
 					spd4.m[0][0] = 0.05f;
 					spd4.m[1][1] = 0.05f;
 					spd4.m[2][2] = 0.05f;
 					spd4.m[3][3] = 0.05f;
 
-					mtx4SetTranslation(&group->pos, &spd4);
-					mtx00015be0(camGetWorldToScreenMtxf(), &spd4);
+					mtx4_set_translation(&group->pos, &spd4);
+					mtx00015be0(cam_get_world_to_screen_mtxf(), &spd4);
 
 					mtx = gfxAllocateMatrix();
-					mtxF2L(&spd4, mtx);
+					mtx_f2l(&spd4, mtx);
 
 					gSPMatrix(gdl++, osVirtualToPhysical(mtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 

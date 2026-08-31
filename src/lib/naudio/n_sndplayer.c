@@ -21,9 +21,9 @@ s32 var8005f138 = 0;
 void (*g_SndpAddRefCallback)(ALSound *) = NULL;
 void (*g_SndpRemoveRefCallback)(ALSound *) = NULL;
 
-void sndpSetAddRefCallback(void *fn);
-void sndpSetRemoveRefCallback(void *fn);
-void sndpFreeState(struct sndstate *state);
+void sndp_set_addref_callback(void *fn);
+void sndp_set_removeref_callback(void *fn);
+void sndp_free_state2(struct sndstate *state);
 void func00033bc0(struct sndstate *state);
 
 void n_alSndpNew(ALSndpConfig *config)
@@ -51,8 +51,8 @@ void n_alSndpNew(ALSndpConfig *config)
 		alLink(&sndstate[i].node, &sndstate[i - 1].node);
 	}
 
-	sndpSetAddRefCallback(NULL);
-	sndpSetRemoveRefCallback(NULL);
+	sndp_set_addref_callback(NULL);
+	sndp_set_removeref_callback(NULL);
 
 	var8009c334 = alHeapAlloc(config->heap, sizeof(s16), config->unk10);
 
@@ -144,7 +144,7 @@ void _n_handleEvent(N_ALSndpEvent *event)
 		sound = state->sound;
 
 		if (sound == NULL) {
-			sndpCountStates(&numfree, &numalloced);
+			sndp_count_states(&numfree, &numalloced);
 			return;
 		}
 
@@ -472,7 +472,7 @@ void func00033090(struct sndstate *state)
 		n_alSynFreeVoice(&state->voice);
 	}
 
-	sndpFreeState(state);
+	sndp_free_state2(state);
 
 	// @todo: Remove cast
 	_removeEvents(&g_SndPlayer->evtq, (N_ALSoundState *)state, 0xffff);
@@ -524,7 +524,7 @@ void _removeEvents(ALEventQueue *evtq, N_ALSoundState *state, u16 typemask)
 	osSetIntMask(mask);
 }
 
-u16 sndpCountStates(s16 *numfreeptr, s16 *numallocedptr)
+u16 sndp_count_states(s16 *numfreeptr, s16 *numallocedptr)
 {
 	OSIntMask mask = osSetIntMask(1);
 	u16 numalloced;
@@ -546,7 +546,7 @@ u16 sndpCountStates(s16 *numfreeptr, s16 *numallocedptr)
 	return numalloced2;
 }
 
-void sndpSetAddRefCallback(void *fn)
+void sndp_set_addref_callback(void *fn)
 {
 	g_SndpAddRefCallback = fn;
 }
@@ -623,12 +623,12 @@ struct sndstate *func00033390(s32 arg0, ALSound *sound)
 	return state;
 }
 
-void sndpSetRemoveRefCallback(void *fn)
+void sndp_set_removeref_callback(void *fn)
 {
 	g_SndpRemoveRefCallback = fn;
 }
 
-void sndpFreeState(struct sndstate *state)
+void sndp_free_state2(struct sndstate *state)
 {
 	var8005f134--;
 
@@ -671,14 +671,14 @@ void sndpFreeState(struct sndstate *state)
 	}
 }
 
-void sndSetPriority(struct sndstate *state, u8 priority)
+void sndp_set_priority(struct sndstate *state, u8 priority)
 {
 	if (state) {
 		state->priority = (s16)priority;
 	}
 }
 
-s32 sndGetState(struct sndstate *state)
+s32 sndp_get_state(struct sndstate *state)
 {
 	if (state) {
 		return state->state;
@@ -701,13 +701,13 @@ struct sndstate *func00033820(s32 arg0, s16 soundnum, u16 vol, ALPan pan, f32 pi
 	N_ALEvent evt;
 	N_ALEvent evt2;
 
-	if (sndIsDisabled()) {
+	if (snd_is_disabled()) {
 		return NULL;
 	}
 
 	if (soundnum != 0) {
 		do {
-			sound = sndLoadSound(soundnum);
+			sound = snd_load_sound(soundnum);
 			state = func00033390(arg0, sound);
 
 			if (state != NULL) {
@@ -775,7 +775,7 @@ struct sndstate *func00033820(s32 arg0, s16 soundnum, u16 vol, ALPan pan, f32 pi
 	return state2;
 }
 
-void audioStop(struct sndstate *state)
+void sndp_stop_sound(struct sndstate *state)
 {
 	N_ALEvent evt;
 
@@ -900,7 +900,7 @@ void func00033e28(void)
 	func00033c30(SNDSTATEFLAG_01 | SNDSTATEFLAG_02);
 }
 
-void audioPostEvent(struct sndstate *state, s16 type, s32 data)
+void sndp_post_event(struct sndstate *state, s16 type, s32 data)
 {
 	N_ALEvent evt;
 
@@ -921,14 +921,14 @@ u16 func00033ec4(u8 index)
 }
 
 #if VERSION >= VERSION_NTSC_1_0
-struct sndstate *sndpGetHeadState(void)
+struct sndstate *sndp_get_head_state(void)
 {
 	return g_SndpAllocStatesHead;
 }
 #endif
 
 #if VERSION >= VERSION_NTSC_1_0
-ALMicroTime sndpGetCurTime(void)
+ALMicroTime sndp_get_curtime(void)
 {
 	return g_SndPlayer->curTime;
 }
