@@ -9,9 +9,9 @@
 #include "system.h"
 #include "video.h"
 
-#include "../fast3d/gfx_api.h"
-#include "../fast3d/gfx_sdl.h"
-#include "../fast3d/gfx_opengl.h"
+#include "fast3d/gfx_api.h"
+#include "fast3d/gfx_sdl.h"
+#include "fast3d/gfx_opengl.h"
 
 #ifdef PLATFORM_NSWITCH
 #define DEFAULT_VID_WIDTH 1280

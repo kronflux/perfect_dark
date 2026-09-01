@@ -104,7 +104,7 @@ extern OSIntMask __OSGlobalIntMask;	/* global interrupt mask */
 extern void		osInitialize(void);
 extern void		osExit(void);
 /* Kept here, unlike the decomp, which moved this into lib/boot.h behind a
- * VERSION check. The host build implements osGetMemSize in port/src/libultra.c
+ * VERSION check. The host build implements osGetMemSize in src/libultra.c
  * and calls it from translation units that do not include lib/boot.h. */
 extern u32 		osGetMemSize(void);
 

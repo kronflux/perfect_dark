@@ -4,7 +4,7 @@
 
 /* osGetMemSize is declared in PR/os_system.h. The decomp declares it here
  * instead, split s32/u32 by VERSION for matching; the host build has a single
- * u32 implementation in port/src/libultra.c, so the split is omitted. */
+ * u32 implementation in src/libultra.c, so the split is omitted. */
 
 void boot(void);
 s32 boot_get_mem_size(void);

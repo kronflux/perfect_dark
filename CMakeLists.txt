@@ -124,7 +124,7 @@ endif()
 
 message(STATUS "Version: ${VERSION_ROMID}, hash ${VERSION_HASH}, branch ${VERSION_BRANCH}")
 
-configure_file("${CMAKE_SOURCE_DIR}/port/include/versioninfo.h.in" "${CMAKE_BINARY_DIR}/port/include/versioninfo.h" @ONLY)
+configure_file("${CMAKE_SOURCE_DIR}/src/include/versioninfo.h.in" "${CMAKE_BINARY_DIR}/src/include/versioninfo.h" @ONLY)
 
 set(ASSET_DIR "src/assets/${ROMID}")
 set(GENERATED_DIR "src/generated/${ROMID}")
@@ -159,8 +159,7 @@ include_directories("${CMAKE_SOURCE_DIR}/include/PR")
 include_directories("${CMAKE_SOURCE_DIR}/src/include")
 include_directories("${CMAKE_BINARY_DIR}/src/generated/${ROMID}")
 include_directories("${CMAKE_SOURCE_DIR}/src/lib/ultra/audio")
-include_directories("${CMAKE_SOURCE_DIR}/port/include")
-include_directories("${CMAKE_BINARY_DIR}/port/include")
+include_directories("${CMAKE_BINARY_DIR}/src/include")
 
 # Set Release optimization to -Og until I fix the -O2 issues
 if(NOT (CMAKE_BUILD_TYPE STREQUAL "Debug"))
@@ -257,8 +256,32 @@ list(APPEND LIBS "${EXTRA_LIBRARIES}")
 
 # Sources
 
-file(GLOB_RECURSE SRC_PORT "${CMAKE_SOURCE_DIR}/port/*.c")
-file(GLOB_RECURSE SRC_PORT_CXX "${CMAKE_SOURCE_DIR}/port/*.cpp")
+# The host layer sits at the root of src/ beside firingrange.c and textureconfig.c, which belong
+# to other source lists, so it is named file by file rather than globbed.
+set(SRC_HOST
+  audio.c
+  config.c
+  crash.c
+  fs.c
+  input.c
+  libultra.c
+  main.c
+  mixer.c
+  mod.c
+  mpsetups.c
+  optionsmenu.c
+  pdmain.c
+  pdsched.c
+  romdata.c
+  system.c
+  utils.c
+  video.c
+)
+list(TRANSFORM SRC_HOST PREPEND "${CMAKE_SOURCE_DIR}/src/")
+
+file(GLOB SRC_PREPROCESS "${CMAKE_SOURCE_DIR}/src/preprocess/*.c")
+file(GLOB_RECURSE SRC_FAST3D "${CMAKE_SOURCE_DIR}/src/fast3d/*.c")
+file(GLOB_RECURSE SRC_FAST3D_CXX "${CMAKE_SOURCE_DIR}/src/fast3d/*.cpp")
 
 file(GLOB_RECURSE SRC_GAME "${CMAKE_SOURCE_DIR}/src/game/*.c")
 
@@ -311,8 +334,10 @@ list(PREPEND SRC_LIB "${CMAKE_SOURCE_DIR}")
 
 set(SRC
   ${SRC_GAME}
-  ${SRC_PORT}
-  ${SRC_PORT_CXX}
+  ${SRC_HOST}
+  ${SRC_PREPROCESS}
+  ${SRC_FAST3D}
+  ${SRC_FAST3D_CXX}
   ${SRC_LIB_MP3}
   ${SRC_LIB_NAUDIO}
   ${SRC_LIB_ULTRA_AUDIO}
