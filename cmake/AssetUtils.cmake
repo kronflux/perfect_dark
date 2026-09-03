@@ -1,5 +1,7 @@
 # execute a header generator (execcmd) for every json file in jsonpath, collect headers in headerlist
 # note that this reads ROMID
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
 macro(generate_asset_headers jsonpath execcmd extraarg headerlist)
   set(TMP_JSON "")
 
@@ -18,7 +20,7 @@ macro(generate_asset_headers jsonpath execcmd extraarg headerlist)
     add_custom_command(
       OUTPUT  ${HEADERNAME}
       DEPENDS ${JSON}
-      COMMAND ${execcmd} ${JSON} ${extraarg} --headers-only --romid=${ROMID}
+      COMMAND ${Python3_EXECUTABLE} ${execcmd} ${JSON} ${extraarg} --headers-only --romid=${ROMID}
     )
     list(APPEND ${headerlist} "${HEADERNAME}")
   endforeach()
